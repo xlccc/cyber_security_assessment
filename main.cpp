@@ -6,16 +6,32 @@
 #include<stdio.h>
 #include<string>
 #include"database/db.h"
+#include"scan/portScan.h"	
+#include"utils_scan.h"
 
 
 
-//测试SQLite POC数据库
 int main()
 {
-	POC_db();
+	//测试SQLite POC数据库
+	//POC_db();
 
-	
-	system("pause");
+	char cwd[10000];
+	if (getcwd(cwd, sizeof(cwd)) != nullptr) {
+		std::cout << "Current working directory: " << cwd << std::endl;
+	}
+	else {
+		std::cerr << "Error getting current working directory" << std::endl;
+	}
+
+	//测试端口扫描
+	//std::string outputPath = performPortScan("192.168.183.200");
+
+	std::vector<ScanHostResult> scan_host_result = parseXmlFile("../../output_nmap/output_192.168.183.200_2024-05-25_23_07_52.xml");
+
+	std::cout << "wait.." << endl;
+
+	//system("pause");
 	return 0;
 }
 
