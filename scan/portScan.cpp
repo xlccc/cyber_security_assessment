@@ -44,7 +44,7 @@ std::string performPortScan(const std::string& targetHost) {
     std::replace(outputFileName.begin(), outputFileName.end(), '/', '_');
 
     std::string command1 = "sudo nmap -A -O " + targetHost + " -oX " + outputPath;
-    std::string command2 = "sudo chown c:c " + outputPath;
+    std::string command2 = "sudo chown root:root " + outputPath;
     std::string command3 = "sudo chmod 666 " + outputPath;
     
 
