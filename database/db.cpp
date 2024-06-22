@@ -310,51 +310,51 @@ public:
 
 
 
-//测试POC数据库
-int POC_db() {
-
-
-    DBServer DBServer;
-    DBServer.start();
-
-    std::cout << "Press Enter to stop the server." << std::endl;
-    std::cin.get(); // 等待用户输入，确保程序在启动监听器后不会立即退出
-
-    DBServer.stop();
-
-
-
-    //// 创建数据库管理对象，指定数据库文件路径
-    DatabaseManager dbManager(DB_PATH);
-
-    //std::vector<POC> records;
-
-    //// 创建表
-    //dbManager.createTable();
-    // 
-    ////获取所有数据
-    //records = dbManager.getAllData();
-    //
-    //int id = 2;     //假设要删的是id为2的数据
-    //bool delete_success = dbManager.deleteDataById(id);
-    //if (delete_success != true)
-    //{
-    //    std::cout << "SQL error: " << " 不存在id为："<<  id <<"的数据" <<  std::endl;
-    //}
-    //records = dbManager.getAllData();
-    //
-    //////测试更新
-    ////POC poc_update;
-    ////poc_update.id = 1;
-    ////poc_update.cve_id = "";
-    ////poc_update.description = "wdadwdas  a";
-    ////poc_update.script_type = "python";
-    ////poc_update.script = "dadsa";
-    ////poc_update.type = "sad";
-    ////dbManager.updateDataById(poc_update.id, poc_update);
-
-
-    return 0;
-}
+////测试POC数据库
+//int POC_db() {
+//
+//
+//    DBServer DBServer;
+//    DBServer.start();
+//
+//    std::cout << "Press Enter to stop the server." << std::endl;
+//    std::cin.get(); // 等待用户输入，确保程序在启动监听器后不会立即退出
+//
+//    DBServer.stop();
+//
+//
+//
+//    //// 创建数据库管理对象，指定数据库文件路径
+//    DatabaseManager dbManager(DB_PATH);
+//
+//    //std::vector<POC> records;
+//
+//    //// 创建表
+//    //dbManager.createTable();
+//    // 
+//    ////获取所有数据
+//    //records = dbManager.getAllData();
+//    //
+//    //int id = 2;     //假设要删的是id为2的数据
+//    //bool delete_success = dbManager.deleteDataById(id);
+//    //if (delete_success != true)
+//    //{
+//    //    std::cout << "SQL error: " << " 不存在id为："<<  id <<"的数据" <<  std::endl;
+//    //}
+//    //records = dbManager.getAllData();
+//    //
+//    //////测试更新
+//    ////POC poc_update;
+//    ////poc_update.id = 1;
+//    ////poc_update.cve_id = "";
+//    ////poc_update.description = "wdadwdas  a";
+//    ////poc_update.script_type = "python";
+//    ////poc_update.script = "dadsa";
+//    ////poc_update.type = "sad";
+//    ////dbManager.updateDataById(poc_update.id, poc_update);
+//
+//
+//    return 0;
+//}
 
 

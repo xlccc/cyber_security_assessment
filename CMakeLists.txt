@@ -57,6 +57,7 @@ set(SOURCES
     utils/utils.cpp
     scan/portScan.cpp
     scan/utils_scan.cpp
+    ServerManager.cpp
 )
 
 set(HEADERS
@@ -74,6 +75,7 @@ set(HEADERS
     scan/portScan.h
     scan/scan_struct.h
     scan/utils_scan.h
+    ServerManager.h
 )
 
 add_executable(MyCppProject ${SOURCES} ${HEADERS})
