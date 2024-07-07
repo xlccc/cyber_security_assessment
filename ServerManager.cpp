@@ -1,11 +1,11 @@
-#include "ServerManager.h"
+ï»¿#include "ServerManager.h"
 
 using namespace web;
 using namespace web::http;
 using namespace web::http::experimental::listener;
 
 ServerManager::ServerManager() : dbManager(DB_PATH) {
-    utility::string_t address = U("http://192.168.29.129:8081/");
+    utility::string_t address = U("http://192.168.177.129:8081/");
     uri_builder uri(address);
     auto addr = uri.to_uri().to_string();
     listener = std::make_unique<http_listener>(addr);
@@ -118,9 +118,9 @@ void ServerManager::handle_post_login(http_request request) {
         fun(Event, session);
         new_Event = ConvertEvents(Event);
         for (int i = 0; i < Event.size(); i++) {
-            cout << "ÃèÊöÐÅÏ¢£º" << Event[i].description << " "
-                << "Ö´ÐÐÖ¸Áî:  " << Event[i].command << " Ö´ÐÐ½á¹û£º" << Event[i].result << " "
-                << "ÊÇ·ñ·ûºÏ»ùÏß£º  " << Event[i].IsComply
+            cout << "æè¿°ä¿¡æ¯ï¼š" << Event[i].description << " "
+                << "æ‰§è¡ŒæŒ‡ä»¤:  " << Event[i].command << " æ‰§è¡Œç»“æžœï¼š" << Event[i].result << " "
+                << "æ˜¯å¦ç¬¦åˆåŸºçº¿ï¼š  " << Event[i].IsComply
                 << endl;
         }
 
@@ -206,13 +206,13 @@ void ServerManager::handle_post_insert_data(http_request request) {
         if (success) {
             poc_list = dbManager.getAllData();
             json::value response_data;
-            response_data[U("message")] = json::value::string(U("Ìí¼Ó³É¹¦£¡"));
+            response_data[U("message")] = json::value::string(U("æ·»åŠ æˆåŠŸï¼"));
             response.set_status_code(status_codes::OK);
             response.set_body(response_data);
         }
         else {
             json::value response_data;
-            response_data[U("message")] = json::value::string(U("Ìí¼ÓÊ§°Ü£¡"));
+            response_data[U("message")] = json::value::string(U("æ·»åŠ å¤±è´¥ï¼"));
             response.set_status_code(status_codes::BadRequest);
             response.set_body(response_data);
         }
@@ -238,13 +238,13 @@ void ServerManager::handle_put_update_data_by_id(http_request request) {
         if (success) {
             poc_list = dbManager.getAllData();
             json::value response_data;
-            response_data[U("message")] = json::value::string(U("¸üÐÂ³É¹¦"));
+            response_data[U("message")] = json::value::string(U("æ›´æ–°æˆåŠŸ"));
             response.set_status_code(status_codes::OK);
             response.set_body(response_data);
         }
         else {
             json::value response_data;
-            response_data[U("message")] = json::value::string(U("¸üÐÂÊ§°Ü"));
+            response_data[U("message")] = json::value::string(U("æ›´æ–°å¤±è´¥"));
             response.set_status_code(status_codes::BadRequest);
             response.set_body(response_data);
         }
@@ -279,13 +279,13 @@ void ServerManager::handle_delete_data_by_id(http_request request) {
         if (success) {
             poc_list = dbManager.getAllData();
             json::value response_data;
-            response_data[U("message")] = json::value::string(U("É¾³ý³É¹¦"));
+            response_data[U("message")] = json::value::string(U("åˆ é™¤æˆåŠŸ"));
             response.set_status_code(status_codes::OK);
             response.set_body(response_data);
         }
         else {
             json::value response_data;
-            response_data[U("message")] = json::value::string(U("É¾³ýÊ§°Ü"));
+            response_data[U("message")] = json::value::string(U("åˆ é™¤å¤±è´¥"));
             response.set_status_code(status_codes::BadRequest);
             response.set_body(response_data);
         }
