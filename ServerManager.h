@@ -1,11 +1,9 @@
 #ifndef SERVERMANAGER_H
 #define SERVERMANAGER_H
-
 #include <cpprest/http_listener.h>
 #include <cpprest/json.h>
 #include <cpprest/uri.h>
 #include <cpprest/uri_builder.h>
-#include <iostream>
 #include <map>
 #include <vector>
 #include <string>
@@ -57,7 +55,7 @@ private:
     void handle_post_insert_data(http_request request);
     void handle_put_update_data_by_id(http_request request);
     void handle_delete_data_by_id(http_request request);
-
+    void handle_post_get_Nmap(http_request request);
     
 
     json::value CVE_to_json(const CVE& cve);
