@@ -11,7 +11,7 @@
 				}
 			],
 			"type" : "STRING",
-			"value" : "/vcpkg/installed/x64-linux/debug/lib/libboost_atomic.a"
+			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libboost_atomic.a"
 		},
 		{
 			"name" : "Boost_ATOMIC_LIBRARY_RELEASE",
@@ -23,7 +23,7 @@
 				}
 			],
 			"type" : "STRING",
-			"value" : "/vcpkg/installed/x64-linux/lib/libboost_atomic.a"
+			"value" : "/root/vcpkg/installed/x64-linux/lib/libboost_atomic.a"
 		},
 		{
 			"name" : "Boost_CHRONO_LIBRARY_DEBUG",
@@ -35,7 +35,7 @@
 				}
 			],
 			"type" : "STRING",
-			"value" : "/vcpkg/installed/x64-linux/debug/lib/libboost_chrono.a"
+			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libboost_chrono.a"
 		},
 		{
 			"name" : "Boost_CHRONO_LIBRARY_RELEASE",
@@ -47,7 +47,7 @@
 				}
 			],
 			"type" : "STRING",
-			"value" : "/vcpkg/installed/x64-linux/lib/libboost_chrono.a"
+			"value" : "/root/vcpkg/installed/x64-linux/lib/libboost_chrono.a"
 		},
 		{
 			"name" : "Boost_DATE_TIME_LIBRARY_DEBUG",
@@ -59,7 +59,7 @@
 				}
 			],
 			"type" : "STRING",
-			"value" : "/vcpkg/installed/x64-linux/debug/lib/libboost_date_time.a"
+			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libboost_date_time.a"
 		},
 		{
 			"name" : "Boost_DATE_TIME_LIBRARY_RELEASE",
@@ -71,7 +71,7 @@
 				}
 			],
 			"type" : "STRING",
-			"value" : "/vcpkg/installed/x64-linux/lib/libboost_date_time.a"
+			"value" : "/root/vcpkg/installed/x64-linux/lib/libboost_date_time.a"
 		},
 		{
 			"name" : "Boost_DIR",
@@ -87,7 +87,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost"
 		},
 		{
 			"name" : "Boost_FILESYSTEM_LIBRARY_DEBUG",
@@ -99,7 +99,7 @@
 				}
 			],
 			"type" : "STRING",
-			"value" : "/vcpkg/installed/x64-linux/debug/lib/libboost_filesystem.a"
+			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libboost_filesystem.a"
 		},
 		{
 			"name" : "Boost_FILESYSTEM_LIBRARY_RELEASE",
@@ -111,7 +111,7 @@
 				}
 			],
 			"type" : "STRING",
-			"value" : "/vcpkg/installed/x64-linux/lib/libboost_filesystem.a"
+			"value" : "/root/vcpkg/installed/x64-linux/lib/libboost_filesystem.a"
 		},
 		{
 			"name" : "Boost_INCLUDE_DIR",
@@ -123,7 +123,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/include"
+			"value" : "/root/vcpkg/installed/x64-linux/include"
 		},
 		{
 			"name" : "Boost_RANDOM_LIBRARY_DEBUG",
@@ -135,7 +135,7 @@
 				}
 			],
 			"type" : "STRING",
-			"value" : "/vcpkg/installed/x64-linux/debug/lib/libboost_random.a"
+			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libboost_random.a"
 		},
 		{
 			"name" : "Boost_RANDOM_LIBRARY_RELEASE",
@@ -147,7 +147,7 @@
 				}
 			],
 			"type" : "STRING",
-			"value" : "/vcpkg/installed/x64-linux/lib/libboost_random.a"
+			"value" : "/root/vcpkg/installed/x64-linux/lib/libboost_random.a"
 		},
 		{
 			"name" : "Boost_REGEX_LIBRARY_DEBUG",
@@ -159,7 +159,7 @@
 				}
 			],
 			"type" : "STRING",
-			"value" : "/vcpkg/installed/x64-linux/debug/lib/libboost_regex.a"
+			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libboost_regex.a"
 		},
 		{
 			"name" : "Boost_REGEX_LIBRARY_RELEASE",
@@ -171,7 +171,7 @@
 				}
 			],
 			"type" : "STRING",
-			"value" : "/vcpkg/installed/x64-linux/lib/libboost_regex.a"
+			"value" : "/root/vcpkg/installed/x64-linux/lib/libboost_regex.a"
 		},
 		{
 			"name" : "Boost_SYSTEM_LIBRARY_DEBUG",
@@ -183,7 +183,7 @@
 				}
 			],
 			"type" : "STRING",
-			"value" : "/vcpkg/installed/x64-linux/debug/lib/libboost_system.a"
+			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libboost_system.a"
 		},
 		{
 			"name" : "Boost_SYSTEM_LIBRARY_RELEASE",
@@ -195,7 +195,7 @@
 				}
 			],
 			"type" : "STRING",
-			"value" : "/vcpkg/installed/x64-linux/lib/libboost_system.a"
+			"value" : "/root/vcpkg/installed/x64-linux/lib/libboost_system.a"
 		},
 		{
 			"name" : "Boost_THREAD_LIBRARY_DEBUG",
@@ -207,7 +207,7 @@
 				}
 			],
 			"type" : "STRING",
-			"value" : "/vcpkg/installed/x64-linux/debug/lib/libboost_thread.a"
+			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libboost_thread.a"
 		},
 		{
 			"name" : "Boost_THREAD_LIBRARY_RELEASE",
@@ -219,7 +219,7 @@
 				}
 			],
 			"type" : "STRING",
-			"value" : "/vcpkg/installed/x64-linux/lib/libboost_thread.a"
+			"value" : "/root/vcpkg/installed/x64-linux/lib/libboost_thread.a"
 		},
 		{
 			"name" : "CMAKE_ADDR2LINE",
@@ -275,7 +275,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/root/.vs/cyber_seproject/6731b597-df0c-4866-ab56-292bdcaceae0/out/build/Linux-GCC-Debug"
+			"value" : "/root/.vs/cyber_seproject2/8cf44de5-c72a-44b7-b30d-6effcd345537/out/build/Linux-GCC-Debug"
 		},
 		{
 			"name" : "CMAKE_CACHE_MAJOR_VERSION",
@@ -299,7 +299,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "19"
+			"value" : "29"
 		},
 		{
 			"name" : "CMAKE_CACHE_PATCH_VERSION",
@@ -311,7 +311,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "4"
+			"value" : "2"
 		},
 		{
 			"name" : "CMAKE_COMMAND",
@@ -323,7 +323,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/root/.vs/cmake/bin/cmake"
+			"value" : "/usr/local/bin/cmake"
 		},
 		{
 			"name" : "CMAKE_CPACK_COMMAND",
@@ -335,7 +335,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/root/.vs/cmake/bin/cpack"
+			"value" : "/usr/local/bin/cpack"
 		},
 		{
 			"name" : "CMAKE_CTEST_COMMAND",
@@ -347,7 +347,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/root/.vs/cmake/bin/ctest"
+			"value" : "/usr/local/bin/ctest"
 		},
 		{
 			"name" : "CMAKE_CXX_COMPILER",
@@ -742,6 +742,18 @@
 			"value" : ""
 		},
 		{
+			"name" : "CMAKE_FIND_PACKAGE_REDIRECTS_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake."
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/root/.vs/cyber_seproject2/8cf44de5-c72a-44b7-b30d-6effcd345537/out/build/Linux-GCC-Debug/CMakeFiles/pkgRedirects"
+		},
+		{
 			"name" : "CMAKE_GENERATOR",
 			"properties" : 
 			[
@@ -826,18 +838,6 @@
 			"value" : "1"
 		},
 		{
-			"name" : "CMAKE_HAVE_PTHREAD_H",
-			"properties" : 
-			[
-				{
-					"name" : "HELPSTRING",
-					"value" : "Have include pthread.h"
-				}
-			],
-			"type" : "INTERNAL",
-			"value" : "1"
-		},
-		{
 			"name" : "CMAKE_HOME_DIRECTORY",
 			"properties" : 
 			[
@@ -847,7 +847,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/root/.vs/cyber_seproject/6731b597-df0c-4866-ab56-292bdcaceae0/src"
+			"value" : "/root/.vs/cyber_seproject2/8cf44de5-c72a-44b7-b30d-6effcd345537/src"
 		},
 		{
 			"name" : "CMAKE_INSTALL_PREFIX",
@@ -859,7 +859,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/root/.vs/cyber_seproject/6731b597-df0c-4866-ab56-292bdcaceae0/out/install/Linux-GCC-Debug"
+			"value" : "/root/.vs/cyber_seproject2/8cf44de5-c72a-44b7-b30d-6effcd345537/out/install/Linux-GCC-Debug"
 		},
 		{
 			"name" : "CMAKE_INSTALL_SO_NO_EXE",
@@ -1135,7 +1135,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/root/.vs/cmake/share/cmake-3.19"
+			"value" : "/usr/local/share/cmake-3.29"
 		},
 		{
 			"name" : "CMAKE_SHARED_LINKER_FLAGS",
@@ -1346,6 +1346,22 @@
 			"value" : "/usr/bin/strip"
 		},
 		{
+			"name" : "CMAKE_TAPI",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to a program."
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "CMAKE_TAPI-NOTFOUND"
+		},
+		{
 			"name" : "CMAKE_TOOLCHAIN_FILE",
 			"properties" : 
 			[
@@ -1359,7 +1375,7 @@
 				}
 			],
 			"type" : "UNINITIALIZED",
-			"value" : "/vcpkg/scripts/buildsystems/vcpkg.cmake"
+			"value" : "/root/vcpkg/scripts/buildsystems/vcpkg.cmake"
 		},
 		{
 			"name" : "CMAKE_UNAME",
@@ -1399,7 +1415,7 @@
 				},
 				{
 					"name" : "HELPSTRING",
-					"value" : "(This variable does not exist and should not be used)"
+					"value" : ""
 				}
 			],
 			"type" : "UNINITIALIZED",
@@ -1415,7 +1431,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "[/vcpkg/installed/x64-linux/share/boost/BoostConfig.cmake][cfound components: random system thread filesystem chrono atomic date_time regex ][v1.85.0()]"
+			"value" : "[/root/vcpkg/installed/x64-linux/share/boost/BoostConfig.cmake][cfound components: random system thread filesystem chrono atomic date_time regex ][v1.85.0()]"
 		},
 		{
 			"name" : "FIND_PACKAGE_MESSAGE_DETAILS_ICU",
@@ -1427,7 +1443,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "[/vcpkg/installed/x64-linux/include][/vcpkg/installed/x64-linux/debug/lib/libicuuc.a;/vcpkg/installed/x64-linux/debug/lib/libicui18n.a;/vcpkg/installed/x64-linux/debug/lib/libicuio.a;/vcpkg/installed/x64-linux/debug/lib/libicudata.a][ON][v74.2()]"
+			"value" : "[/root/vcpkg/installed/x64-linux/include][/root/vcpkg/installed/x64-linux/debug/lib/libicuuc.a;/root/vcpkg/installed/x64-linux/debug/lib/libicui18n.a;/root/vcpkg/installed/x64-linux/debug/lib/libicuio.a;/root/vcpkg/installed/x64-linux/debug/lib/libicudata.a][ON][v74.2()]"
 		},
 		{
 			"name" : "FIND_PACKAGE_MESSAGE_DETAILS_OpenSSL",
@@ -1439,7 +1455,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "[/vcpkg/installed/x64-linux/debug/lib/libcrypto.a][/vcpkg/installed/x64-linux/include][c ][v3.3.0()]"
+			"value" : "[/root/vcpkg/installed/x64-linux/debug/lib/libcrypto.a][/root/vcpkg/installed/x64-linux/include][c ][v3.3.1()]"
 		},
 		{
 			"name" : "FIND_PACKAGE_MESSAGE_DETAILS_SQLite3",
@@ -1451,7 +1467,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "[/vcpkg/installed/x64-linux/include][/vcpkg/installed/x64-linux/debug/lib/libsqlite3.a][v3.45.3()]"
+			"value" : "[/root/vcpkg/installed/x64-linux/include][/root/vcpkg/installed/x64-linux/debug/lib/libsqlite3.a][v3.46.0()]"
 		},
 		{
 			"name" : "FIND_PACKAGE_MESSAGE_DETAILS_Threads",
@@ -1475,7 +1491,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "[optimized;/vcpkg/installed/x64-linux/lib/libz.a;debug;/vcpkg/installed/x64-linux/debug/lib/libz.a][/vcpkg/installed/x64-linux/include][v1.3.1()]"
+			"value" : "[optimized;/root/vcpkg/installed/x64-linux/lib/libz.a;debug;/root/vcpkg/installed/x64-linux/debug/lib/libz.a][/root/vcpkg/installed/x64-linux/include][c ][v1.3.1()]"
 		},
 		{
 			"name" : "I18N_FOUND",
@@ -1487,7 +1503,23 @@
 				},
 				{
 					"name" : "HELPSTRING",
-					"value" : "(This variable does not exist and should not be used)"
+					"value" : ""
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : ""
+		},
+		{
+			"name" : "ICU_DATA_FOUND",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : ""
 				}
 			],
 			"type" : "UNINITIALIZED",
@@ -1523,127 +1555,183 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/vcpkg/installed/x64-linux/debug/lib/libicudata.a"
+			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libicudata.a"
 		},
 		{
 			"name" : "ICU_DERB_EXECUTABLE",
 			"properties" : 
 			[
 				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
 					"name" : "HELPSTRING",
 					"value" : "ICU derb executable"
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/vcpkg/installed/x64-linux/tools/icu/bin/derb"
+			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/derb"
 		},
 		{
 			"name" : "ICU_GENBRK_EXECUTABLE",
 			"properties" : 
 			[
 				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
 					"name" : "HELPSTRING",
 					"value" : "ICU genbrk executable"
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/vcpkg/installed/x64-linux/tools/icu/bin/genbrk"
+			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/genbrk"
 		},
 		{
 			"name" : "ICU_GENCCODE_EXECUTABLE",
 			"properties" : 
 			[
 				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
 					"name" : "HELPSTRING",
 					"value" : "ICU genccode executable"
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/vcpkg/installed/x64-linux/tools/icu/bin/genccode"
+			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/genccode"
 		},
 		{
 			"name" : "ICU_GENCFU_EXECUTABLE",
 			"properties" : 
 			[
 				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
 					"name" : "HELPSTRING",
 					"value" : "ICU gencfu executable"
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/vcpkg/installed/x64-linux/tools/icu/bin/gencfu"
+			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/gencfu"
 		},
 		{
 			"name" : "ICU_GENCMN_EXECUTABLE",
 			"properties" : 
 			[
 				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
 					"name" : "HELPSTRING",
 					"value" : "ICU gencmn executable"
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/vcpkg/installed/x64-linux/tools/icu/bin/gencmn"
+			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/gencmn"
 		},
 		{
 			"name" : "ICU_GENCNVAL_EXECUTABLE",
 			"properties" : 
 			[
 				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
 					"name" : "HELPSTRING",
 					"value" : "ICU gencnval executable"
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/vcpkg/installed/x64-linux/tools/icu/bin/gencnval"
+			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/gencnval"
 		},
 		{
 			"name" : "ICU_GENDICT_EXECUTABLE",
 			"properties" : 
 			[
 				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
 					"name" : "HELPSTRING",
 					"value" : "ICU gendict executable"
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/vcpkg/installed/x64-linux/tools/icu/bin/gendict"
+			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/gendict"
 		},
 		{
 			"name" : "ICU_GENNORM2_EXECUTABLE",
 			"properties" : 
 			[
 				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
 					"name" : "HELPSTRING",
 					"value" : "ICU gennorm2 executable"
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/vcpkg/installed/x64-linux/tools/icu/bin/gennorm2"
+			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/gennorm2"
 		},
 		{
 			"name" : "ICU_GENRB_EXECUTABLE",
 			"properties" : 
 			[
 				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
 					"name" : "HELPSTRING",
 					"value" : "ICU genrb executable"
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/vcpkg/installed/x64-linux/tools/icu/bin/genrb"
+			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/genrb"
 		},
 		{
 			"name" : "ICU_GENSPREP_EXECUTABLE",
 			"properties" : 
 			[
 				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
 					"name" : "HELPSTRING",
 					"value" : "ICU gensprep executable"
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/vcpkg/installed/x64-linux/tools/icu/bin/gensprep"
+			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/gensprep"
+		},
+		{
+			"name" : "ICU_I18N_FOUND",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : ""
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : ""
 		},
 		{
 			"name" : "ICU_I18N_LIBRARY_DEBUG",
@@ -1675,55 +1763,87 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/vcpkg/installed/x64-linux/debug/lib/libicui18n.a"
+			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libicui18n.a"
 		},
 		{
 			"name" : "ICU_ICU-CONFIG_EXECUTABLE",
 			"properties" : 
 			[
 				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
 					"name" : "HELPSTRING",
 					"value" : "ICU icu-config executable"
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/vcpkg/installed/x64-linux/tools/icu/bin/icu-config"
+			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/icu-config"
 		},
 		{
 			"name" : "ICU_ICUINFO_EXECUTABLE",
 			"properties" : 
 			[
 				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
 					"name" : "HELPSTRING",
 					"value" : "ICU icuinfo executable"
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/vcpkg/installed/x64-linux/tools/icu/bin/icuinfo"
+			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/icuinfo"
 		},
 		{
 			"name" : "ICU_ICUPKG_EXECUTABLE",
 			"properties" : 
 			[
 				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
 					"name" : "HELPSTRING",
 					"value" : "ICU icupkg executable"
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/vcpkg/installed/x64-linux/tools/icu/bin/icupkg"
+			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/icupkg"
 		},
 		{
 			"name" : "ICU_INCLUDE_DIR",
 			"properties" : 
 			[
 				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
 					"name" : "HELPSTRING",
 					"value" : "ICU include directory"
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/include"
+			"value" : "/root/vcpkg/installed/x64-linux/include"
+		},
+		{
+			"name" : "ICU_IO_FOUND",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : ""
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : ""
 		},
 		{
 			"name" : "ICU_IO_LIBRARY_DEBUG",
@@ -1755,24 +1875,32 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/vcpkg/installed/x64-linux/debug/lib/libicuio.a"
+			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libicuio.a"
 		},
 		{
 			"name" : "ICU_MAKECONV_EXECUTABLE",
 			"properties" : 
 			[
 				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
 					"name" : "HELPSTRING",
 					"value" : "ICU makeconv executable"
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/vcpkg/installed/x64-linux/tools/icu/bin/makeconv"
+			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/makeconv"
 		},
 		{
 			"name" : "ICU_MAKEFILE_INC",
 			"properties" : 
 			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
 				{
 					"name" : "HELPSTRING",
 					"value" : "ICU Makefile.inc data file"
@@ -1786,17 +1914,25 @@
 			"properties" : 
 			[
 				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
 					"name" : "HELPSTRING",
 					"value" : "ICU pkgdata executable"
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/vcpkg/installed/x64-linux/tools/icu/bin/pkgdata"
+			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/pkgdata"
 		},
 		{
 			"name" : "ICU_PKGDATA_INC",
 			"properties" : 
 			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
 				{
 					"name" : "HELPSTRING",
 					"value" : "ICU pkgdata.inc data file"
@@ -1810,12 +1946,32 @@
 			"properties" : 
 			[
 				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
 					"name" : "HELPSTRING",
 					"value" : "ICU uconv executable"
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/vcpkg/installed/x64-linux/tools/icu/bin/uconv"
+			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/uconv"
+		},
+		{
+			"name" : "ICU_UC_FOUND",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : ""
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : ""
 		},
 		{
 			"name" : "ICU_UC_LIBRARY_DEBUG",
@@ -1847,7 +2003,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/vcpkg/installed/x64-linux/debug/lib/libicuuc.a"
+			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libicuuc.a"
 		},
 		{
 			"name" : "IO_FOUND",
@@ -1859,7 +2015,7 @@
 				},
 				{
 					"name" : "HELPSTRING",
-					"value" : "(This variable does not exist and should not be used)"
+					"value" : ""
 				}
 			],
 			"type" : "UNINITIALIZED",
@@ -1875,7 +2031,19 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/root/.vs/cyber_seproject/6731b597-df0c-4866-ab56-292bdcaceae0/out/build/Linux-GCC-Debug"
+			"value" : "/root/.vs/cyber_seproject2/8cf44de5-c72a-44b7-b30d-6effcd345537/out/build/Linux-GCC-Debug"
+		},
+		{
+			"name" : "MyCppProject_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "ON"
 		},
 		{
 			"name" : "MyCppProject_SOURCE_DIR",
@@ -1887,7 +2055,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/root/.vs/cyber_seproject/6731b597-df0c-4866-ab56-292bdcaceae0/src"
+			"value" : "/root/.vs/cyber_seproject2/8cf44de5-c72a-44b7-b30d-6effcd345537/src"
 		},
 		{
 			"name" : "OPENSSL_CRYPTO_LIBRARY",
@@ -1903,7 +2071,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/vcpkg/installed/x64-linux/debug/lib/libcrypto.a"
+			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libcrypto.a"
 		},
 		{
 			"name" : "OPENSSL_DL_LIBRARY",
@@ -1931,7 +2099,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/include"
+			"value" : "/root/vcpkg/installed/x64-linux/include"
 		},
 		{
 			"name" : "OPENSSL_SSL_LIBRARY",
@@ -1947,7 +2115,23 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/vcpkg/installed/x64-linux/debug/lib/libssl.a"
+			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libssl.a"
+		},
+		{
+			"name" : "PKG_CONFIG_ARGN",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Arguments to supply to pkg-config"
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
 		},
 		{
 			"name" : "PKG_CONFIG_EXECUTABLE",
@@ -1979,7 +2163,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/include"
+			"value" : "/root/vcpkg/installed/x64-linux/include"
 		},
 		{
 			"name" : "SQLite3_LIBRARY",
@@ -1995,7 +2179,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/vcpkg/installed/x64-linux/debug/lib/libsqlite3.a"
+			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libsqlite3.a"
 		},
 		{
 			"name" : "THREADS_HAVE_PTHREAD_ARG",
@@ -2019,7 +2203,7 @@
 				},
 				{
 					"name" : "HELPSTRING",
-					"value" : "(This variable does not exist and should not be used)"
+					"value" : ""
 				}
 			],
 			"type" : "UNINITIALIZED",
@@ -2047,7 +2231,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed"
+			"value" : "/root/vcpkg/installed"
 		},
 		{
 			"name" : "VCPKG_MANIFEST_DIR",
@@ -2187,7 +2371,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/include"
+			"value" : "/root/vcpkg/installed/x64-linux/include"
 		},
 		{
 			"name" : "ZLIB_LIBRARY_DEBUG",
@@ -2203,7 +2387,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/vcpkg/installed/x64-linux/debug/lib/libz.a"
+			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libz.a"
 		},
 		{
 			"name" : "ZLIB_LIBRARY_RELEASE",
@@ -2219,7 +2403,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/vcpkg/installed/x64-linux/lib/libz.a"
+			"value" : "/root/vcpkg/installed/x64-linux/lib/libz.a"
 		},
 		{
 			"name" : "Z_VCPKG_CHECK_MANIFEST_MODE",
@@ -2255,7 +2439,19 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/vcpkg"
+			"value" : "/root/vcpkg"
+		},
+		{
+			"name" : "_CMAKE_LINKER_PUSHPOP_STATE_SUPPORTED",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "linker supports push/pop state"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "TRUE"
 		},
 		{
 			"name" : "_OPENSSL_CFLAGS",
@@ -2267,7 +2463,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "-I/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../../include"
+			"value" : "-I/root/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../../include"
 		},
 		{
 			"name" : "_OPENSSL_CFLAGS_I",
@@ -2315,7 +2511,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../../include"
+			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../../include"
 		},
 		{
 			"name" : "_OPENSSL_INCLUDE_DIRS",
@@ -2327,7 +2523,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../../include"
+			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../../include"
 		},
 		{
 			"name" : "_OPENSSL_LDFLAGS",
@@ -2339,7 +2535,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "-L/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../lib;-lssl;-lcrypto;-ldl;-pthread"
+			"value" : "-L/root/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../lib;-lssl;-lcrypto;-ldl;-pthread"
 		},
 		{
 			"name" : "_OPENSSL_LDFLAGS_OTHER",
@@ -2363,7 +2559,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../lib"
+			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../lib"
 		},
 		{
 			"name" : "_OPENSSL_LIBRARIES",
@@ -2387,7 +2583,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../lib"
+			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../lib"
 		},
 		{
 			"name" : "_OPENSSL_LIBS",
@@ -2459,7 +2655,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../.."
+			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../.."
 		},
 		{
 			"name" : "_OPENSSL_STATIC_CFLAGS",
@@ -2471,7 +2667,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "-I/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../../include"
+			"value" : "-I/root/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../../include"
 		},
 		{
 			"name" : "_OPENSSL_STATIC_CFLAGS_I",
@@ -2507,7 +2703,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../../include"
+			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../../include"
 		},
 		{
 			"name" : "_OPENSSL_STATIC_LDFLAGS",
@@ -2519,7 +2715,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "-L/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../lib;-lssl;-lcrypto;-ldl;-pthread"
+			"value" : "-L/root/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../lib;-lssl;-lcrypto;-ldl;-pthread"
 		},
 		{
 			"name" : "_OPENSSL_STATIC_LDFLAGS_OTHER",
@@ -2567,7 +2763,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../lib"
+			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../lib"
 		},
 		{
 			"name" : "_OPENSSL_STATIC_LIBS",
@@ -2627,7 +2823,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "3.3.0"
+			"value" : "3.3.1"
 		},
 		{
 			"name" : "_OPENSSL_openssl_INCLUDEDIR",
@@ -2687,7 +2883,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed"
+			"value" : "/root/vcpkg/installed"
 		},
 		{
 			"name" : "__pkg_config_arguments__OPENSSL",
@@ -2723,7 +2919,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_algorithm"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_algorithm"
 		},
 		{
 			"name" : "boost_align_DIR",
@@ -2735,7 +2931,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_align"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_align"
 		},
 		{
 			"name" : "boost_array_DIR",
@@ -2747,7 +2943,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_array"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_array"
 		},
 		{
 			"name" : "boost_assert_DIR",
@@ -2759,7 +2955,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_assert"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_assert"
 		},
 		{
 			"name" : "boost_atomic_DIR",
@@ -2771,7 +2967,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_atomic"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_atomic"
 		},
 		{
 			"name" : "boost_bind_DIR",
@@ -2783,7 +2979,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_bind"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_bind"
 		},
 		{
 			"name" : "boost_chrono_DIR",
@@ -2795,7 +2991,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_chrono"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_chrono"
 		},
 		{
 			"name" : "boost_concept_check_DIR",
@@ -2807,7 +3003,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_concept_check"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_concept_check"
 		},
 		{
 			"name" : "boost_config_DIR",
@@ -2819,7 +3015,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_config"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_config"
 		},
 		{
 			"name" : "boost_container_DIR",
@@ -2831,7 +3027,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_container"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_container"
 		},
 		{
 			"name" : "boost_container_hash_DIR",
@@ -2843,7 +3039,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_container_hash"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_container_hash"
 		},
 		{
 			"name" : "boost_conversion_DIR",
@@ -2855,7 +3051,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_conversion"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_conversion"
 		},
 		{
 			"name" : "boost_core_DIR",
@@ -2867,7 +3063,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_core"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_core"
 		},
 		{
 			"name" : "boost_date_time_DIR",
@@ -2879,7 +3075,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_date_time"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_date_time"
 		},
 		{
 			"name" : "boost_describe_DIR",
@@ -2891,7 +3087,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_describe"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_describe"
 		},
 		{
 			"name" : "boost_detail_DIR",
@@ -2903,7 +3099,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_detail"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_detail"
 		},
 		{
 			"name" : "boost_dynamic_bitset_DIR",
@@ -2915,7 +3111,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_dynamic_bitset"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_dynamic_bitset"
 		},
 		{
 			"name" : "boost_exception_DIR",
@@ -2927,7 +3123,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_exception"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_exception"
 		},
 		{
 			"name" : "boost_filesystem_DIR",
@@ -2939,7 +3135,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_filesystem"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_filesystem"
 		},
 		{
 			"name" : "boost_function_DIR",
@@ -2951,7 +3147,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_function"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_function"
 		},
 		{
 			"name" : "boost_function_types_DIR",
@@ -2963,7 +3159,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_function_types"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_function_types"
 		},
 		{
 			"name" : "boost_functional_DIR",
@@ -2975,7 +3171,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_functional"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_functional"
 		},
 		{
 			"name" : "boost_fusion_DIR",
@@ -2987,7 +3183,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_fusion"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_fusion"
 		},
 		{
 			"name" : "boost_headers_DIR",
@@ -2999,7 +3195,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_headers"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_headers"
 		},
 		{
 			"name" : "boost_integer_DIR",
@@ -3011,7 +3207,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_integer"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_integer"
 		},
 		{
 			"name" : "boost_intrusive_DIR",
@@ -3023,7 +3219,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_intrusive"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_intrusive"
 		},
 		{
 			"name" : "boost_io_DIR",
@@ -3035,7 +3231,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_io"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_io"
 		},
 		{
 			"name" : "boost_iterator_DIR",
@@ -3047,7 +3243,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_iterator"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_iterator"
 		},
 		{
 			"name" : "boost_lexical_cast_DIR",
@@ -3059,7 +3255,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_lexical_cast"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_lexical_cast"
 		},
 		{
 			"name" : "boost_move_DIR",
@@ -3071,7 +3267,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_move"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_move"
 		},
 		{
 			"name" : "boost_mp11_DIR",
@@ -3083,7 +3279,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_mp11"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_mp11"
 		},
 		{
 			"name" : "boost_mpl_DIR",
@@ -3095,7 +3291,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_mpl"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_mpl"
 		},
 		{
 			"name" : "boost_numeric_conversion_DIR",
@@ -3107,7 +3303,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_numeric_conversion"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_numeric_conversion"
 		},
 		{
 			"name" : "boost_optional_DIR",
@@ -3119,7 +3315,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_optional"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_optional"
 		},
 		{
 			"name" : "boost_predef_DIR",
@@ -3131,7 +3327,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_predef"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_predef"
 		},
 		{
 			"name" : "boost_preprocessor_DIR",
@@ -3143,7 +3339,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_preprocessor"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_preprocessor"
 		},
 		{
 			"name" : "boost_random_DIR",
@@ -3155,7 +3351,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_random"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_random"
 		},
 		{
 			"name" : "boost_range_DIR",
@@ -3167,7 +3363,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_range"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_range"
 		},
 		{
 			"name" : "boost_ratio_DIR",
@@ -3179,7 +3375,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_ratio"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_ratio"
 		},
 		{
 			"name" : "boost_regex_DIR",
@@ -3191,7 +3387,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_regex"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_regex"
 		},
 		{
 			"name" : "boost_scope_DIR",
@@ -3203,7 +3399,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_scope"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_scope"
 		},
 		{
 			"name" : "boost_smart_ptr_DIR",
@@ -3215,7 +3411,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_smart_ptr"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_smart_ptr"
 		},
 		{
 			"name" : "boost_static_assert_DIR",
@@ -3227,7 +3423,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_static_assert"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_static_assert"
 		},
 		{
 			"name" : "boost_system_DIR",
@@ -3239,7 +3435,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_system"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_system"
 		},
 		{
 			"name" : "boost_thread_DIR",
@@ -3251,7 +3447,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_thread"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_thread"
 		},
 		{
 			"name" : "boost_throw_exception_DIR",
@@ -3263,7 +3459,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_throw_exception"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_throw_exception"
 		},
 		{
 			"name" : "boost_tokenizer_DIR",
@@ -3275,7 +3471,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_tokenizer"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_tokenizer"
 		},
 		{
 			"name" : "boost_tuple_DIR",
@@ -3287,7 +3483,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_tuple"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_tuple"
 		},
 		{
 			"name" : "boost_type_traits_DIR",
@@ -3299,7 +3495,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_type_traits"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_type_traits"
 		},
 		{
 			"name" : "boost_typeof_DIR",
@@ -3311,7 +3507,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_typeof"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_typeof"
 		},
 		{
 			"name" : "boost_unordered_DIR",
@@ -3323,7 +3519,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_unordered"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_unordered"
 		},
 		{
 			"name" : "boost_utility_DIR",
@@ -3335,7 +3531,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_utility"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_utility"
 		},
 		{
 			"name" : "boost_variant2_DIR",
@@ -3347,7 +3543,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_variant2"
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_variant2"
 		},
 		{
 			"name" : "boost_winapi_DIR",
@@ -3359,23 +3555,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/boost_winapi"
-		},
-		{
-			"name" : "cache_var",
-			"properties" : 
-			[
-				{
-					"name" : "ADVANCED",
-					"value" : "1"
-				},
-				{
-					"name" : "HELPSTRING",
-					"value" : "(This variable does not exist and should not be used)"
-				}
-			],
-			"type" : "UNINITIALIZED",
-			"value" : ""
+			"value" : "/root/vcpkg/installed/x64-linux/share/boost_winapi"
 		},
 		{
 			"name" : "cpprestsdk_DIR",
@@ -3387,7 +3567,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/cpprestsdk"
+			"value" : "/root/vcpkg/installed/x64-linux/share/cpprestsdk"
 		},
 		{
 			"name" : "libssh_DIR",
@@ -3399,7 +3579,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/vcpkg/installed/x64-linux/share/libssh"
+			"value" : "/root/vcpkg/installed/x64-linux/share/libssh"
 		},
 		{
 			"name" : "pkgcfg_lib__OPENSSL_crypto",
@@ -3415,7 +3595,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/vcpkg/installed/x64-linux/debug/lib/libcrypto.a"
+			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libcrypto.a"
 		},
 		{
 			"name" : "pkgcfg_lib__OPENSSL_dl",
@@ -3447,7 +3627,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/vcpkg/installed/x64-linux/debug/lib/libssl.a"
+			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libssl.a"
 		},
 		{
 			"name" : "prefix_result",
@@ -3459,7 +3639,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../lib"
+			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../lib"
 		}
 	],
 	"kind" : "cache",
