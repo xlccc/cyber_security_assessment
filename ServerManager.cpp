@@ -63,6 +63,9 @@ void ServerManager::handle_request(http_request request) {
     else if (first_segment == U("deleteDataById") && request.method() == methods::DEL) {
         handle_delete_data_by_id(request);
     }
+    else if (first_segment == U("getNmapIp") && request.method() == methods::POST) {
+        handle_post_get_Nmap(request);
+    }
     else {
         request.reply(status_codes::NotFound, U("Path not found"));
     }
@@ -105,6 +108,7 @@ void ServerManager::handle_post_login(http_request request) {
         this->global_ip = jsonReq[U("ip")].as_string();
         this->global_pd = jsonReq[U("pd")].as_string();
 
+        //pd������
         string ip = (global_ip);
         string pd = (global_pd);
 
@@ -294,6 +298,35 @@ void ServerManager::handle_delete_data_by_id(http_request request) {
         response.headers().add(U("Access-Control-Allow-Headers"), U("Content-Type"));
         request.reply(response);
         }).wait();
+}
+
+void ServerManager::handle_post_get_Nmap(http_request request)
+{
+    request.extract_json().then([this, &request](json::value body) {
+        std::string ip = body[U("ip")].as_string();
+
+        std::string outputPath = performPortScan(ip);
+        cout << outputPath << endl;
+        scan_host_result = parseXmlFile(outputPath);
+
+        for (auto& scanHostResult : scan_host_result) {
+            auto& cpes = scanHostResult.cpes;
+            fetch_and_padding_cves(cpes);
+            auto& ports = scanHostResult.ports;
+            for (auto& scanResult : ports) {
+                fetch_and_padding_cves(scanResult.cpes);
+            }
+        }
+        // ������Ӧ
+        http_response response(status_codes::OK);
+        response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
+        json::value response_data;
+        response_data[U("message")] = json::value::string(U("Nmap scan completed and CVE data fetched."));
+        response.set_body(response_data);
+        request.reply(response);
+
+        }).wait();
+
 }
 
 void ServerManager::fetch_and_padding_cves(map<std::string, vector<CVE>>& cpes, int limit) {
