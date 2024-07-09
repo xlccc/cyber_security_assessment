@@ -56,7 +56,7 @@ private:
     void handle_put_update_data_by_id(http_request request);
     void handle_delete_data_by_id(http_request request);
     void handle_post_get_Nmap(http_request request);
-    
+    void handle_post_hydra(http_request request);
 
     json::value CVE_to_json(const CVE& cve);
     json::value ScanResult_to_json(const ScanResult& scan_result);

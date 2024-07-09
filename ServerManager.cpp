@@ -66,6 +66,9 @@ void ServerManager::handle_request(http_request request) {
     else if (first_segment == U("getNmapIp") && request.method() == methods::POST) {
         handle_post_get_Nmap(request);
     }
+    else if (first_segment == U("getWeakPassword") && request.method() == methods::POST) {
+        handle_post_hydra(request);
+    }
     else {
         request.reply(status_codes::NotFound, U("Path not found"));
     }
@@ -320,6 +323,9 @@ void ServerManager::handle_post_get_Nmap(http_request request)
         // 创建响应
         http_response response(status_codes::OK);
         response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
+        response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, PUT, DELETE, OPTIONS"));
+        response.headers().add(U("Access-Control-Allow-Headers"), U("Content-Type"));
+
         json::value response_data;
         response_data[U("message")] = json::value::string(U("Nmap scan completed and CVE data fetched."));
         response.set_body(response_data);
@@ -327,6 +333,66 @@ void ServerManager::handle_post_get_Nmap(http_request request)
 
         }).wait();
 
+}
+
+void ServerManager::handle_post_hydra(http_request request)
+{
+    request.extract_json().then([this, &request](json::value body) {
+        std::string ip = body[U("ip")].as_string();
+        std::string usernameFile = "/hydra/usernames.txt";
+        std::string passwordFile = "/hydra/passwords.txt";
+
+        // Construct the hydra command
+        std::string command = "hydra -L " + usernameFile + " -P " + passwordFile + " -f ssh://" + ip;
+
+        // Execute the command and get the output
+        std::string output = exec(command.c_str());
+
+
+        string res = extract_login_info(output);
+       
+
+        std::regex pattern(R"(\[(\d+)\]\[([^\]]+)\] host:\s*([^\s]+)\s+login:\s*([^\s]+)\s+password:\s*([^\s]+))");
+        std::smatch match;
+        int port = 0;
+        string service = "";
+        string host = "";
+        string login = "";
+        string password = "";
+        // Search for the pattern in the input string
+        if (std::regex_search(res, match, pattern)) {
+            port = std::stoi(match[1].str());
+            service = match[2].str();
+            host = match[3].str();
+            login = match[4].str();
+            password = match[5].str();
+        }
+        else {
+            throw std::runtime_error("No matching info found");
+        }
+        json::value json_obj = json::value::object();
+        json_obj[U("port")] = json::value::number(port);
+        json_obj[U("service")] = json::value::string(service);
+        json_obj[U("host")] = json::value::string(host);
+        json_obj[U("login")] = json::value::string(login);
+        json_obj[U("password")] = json::value::string(password);
+
+        // Create a JSON array and add the JSON object to it
+        json::value json_array = json::value::array();
+        json_array[0] = json_obj;
+
+        // 创建响应
+        http_response response(status_codes::OK);
+        response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
+        response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, PUT, DELETE, OPTIONS"));
+        response.headers().add(U("Access-Control-Allow-Headers"), U("Content-Type"));
+
+        //json::value response_data;
+        //response_data[U("message")] = json::value::string(U(res));
+        response.set_body(json_array);
+        request.reply(response);
+
+        }).wait();
 }
 
 void ServerManager::fetch_and_padding_cves(map<std::string, vector<CVE>>& cpes, int limit) {

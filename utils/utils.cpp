@@ -34,3 +34,30 @@ std::string convertToUTF8(const std::string& input, const std::string& fromEncod
     sourceStr.toUTF8String(output);
     return output;
 }
+
+// Function to execute a command and get the output
+std::string exec(const char* cmd) {
+    std::array<char, 128> buffer;
+    std::string result;
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+
+    if (!pipe) {
+        throw std::runtime_error("popen() failed!");
+    }
+
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+        result += buffer.data();
+    }
+
+    return result;
+}
+
+// Function to extract login information from hydra output
+std::string extract_login_info(const std::string& output) {
+    std::regex pattern(R"(\[\d+\]\[[^\]]+\] host:\s*[^\s]+\s+login:\s*[^\s]+\s+password:\s*[^\s]+)");
+    std::smatch match;
+    if (std::regex_search(output, match, pattern)) {
+        return match.str(0);
+    }
+    return "No login info found";
+}
