@@ -42,6 +42,9 @@ public:
     vector<ScanHostResult> scan_host_result;
     void fetch_and_padding_cves(std::map<std::string, std::vector<CVE>>& cpes, int limit = 10);
 private:
+    // ´æ´¢portIdºÍservice_nameµÄmap
+    std::map<std::string, std::string> port_services;
+
     std::unique_ptr<http_listener> listener;
     void handle_options(http_request request);
     void handle_request(http_request request);
