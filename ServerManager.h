@@ -42,6 +42,9 @@ public:
     vector<ScanHostResult> scan_host_result;
     void fetch_and_padding_cves(std::map<std::string, std::vector<CVE>>& cpes, int limit = 10);
 private:
+    // ´æ´¢portIdºÍservice_nameµÄmap
+    std::map<std::string, std::string> port_services;
+
     std::unique_ptr<http_listener> listener;
     void handle_options(http_request request);
     void handle_request(http_request request);
@@ -56,7 +59,7 @@ private:
     void handle_put_update_data_by_id(http_request request);
     void handle_delete_data_by_id(http_request request);
     void handle_post_get_Nmap(http_request request);
-    
+    void handle_post_hydra(http_request request);
 
     json::value CVE_to_json(const CVE& cve);
     json::value ScanResult_to_json(const ScanResult& scan_result);

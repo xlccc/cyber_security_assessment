@@ -66,6 +66,9 @@ void ServerManager::handle_request(http_request request) {
     else if (first_segment == U("getNmapIp") && request.method() == methods::POST) {
         handle_post_get_Nmap(request);
     }
+    else if (first_segment == U("getWeakPassword") && request.method() == methods::POST) {
+        handle_post_hydra(request);
+    }
     else {
         request.reply(status_codes::NotFound, U("Path not found"));
     }
@@ -310,6 +313,9 @@ void ServerManager::handle_post_get_Nmap(http_request request)
         scan_host_result = parseXmlFile(outputPath);
 
         for (auto& scanHostResult : scan_host_result) {
+            for (auto& port : scanHostResult.ports) {
+                port_services[port.service_name] = port.portId;
+            }
             auto& cpes = scanHostResult.cpes;
             fetch_and_padding_cves(cpes);
             auto& ports = scanHostResult.ports;
@@ -320,6 +326,9 @@ void ServerManager::handle_post_get_Nmap(http_request request)
         // 锟斤拷锟斤拷锟斤拷应
         http_response response(status_codes::OK);
         response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
+        response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, PUT, DELETE, OPTIONS"));
+        response.headers().add(U("Access-Control-Allow-Headers"), U("Content-Type"));
+
         json::value response_data;
         response_data[U("message")] = json::value::string(U("Nmap scan completed and CVE data fetched."));
         response.set_body(response_data);
@@ -328,6 +337,183 @@ void ServerManager::handle_post_get_Nmap(http_request request)
         }).wait();
 
 }
+
+void ServerManager::handle_post_hydra(http_request request) {
+    request.extract_json().then([this, &request](json::value body) {
+        try {
+            if (!body.has_field(U("ip")) || !body.has_field(U("service_name")) || !body.has_field(U("portId"))) {
+                throw std::runtime_error("Invalid input JSON");
+            }
+
+            std::string ip = body[U("ip")].as_string();
+            std::string service_name = body[U("service_name")].as_string();
+            std::string portId_name = body[U("portId")].as_string();
+
+            std::string usernameFile = "/hydra/usernames.txt";
+            std::string passwordFile = "/hydra/passwords.txt";
+
+            //说明有这个服务
+            if (port_services.find(service_name) != port_services.end()) {
+                // Construct the hydra command
+                std::string command = "hydra -L " + usernameFile + " -P " + passwordFile + " -f " + service_name + "://" + ip;
+
+                // Execute the command and get the output
+                std::string output = exec(command.c_str());
+
+                std::string res = extract_login_info(output);
+
+                std::regex pattern(R"(\[(\d+)\]\[([^\]]+)\] host:\s*([^\s]+)\s+login:\s*([^\s]+)\s+password:\s*([^\s]+))");
+                std::smatch match;
+                int port = 0;
+                std::string service = "";
+                std::string host = "";
+                std::string login = "";
+                std::string password = "";
+
+                // Search for the pattern in the input string
+                if (std::regex_search(res, match, pattern)) {
+                    port = std::stoi(match[1].str());
+                    service = match[2].str();
+                    host = match[3].str();
+                    login = match[4].str();
+                    password = match[5].str();
+                }
+                else {
+                    throw std::runtime_error("No matching info found");
+                }
+
+                json::value json_obj = json::value::object();
+                json_obj[U("port")] = json::value::number(port);
+                json_obj[U("service")] = json::value::string(service);
+                json_obj[U("host")] = json::value::string(host);
+                json_obj[U("login")] = json::value::string(login);
+                json_obj[U("password")] = json::value::string(password);
+
+                // Create a JSON array and add the JSON object to it
+                json::value json_array = json::value::array();
+                json_array[0] = json_obj;
+
+                // 创建响应
+                http_response response(status_codes::OK);
+                response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
+                response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, PUT, DELETE, OPTIONS"));
+                response.headers().add(U("Access-Control-Allow-Headers"), U("Content-Type"));
+
+                response.set_body(json_array);
+                request.reply(response);
+            }
+            else {
+                // 服务不存在，返回错误信息
+                json::value error_response = json::value::object();
+                error_response[U("error")] = json::value::string(U("Service not found"));
+                error_response[U("service_name")] = json::value::string(service_name);
+
+                // 创建响应
+                http_response response(status_codes::NotFound);
+                response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
+                response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, PUT, DELETE, OPTIONS"));
+                response.headers().add(U("Access-Control-Allow-Headers"), U("Content-Type"));
+
+                response.set_body(error_response);
+                request.reply(response);
+            }
+        }
+        catch (const std::exception& e) {
+            std::cerr << "An error occurred: " << e.what() << std::endl;
+            http_response response(status_codes::InternalError);
+            response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
+            response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, PUT, DELETE, OPTIONS"));
+            response.headers().add(U("Access-Control-Allow-Headers"), U("Content-Type"));
+            json::value error_response = json::value::object();
+            error_response[U("error")] = json::value::string(U("Internal server error"));
+            error_response[U("details")] = json::value::string(U(e.what()));
+            response.set_body(error_response);
+            request.reply(response);
+        }
+        }).wait();
+}
+
+
+
+//void ServerManager::handle_post_hydra(http_request request)
+//{
+//    request.extract_json().then([this, &request](json::value body) {
+//        std::string ip = body[U("ip")].as_string();
+//        std::string service_name = body[U("service_name")].as_string();
+//        std::string portId_name = body[U("portId_name")].as_string();
+//
+//        std::string usernameFile = "/hydra/usernames.txt";
+//        std::string passwordFile = "/hydra/passwords.txt";
+//
+//        //说明有这个服务
+//        if (port_services.find(service_name) != port_services.end()) {
+//            // Construct the hydra command
+//            std::string command = "hydra -L " + usernameFile + " -P " + passwordFile + " -f" + service_name + "://" + ip;
+//
+//            // Execute the command and get the output
+//            std::string output = exec(command.c_str());
+//
+//
+//            string res = extract_login_info(output);
+//
+//
+//            std::regex pattern(R"(\[(\d+)\]\[([^\]]+)\] host:\s*([^\s]+)\s+login:\s*([^\s]+)\s+password:\s*([^\s]+))");
+//            std::smatch match;
+//            int port = 0;
+//            string service = "";
+//            string host = "";
+//            string login = "";
+//            string password = "";
+//            // Search for the pattern in the input string
+//            if (std::regex_search(res, match, pattern)) {
+//                port = std::stoi(match[1].str());
+//                service = match[2].str();
+//                host = match[3].str();
+//                login = match[4].str();
+//                password = match[5].str();
+//            }
+//            else {
+//                throw std::runtime_error("No matching info found");
+//            }
+//            json::value json_obj = json::value::object();
+//            json_obj[U("port")] = json::value::number(port);
+//            json_obj[U("service")] = json::value::string(service);
+//            json_obj[U("host")] = json::value::string(host);
+//            json_obj[U("login")] = json::value::string(login);
+//            json_obj[U("password")] = json::value::string(password);
+//
+//            // Create a JSON array and add the JSON object to it
+//            json::value json_array = json::value::array();
+//            json_array[0] = json_obj;
+//
+//            // 创建响应
+//            http_response response(status_codes::OK);
+//            response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
+//            response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, PUT, DELETE, OPTIONS"));
+//            response.headers().add(U("Access-Control-Allow-Headers"), U("Content-Type"));
+//
+//            //json::value response_data;
+//            //response_data[U("message")] = json::value::string(U(res));
+//            response.set_body(json_array);
+//            request.reply(response);
+//        }
+//        else {
+//            // 服务不存在，返回错误信息
+//            json::value error_response = json::value::object();
+//            error_response[U("error")] = json::value::string(U("Service not found"));
+//            error_response[U("service_name")] = json::value::string(service_name);
+//
+//            // 创建响应
+//            http_response response(status_codes::NotFound);
+//            response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
+//            response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, PUT, DELETE, OPTIONS"));
+//            response.headers().add(U("Access-Control-Allow-Headers"), U("Content-Type"));
+//
+//            response.set_body(error_response);
+//            request.reply(response);
+//        }
+//        }).wait();
+//}
 
 void ServerManager::fetch_and_padding_cves(map<std::string, vector<CVE>>& cpes, int limit) {
     std::string base_url = "http://192.168.29.129:5000/api/cvefor";

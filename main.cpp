@@ -12,6 +12,7 @@
 #include <cpprest/filestream.h>   // 文件流库
 #include <cpprest/json.h>         // JSON 库
 #include <iostream>
+#include"utils/utils.h"
 #include"ServerManager.h"
 using namespace utility;          // Common utilities like string conversions
 using namespace web;              // Common features like URIs.
