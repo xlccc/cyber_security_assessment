@@ -5,7 +5,14 @@
 #include <string>
 #include "rapidxml.hpp" // 使用 RapidXML 库进行 XML 解析
 #include"scan_struct.h"
+#include <Python.h>
+#include"utils.h"
+
 
 //解析nmap端口扫描结果的xml文件
 std::vector<ScanHostResult> parseXmlFile(const std::string& xmlFilePath);
+
+
+//运行python脚本
+std::string runPythonScript(const std::string& scriptPath_extension, const std::string& url, const std::string& ip, int port);
 

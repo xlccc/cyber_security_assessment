@@ -108,6 +108,7 @@ public:
                 json::value data;
                 data[U("id")] = json::value::number(poc_data[i].id);
                 data[U("cve_id")] = json::value::string(utility::conversions::to_string_t(poc_data[i].cve_id));
+                data[U("vul_name")] = json::value::string(utility::conversions::to_string_t(poc_data[i].vul_name));
                 data[U("type")] = json::value::string(utility::conversions::to_string_t(poc_data[i].type));
                 data[U("description")] = json::value::string(utility::conversions::to_string_t(poc_data[i].description));
                 data[U("script_type")] = json::value::string(utility::conversions::to_string_t(poc_data[i].script_type));
@@ -120,12 +121,12 @@ public:
             response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
             response.set_body(search_data);
             request.reply(response);
-            
+
         }
         else {
             std::cout << "Path not found: " << path << ". Sending 404 Not Found." << std::endl;
             request.reply(status_codes::NotFound);
-            }
+        }
     }
 
     //添加新的POC
@@ -137,12 +138,13 @@ public:
             request.extract_json().then([this, &request](json::value body) {
                 //json::value的[]接收utility::string_t时是公有接口
                 std::string cve_id = (body[U("cve_id")].as_string());
+                std::string vul_name = (body[U("vul_name")].as_string());       //新增
                 std::string type = (body[U("type")].as_string());
                 std::string description = (body[U("description")].as_string());
                 std::string script_type = (body[U("script_type")].as_string());
                 std::string script = (body[U("script")].as_string());
-                bool success = dbManager.insertData(cve_id, type, description, script_type, script);
-                
+                bool success = dbManager.insertData(cve_id, vul_name, type, description, script_type, script);
+
                 http_response response;
                 if (success) {
                     //更新poc_list
@@ -208,7 +210,7 @@ public:
                 response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, PUT, DELETE, OPTIONS"));
                 response.headers().add(U("Access-Control-Allow-Headers"), U("Content-Type"));
                 request.reply(response);
-                }).wait(); 
+                }).wait();
 
         }
         else {

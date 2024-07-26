@@ -23,8 +23,7 @@ void fun(vector<event>& Event, ssh_session session) {
 	string command_result3;
 	int num1;
 	int num2;
-	int num3;
-	int num4;
+
 
 
 	//2.1检查口令生存周期

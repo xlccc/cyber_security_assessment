@@ -1,12 +1,12 @@
-﻿{
+{
   "configurations": [
     {
       "name": "Linux-GCC-Debug",
-      "generator": "Ninja",
+      "generator": "Unix Makefiles",
       "configurationType": "Debug",
       "cmakeExecutable": "cmake",
-      "remoteCopySourcesExclusionList": [ ".vs", ".git" ],
-      "cmakeCommandArgs": "",
+      "remoteCopySourcesExclusionList": [ ".vs", ".git", "out" ],
+      "cmakeCommandArgs": "-DPython3_ROOT_DIR=/usr -DPython3_INCLUDE_DIR=/usr/include/python3.8 -DPython3_LIBRARY=/usr/lib/x86_64-linux-gnu/libpython3.8.so -DPYBIND11_PYTHON_VERSION=3.8  -DCMAKE_TOOLCHAIN_FILE=/home/c/vcpkg/scripts/buildsystems/vcpkg.cmake",
       "buildCommandArgs": "",
       "ctestCommandArgs": "",
       "inheritEnvironments": [ "linux_x64" ],
@@ -15,10 +15,33 @@
       "remoteBuildRoot": "$HOME/.vs/${projectDirName}/${workspaceHash}/out/build/${name}",
       "remoteInstallRoot": "$HOME/.vs/${projectDirName}/${workspaceHash}/out/install/${name}",
       "remoteCopySources": true,
-      "rsyncCommandArgs": "-a --delete",
+      "rsyncCommandArgs": "-t --delete",
       "remoteCopyBuildOutput": false,
       "remoteCopySourcesMethod": "rsync",
-      "variables": []
+      "variables": [
+        {
+          "name": "CMAKE_CXX_STANDARD",
+          "value": "14",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_CXX_COMPILER",
+          "value": "g++",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_C_COMPILER",
+          "value": "gcc",
+          "type": "STRING"
+        },
+        {
+          "name": "VCPKG_ROOT",
+          "value": "/home/c/vcpkg",
+          "type": "STRING"
+        }
+      ],
+      "includePath": [ "/home/c/vcpkg/installed/x64-linux/include", "${workspaceFolder}/**" ],
+      "intelliSenseMode": "linux-gcc-x64"
     }
   ]
 }
