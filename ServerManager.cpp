@@ -69,6 +69,10 @@ void ServerManager::handle_request(http_request request) {
     else if (first_segment == U("getWeakPassword") && request.method() == methods::POST) {
         handle_post_hydra(request);
     }
+    else if (first_segment == U("testWeakPassword") && request.method() == methods::POST) {
+        handle_post_testWeak(request);
+    }
+
     else {
         request.reply(status_codes::NotFound, U("Path not found"));
     }
@@ -88,14 +92,15 @@ void ServerManager::handle_get_userinfo(http_request request) {
     ServerInfo[U("version")] = json::value::string(info_new.version);
     json::value response_data = json::value::array();
 
-    for (size_t i = 0; i < new_Event.size(); ++i) {
+    for (size_t i = 0; i < Event.size(); ++i) {
         json::value user_data;
-        user_data[U("basis")] = json::value::string(new_Event[i].basis);
-        user_data[U("command")] = json::value::string(new_Event[i].command);
-        user_data[U("description")] = json::value::string(new_Event[i].description);
-        user_data[U("IsComply")] = json::value::string(new_Event[i].IsComply);
-        user_data[U("recommend")] = json::value::string(new_Event[i].recommend);
-        user_data[U("result")] = json::value::string(new_Event[i].result);
+
+        user_data[U("basis")] = json::value::string(utility::conversions::to_string_t(Event[i].basis));
+        user_data[U("command")] = json::value::string(utility::conversions::to_string_t(Event[i].command));
+        user_data[U("description")] = json::value::string(utility::conversions::to_string_t(Event[i].description));
+        user_data[U("IsComply")] = json::value::string(utility::conversions::to_string_t(Event[i].IsComply));
+        user_data[U("recommend")] = json::value::string(utility::conversions::to_string_t(Event[i].recommend));
+        user_data[U("result")] = json::value::string(utility::conversions::to_string_t(Event[i].result));
         response_data[i] = user_data;
     }
     main_body[U("ServerInfo")] = ServerInfo;
@@ -111,7 +116,7 @@ void ServerManager::handle_post_login(http_request request) {
         this->global_ip = jsonReq[U("ip")].as_string();
         this->global_pd = jsonReq[U("pd")].as_string();
 
-        //pdÊÇÃÜÂë
+        //pdæ˜¯å¯†ç 
         string ip = (global_ip);
         string pd = (global_pd);
 
@@ -121,13 +126,13 @@ void ServerManager::handle_post_login(http_request request) {
             return;
         }
 
-        vector<event> Event;
+
         fun(Event, session);
-        new_Event = ConvertEvents(Event);
+
         for (int i = 0; i < Event.size(); i++) {
-            cout << "ÃèÊöĞÅÏ¢£º" << Event[i].description << " "
-                << "Ö´ĞĞÖ¸Áî:  " << Event[i].command << " Ö´ĞĞ½á¹û£º" << Event[i].result << " "
-                << "ÊÇ·ñ·ûºÏ»ùÏß£º  " << Event[i].IsComply
+            cout << "æè¿°ä¿¡æ¯ï¼š" << Event[i].description << " "
+                << "æ‰§è¡ŒæŒ‡ä»¤:  " << Event[i].command << " æ‰§è¡Œç»“æœï¼š" << Event[i].result << " "
+                << "æ˜¯å¦ç¬¦åˆåŸºçº¿ï¼š  " << Event[i].IsComply
                 << endl;
         }
 
@@ -213,13 +218,13 @@ void ServerManager::handle_post_insert_data(http_request request) {
         if (success) {
             poc_list = dbManager.getAllData();
             json::value response_data;
-            response_data[U("message")] = json::value::string(U("Ìí¼Ó³É¹¦£¡"));
+            response_data[U("message")] = json::value::string(U("æ·»åŠ æˆåŠŸï¼"));
             response.set_status_code(status_codes::OK);
             response.set_body(response_data);
         }
         else {
             json::value response_data;
-            response_data[U("message")] = json::value::string(U("Ìí¼ÓÊ§°Ü£¡"));
+            response_data[U("message")] = json::value::string(U("æ·»åŠ å¤±è´¥ï¼"));
             response.set_status_code(status_codes::BadRequest);
             response.set_body(response_data);
         }
@@ -245,13 +250,13 @@ void ServerManager::handle_put_update_data_by_id(http_request request) {
         if (success) {
             poc_list = dbManager.getAllData();
             json::value response_data;
-            response_data[U("message")] = json::value::string(U("¸üĞÂ³É¹¦"));
+            response_data[U("message")] = json::value::string(U("æ›´æ–°æˆåŠŸ"));
             response.set_status_code(status_codes::OK);
             response.set_body(response_data);
         }
         else {
             json::value response_data;
-            response_data[U("message")] = json::value::string(U("¸üĞÂÊ§°Ü"));
+            response_data[U("message")] = json::value::string(U("æ›´æ–°å¤±è´¥"));
             response.set_status_code(status_codes::BadRequest);
             response.set_body(response_data);
         }
@@ -286,13 +291,13 @@ void ServerManager::handle_delete_data_by_id(http_request request) {
         if (success) {
             poc_list = dbManager.getAllData();
             json::value response_data;
-            response_data[U("message")] = json::value::string(U("É¾³ı³É¹¦"));
+            response_data[U("message")] = json::value::string(U("åˆ é™¤æˆåŠŸ"));
             response.set_status_code(status_codes::OK);
             response.set_body(response_data);
         }
         else {
             json::value response_data;
-            response_data[U("message")] = json::value::string(U("É¾³ıÊ§°Ü"));
+            response_data[U("message")] = json::value::string(U("åˆ é™¤å¤±è´¥"));
             response.set_status_code(status_codes::BadRequest);
             response.set_body(response_data);
         }
@@ -323,7 +328,7 @@ void ServerManager::handle_post_get_Nmap(http_request request)
                 fetch_and_padding_cves(scanResult.cpes);
             }
         }
-        // ´´½¨ÏìÓ¦
+        // åˆ›å»ºå“åº”
         http_response response(status_codes::OK);
         response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
         response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, PUT, DELETE, OPTIONS"));
@@ -339,7 +344,9 @@ void ServerManager::handle_post_get_Nmap(http_request request)
 }
 
 void ServerManager::handle_post_hydra(http_request request) {
+    cout << "æµ‹è¯•1";
     request.extract_json().then([this, &request](json::value body) {
+        cout << "æµ‹è¯•2ï¼š";
         try {
             if (!body.has_field(U("ip")) || !body.has_field(U("service_name")) || !body.has_field(U("portId"))) {
                 throw std::runtime_error("Invalid input JSON");
@@ -352,7 +359,7 @@ void ServerManager::handle_post_hydra(http_request request) {
             std::string usernameFile = "/hydra/usernames.txt";
             std::string passwordFile = "/hydra/passwords.txt";
 
-            //ËµÃ÷ÓĞÕâ¸ö·şÎñ
+            //è¯´æ˜æœ‰è¿™ä¸ªæœåŠ¡
             if (port_services.find(service_name) != port_services.end()) {
                 // Construct the hydra command
                 std::string command = "hydra -L " + usernameFile + " -P " + passwordFile + " -f " + service_name + "://" + ip;
@@ -393,7 +400,7 @@ void ServerManager::handle_post_hydra(http_request request) {
                 json::value json_array = json::value::array();
                 json_array[0] = json_obj;
 
-                // ´´½¨ÏìÓ¦
+                // åˆ›å»ºå“åº”
                 http_response response(status_codes::OK);
                 response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
                 response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, PUT, DELETE, OPTIONS"));
@@ -403,12 +410,12 @@ void ServerManager::handle_post_hydra(http_request request) {
                 request.reply(response);
             }
             else {
-                // ·şÎñ²»´æÔÚ£¬·µ»Ø´íÎóĞÅÏ¢
+                // æœåŠ¡ä¸å­˜åœ¨ï¼Œè¿”å›é”™è¯¯ä¿¡æ¯
                 json::value error_response = json::value::object();
                 error_response[U("error")] = json::value::string(U("Service not found"));
                 error_response[U("service_name")] = json::value::string(service_name);
 
-                // ´´½¨ÏìÓ¦
+                // åˆ›å»ºå“åº”
                 http_response response(status_codes::NotFound);
                 response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
                 response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, PUT, DELETE, OPTIONS"));
@@ -433,6 +440,34 @@ void ServerManager::handle_post_hydra(http_request request) {
         }).wait();
 }
 
+void ServerManager::handle_post_testWeak(http_request request)
+{
+    request.extract_json().then([this, &request](json::value body) {
+        std::string password = body[U("pd")].as_string();
+        bool isValidPd = isValidPassword(password);
+        string message = "";
+        if (isValidPassword) {
+            message = "true";
+        }
+        else {
+            message = "false";
+        }
+
+
+        // åˆ›å»ºå“åº”
+        http_response response(status_codes::OK);
+        response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
+        response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, PUT, DELETE, OPTIONS"));
+        response.headers().add(U("Access-Control-Allow-Headers"), U("Content-Type"));
+
+        json::value response_data;
+        response_data[U("message")] = json::value::string(U(message));
+        response.set_body(response_data);
+        request.reply(response);
+
+        }).wait();
+}
+
 
 
 //void ServerManager::handle_post_hydra(http_request request)
@@ -445,7 +480,7 @@ void ServerManager::handle_post_hydra(http_request request) {
 //        std::string usernameFile = "/hydra/usernames.txt";
 //        std::string passwordFile = "/hydra/passwords.txt";
 //
-//        //ËµÃ÷ÓĞÕâ¸ö·şÎñ
+//        //è¯´æ˜æœ‰è¿™ä¸ªæœåŠ¡
 //        if (port_services.find(service_name) != port_services.end()) {
 //            // Construct the hydra command
 //            std::string command = "hydra -L " + usernameFile + " -P " + passwordFile + " -f" + service_name + "://" + ip;
@@ -486,7 +521,7 @@ void ServerManager::handle_post_hydra(http_request request) {
 //            json::value json_array = json::value::array();
 //            json_array[0] = json_obj;
 //
-//            // ´´½¨ÏìÓ¦
+//            // åˆ›å»ºå“åº”
 //            http_response response(status_codes::OK);
 //            response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
 //            response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, PUT, DELETE, OPTIONS"));
@@ -498,12 +533,12 @@ void ServerManager::handle_post_hydra(http_request request) {
 //            request.reply(response);
 //        }
 //        else {
-//            // ·şÎñ²»´æÔÚ£¬·µ»Ø´íÎóĞÅÏ¢
+//            // æœåŠ¡ä¸å­˜åœ¨ï¼Œè¿”å›é”™è¯¯ä¿¡æ¯
 //            json::value error_response = json::value::object();
 //            error_response[U("error")] = json::value::string(U("Service not found"));
 //            error_response[U("service_name")] = json::value::string(service_name);
 //
-//            // ´´½¨ÏìÓ¦
+//            // åˆ›å»ºå“åº”
 //            http_response response(status_codes::NotFound);
 //            response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
 //            response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, PUT, DELETE, OPTIONS"));

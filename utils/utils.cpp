@@ -61,3 +61,38 @@ std::string extract_login_info(const std::string& output) {
     }
     return "No login info found";
 }
+
+bool isValidPassword(const std::string& password)
+{
+    if (password.length() < 8 || password.length() > 12) {
+        return false;
+    }
+
+    bool hasLower = false;
+    bool hasUpper = false;
+    bool hasDigit = false;
+
+    for (char ch : password) {
+        if (std::islower(ch)) {
+            hasLower = true;
+        }
+        else if (std::isupper(ch)) {
+            hasUpper = true;
+        }
+        else if (std::isdigit(ch)) {
+            hasDigit = true;
+        }
+        else if (std::ispunct(ch)) {
+            // If there's any special character, the password is invalid
+            return false;
+        }
+
+        // If all conditions are met, we can stop checking further
+        if (hasLower && hasUpper && hasDigit) {
+            return true;
+        }
+    }
+
+    // If any condition is not met
+    return hasLower && hasUpper && hasDigit;
+}

@@ -1,4 +1,4 @@
-﻿#include"Event.h"
+#include"Event.h"
 #include"Command_Excute.h"
 #include<libssh/libssh.h>
 #include"Padding.h"

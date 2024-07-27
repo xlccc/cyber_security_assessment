@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include"Event.h"
 #include<unordered_map>
 #include<libssh/libssh.h>

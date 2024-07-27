@@ -20,4 +20,6 @@ std::string exec(const char* cmd);
 
 std::string extract_login_info(const std::string& output);
 
+bool isValidPassword(const std::string& password);
+
 #endif // UTILS_H

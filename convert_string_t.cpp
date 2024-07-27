@@ -1,4 +1,4 @@
-﻿#define _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
 #include "convert_string_t.h"
 #include <cpprest/json.h>
 #include <locale>
@@ -56,6 +56,7 @@ std::vector<event_t> ConvertEvents(const std::vector<event>& oldEvents) {
     std::vector<event_t> newEvents;
     for (const auto& oldEvent : oldEvents) {
         event_t newEvent;
+
         newEvent.description = to_utility_string_t(s2ws(oldEvent.description));
         newEvent.basis = to_utility_string_t(s2ws(oldEvent.basis));
         newEvent.command = to_utility_string_t(s2ws(oldEvent.command));

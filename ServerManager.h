@@ -42,7 +42,7 @@ public:
     vector<ScanHostResult> scan_host_result;
     void fetch_and_padding_cves(std::map<std::string, std::vector<CVE>>& cpes, int limit = 10);
 private:
-    // ´æ´¢portIdºÍservice_nameµÄmap
+    // å­˜å‚¨portIdå’Œservice_nameçš„map
     std::map<std::string, std::string> port_services;
 
     std::unique_ptr<http_listener> listener;
@@ -60,6 +60,7 @@ private:
     void handle_delete_data_by_id(http_request request);
     void handle_post_get_Nmap(http_request request);
     void handle_post_hydra(http_request request);
+    void handle_post_testWeak(http_request request);
 
     json::value CVE_to_json(const CVE& cve);
     json::value ScanResult_to_json(const ScanResult& scan_result);
@@ -77,6 +78,7 @@ private:
     // Define your own info_new and new_Event structures and initialize_ssh_session, fun, ConvertEvents, ServerInfo_Padding, convert functions accordingly.
     ServerInfo_t info_new;
     std::vector<event_t> new_Event;
+    vector<event> Event;
 };
 
 #endif // SERVERMANAGER_H

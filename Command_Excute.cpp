@@ -1,4 +1,4 @@
-﻿#include"Command_Excute.h"
+#include"Command_Excute.h"
 std::string execute_commands(ssh_session session, string commands)
 {   
     ssh_channel channel = ssh_channel_new(session);

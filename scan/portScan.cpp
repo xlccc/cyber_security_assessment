@@ -1,4 +1,4 @@
-﻿#include"portScan.h"
+#include"portScan.h"
 #include"../utils/utils.h"
 #include<unistd.h>
 #include<algorithm>
