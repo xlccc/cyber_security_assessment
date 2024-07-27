@@ -23,6 +23,7 @@
 		],
 		"files" : 
 		[
+<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-4f3dcb1de65c41de21f3.json
 			"/root/vcpkg/scripts/buildsystems/vcpkg.cmake",
 			"CMakeLists.txt",
 			"/root/vcpkg/installed/x64-linux/share/cpprestsdk/cpprestsdk-targets.cmake",
@@ -31,6 +32,16 @@
 			"/root/vcpkg/installed/x64-linux/share/openssl/vcpkg-cmake-wrapper.cmake",
 			"/usr/local/share/cmake-3.29/Modules/CMakeFindDependencyMacro.cmake",
 			"/root/vcpkg/installed/x64-linux/share/libssh/libssh-config.cmake"
+========
+			"/home/c/vcpkg/scripts/buildsystems/vcpkg.cmake",
+			"CMakeLists.txt",
+			"/home/c/vcpkg/installed/x64-linux/share/cpprestsdk/cpprestsdk-targets.cmake",
+			"/home/c/vcpkg/installed/x64-linux/share/cpprestsdk/cpprestsdk-config.cmake",
+			"/opt/cmake-3.24.2/share/cmake-3.24/Modules/FindOpenSSL.cmake",
+			"/home/c/vcpkg/installed/x64-linux/share/openssl/vcpkg-cmake-wrapper.cmake",
+			"/opt/cmake-3.24.2/share/cmake-3.24/Modules/CMakeFindDependencyMacro.cmake",
+			"/home/c/vcpkg/installed/x64-linux/share/libssh/libssh-config.cmake"
+>>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-f2071e2508bd6da763d4.json
 		],
 		"nodes" : 
 		[
@@ -63,6 +74,7 @@
 			},
 			{
 				"command" : 7,
+<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-4f3dcb1de65c41de21f3.json
 				"file" : 1,
 				"line" : 23,
 				"parent" : 0
@@ -167,14 +179,123 @@
 			},
 			{
 				"command" : 9,
+========
+>>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-f2071e2508bd6da763d4.json
 				"file" : 1,
-				"line" : 36,
+				"line" : 23,
+				"parent" : 0
+			},
+			{
+<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-4f3dcb1de65c41de21f3.json
+========
+				"command" : 6,
+				"file" : 0,
+				"line" : 859,
+				"parent" : 5
+			},
+			{
+				"file" : 3,
+				"parent" : 6
+			},
+			{
+				"command" : 5,
+				"file" : 3,
+				"line" : 25,
+				"parent" : 7
+			},
+			{
+				"file" : 2,
+				"parent" : 8
+			},
+			{
+				"command" : 4,
+				"file" : 2,
+				"line" : 72,
+				"parent" : 9
+			},
+			{
+				"command" : 4,
+				"file" : 2,
+				"line" : 79,
+				"parent" : 9
+			},
+			{
+				"command" : 8,
+				"file" : 3,
+				"line" : 11,
+				"parent" : 7
+			},
+			{
+				"command" : 7,
+				"file" : 6,
+				"line" : 47,
+				"parent" : 12
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 813,
+				"parent" : 13
+			},
+			{
+				"file" : 5,
+				"parent" : 14
+			},
+			{
+				"command" : 6,
+				"file" : 5,
+				"line" : 37,
+				"parent" : 15
+			},
+			{
+				"file" : 4,
+				"parent" : 16
+			},
+			{
+				"command" : 4,
+				"file" : 4,
+				"line" : 672,
+				"parent" : 17
+			},
+			{
+				"command" : 7,
+				"file" : 1,
+				"line" : 24,
+				"parent" : 0
+			},
+			{
+				"command" : 6,
+				"file" : 0,
+				"line" : 859,
+				"parent" : 19
+			},
+			{
+				"file" : 7,
+				"parent" : 20
+			},
+			{
+				"command" : 4,
+				"file" : 7,
+				"line" : 64,
+				"parent" : 21
+			},
+			{
+				"command" : 4,
+				"file" : 2,
+				"line" : 60,
+				"parent" : 9
+			},
+			{
+>>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-f2071e2508bd6da763d4.json
+				"command" : 9,
+				"file" : 1,
+				"line" : 17,
 				"parent" : 0
 			},
 			{
 				"command" : 9,
 				"file" : 1,
-				"line" : 17,
+				"line" : 36,
 				"parent" : 0
 			}
 		]
@@ -188,8 +309,12 @@
 					"fragment" : "-g -std=gnu++14"
 				},
 				{
+<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-4f3dcb1de65c41de21f3.json
 					"backtrace" : 4,
 					"fragment" : "-pthread"
+========
+					"fragment" : "-std=gnu++14"
+>>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-f2071e2508bd6da763d4.json
 				}
 			],
 			"defines" : 
@@ -215,6 +340,7 @@
 			[
 				{
 					"backtrace" : 24,
+<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-4f3dcb1de65c41de21f3.json
 					"path" : "/root/.vs/cyber_seproject2/8cf44de5-c72a-44b7-b30d-6effcd345537/src"
 				},
 				{
@@ -232,11 +358,38 @@
 				{
 					"backtrace" : 24,
 					"path" : "/root/.vs/cyber_seproject2/8cf44de5-c72a-44b7-b30d-6effcd345537/src/scan"
+========
+					"path" : "/vcpkg/installed/x64-linux/include"
+				},
+				{
+					"backtrace" : 25,
+					"path" : "/home/c/.vs/cyber_security_assessment/2a1921a7-7d8e-468c-b6af-1e98f5e79f91/src"
+				},
+				{
+					"backtrace" : 25,
+					"path" : "/home/c/.vs/cyber_security_assessment/2a1921a7-7d8e-468c-b6af-1e98f5e79f91/src/database"
+				},
+				{
+					"backtrace" : 25,
+					"path" : "/home/c/.vs/cyber_security_assessment/2a1921a7-7d8e-468c-b6af-1e98f5e79f91/src/utils"
+				},
+				{
+					"backtrace" : 25,
+					"path" : "/home/c/.vs/cyber_security_assessment/2a1921a7-7d8e-468c-b6af-1e98f5e79f91/src/include"
+				},
+				{
+					"backtrace" : 25,
+					"path" : "/home/c/.vs/cyber_security_assessment/2a1921a7-7d8e-468c-b6af-1e98f5e79f91/src/scan"
+>>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-f2071e2508bd6da763d4.json
 				},
 				{
 					"backtrace" : 25,
 					"isSystem" : true,
+<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-4f3dcb1de65c41de21f3.json
 					"path" : "/root/vcpkg/installed/x64-linux/include"
+========
+					"path" : "/home/c/vcpkg/installed/x64-linux/include"
+>>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-f2071e2508bd6da763d4.json
 				}
 			],
 			"language" : "CXX",
@@ -289,52 +442,92 @@
 			},
 			{
 				"backtrace" : 4,
+<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-4f3dcb1de65c41de21f3.json
 				"fragment" : "/root/vcpkg/installed/x64-linux/debug/lib/libcpprest.a",
+========
+				"fragment" : "/home/c/vcpkg/installed/x64-linux/debug/lib/libcpprest.a",
+>>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-f2071e2508bd6da763d4.json
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 4,
+<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-4f3dcb1de65c41de21f3.json
 				"fragment" : "/root/vcpkg/installed/x64-linux/debug/lib/libssh.a",
+========
+				"fragment" : "/home/c/vcpkg/installed/x64-linux/debug/lib/libssh.a",
+>>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-f2071e2508bd6da763d4.json
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 4,
+<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-4f3dcb1de65c41de21f3.json
 				"fragment" : "/root/vcpkg/installed/x64-linux/debug/lib/libicuuc.a",
+========
+				"fragment" : "/home/c/vcpkg/installed/x64-linux/debug/lib/libicuuc.a",
+>>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-f2071e2508bd6da763d4.json
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 4,
+<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-4f3dcb1de65c41de21f3.json
 				"fragment" : "/root/vcpkg/installed/x64-linux/debug/lib/libicui18n.a",
+========
+				"fragment" : "/home/c/vcpkg/installed/x64-linux/debug/lib/libicui18n.a",
+>>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-f2071e2508bd6da763d4.json
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 4,
+<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-4f3dcb1de65c41de21f3.json
 				"fragment" : "/root/vcpkg/installed/x64-linux/debug/lib/libicuio.a",
+========
+				"fragment" : "/home/c/vcpkg/installed/x64-linux/debug/lib/libicuio.a",
+>>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-f2071e2508bd6da763d4.json
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 4,
+<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-4f3dcb1de65c41de21f3.json
 				"fragment" : "/root/vcpkg/installed/x64-linux/debug/lib/libicudata.a",
+========
+				"fragment" : "/home/c/vcpkg/installed/x64-linux/debug/lib/libicudata.a",
+>>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-f2071e2508bd6da763d4.json
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 4,
+<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-4f3dcb1de65c41de21f3.json
 				"fragment" : "/root/vcpkg/installed/x64-linux/debug/lib/libsqlite3.a",
+========
+				"fragment" : "/home/c/vcpkg/installed/x64-linux/debug/lib/libsqlite3.a",
+>>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-f2071e2508bd6da763d4.json
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 10,
+<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-4f3dcb1de65c41de21f3.json
 				"fragment" : "/root/vcpkg/installed/x64-linux/debug/lib/libz.a",
+========
+				"fragment" : "/home/c/vcpkg/installed/x64-linux/debug/lib/libz.a",
+>>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-f2071e2508bd6da763d4.json
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 11,
+<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-4f3dcb1de65c41de21f3.json
 				"fragment" : "/root/vcpkg/installed/x64-linux/debug/lib/libssl.a",
+========
+				"fragment" : "/home/c/vcpkg/installed/x64-linux/debug/lib/libssl.a",
+>>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-f2071e2508bd6da763d4.json
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 18,
+<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-4f3dcb1de65c41de21f3.json
 				"fragment" : "/root/vcpkg/installed/x64-linux/debug/lib/libcrypto.a",
+========
+				"fragment" : "/home/c/vcpkg/installed/x64-linux/debug/lib/libcrypto.a",
+>>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-f2071e2508bd6da763d4.json
 				"role" : "libraries"
 			},
 			{
@@ -344,7 +537,11 @@
 			},
 			{
 				"backtrace" : 22,
+<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-4f3dcb1de65c41de21f3.json
 				"fragment" : "/root/vcpkg/installed/x64-linux/debug/lib/libcrypto.a",
+========
+				"fragment" : "/home/c/vcpkg/installed/x64-linux/debug/lib/libcrypto.a",
+>>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/target-MyCppProject-Debug-f2071e2508bd6da763d4.json
 				"role" : "libraries"
 			},
 			{

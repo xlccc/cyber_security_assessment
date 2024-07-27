@@ -47,10 +47,19 @@ std::vector<ScanHostResult> parseXmlFile(const std::string& xmlFilePath) {
             }
         }
 
+
         // 提取操作系统的CPE信息，并初始化为空的CVE数组
         rapidxml::xml_node<>* osNode = hostNode->first_node("os");
         if (osNode) {
             for (rapidxml::xml_node<>* osMatchNode = osNode->first_node("osmatch"); osMatchNode; osMatchNode = osMatchNode->next_sibling("osmatch")) {
+                
+                //提取操作系统版本
+                rapidxml::xml_attribute<>* osMatchAttr = osMatchNode->first_attribute("name");
+                if (osMatchAttr)
+                {
+                    hostResult.os_matches.push_back(osMatchAttr->value());
+                }
+
                 for (rapidxml::xml_node<>* osClassNode = osMatchNode->first_node("osclass"); osClassNode; osClassNode = osClassNode->next_sibling("osclass")) {
                     for (rapidxml::xml_node<>* cpeNode = osClassNode->first_node("cpe"); cpeNode; cpeNode = cpeNode->next_sibling("cpe")) {
                         std::string cpe = cpeNode->value();
@@ -120,3 +129,79 @@ std::vector<ScanHostResult> parseXmlFile(const std::string& xmlFilePath) {
 
     return scanHostResults; // 返回解析结果
 }
+
+
+
+std::string runPythonScript(const std::string& scriptPath_extension, const std::string& url, const std::string& ip, int port) {
+    std::string result = "";
+
+    // Initialize the Python interpreter
+    Py_Initialize();
+
+    // Set sys.argv for the script
+    //sys.path是Python解释器用来查找模块的搜索路径列表。
+    //执行一个导入语句时，Python会按照sys.path中的路径顺序查找模块。如果没有找到模块，就会抛出ImportError。
+    //脚本尝试进行相对导入，但Python不知道相对导入的父包路径。所以需要确保sys.path包含这些父包路径。
+    PyObject* sys = PyImport_ImportModule("sys");
+    PyObject* sys_path = PyObject_GetAttrString(sys, "path");
+    PyList_Append(sys_path, PyUnicode_FromString("/home/c/.vs/网络安全测试平台-新-linux-2.0-CMake/26bbbde1-7e92-4836-b250-1203a21a6665/src/scan/scripts"));
+    PyList_Append(sys_path, PyUnicode_FromString("/home/c/.vs/网络安全测试平台-新-linux-2.0-CMake/26bbbde1-7e92-4836-b250-1203a21a6665/src/scan"));
+    PyList_Append(sys_path, PyUnicode_FromString("/home/c/.vs/网络安全测试平台-新-linux-2.0-CMake/26bbbde1-7e92-4836-b250-1203a21a6665/src"));
+
+
+    //用于测试：打印sys.path，看是否正确设置了
+    PyObject* path_str = PyObject_Str(sys_path);
+    const char* path_cstr = PyUnicode_AsUTF8(path_str);
+    std::cout << "sys.path: " << path_cstr << std::endl;
+    Py_DECREF(path_str);
+
+    // Import the POC module
+    // 以库的形式加载POC插件
+    std::string scriptPath = removeExtension(scriptPath_extension); //去掉文件名后缀
+
+    PyObject* poc_module = PyImport_ImportModule(scriptPath.c_str());
+    if (!poc_module) {
+        PyErr_Print();
+        std::cerr << "Failed to load script: " << scriptPath << std::endl;
+        Py_Finalize();
+        return result;
+    }
+
+    // Get the check function from the module
+    PyObject* check_func = PyObject_GetAttrString(poc_module, "check");
+    if (!check_func || !PyCallable_Check(check_func)) {
+        PyErr_Print();
+        std::cerr << "Cannot find function 'check' in the script" << std::endl;
+        Py_DECREF(poc_module);
+        Py_Finalize();
+        return result;
+    }
+
+    // Prepare arguments for the check function
+    PyObject* args = PyTuple_Pack(3, PyUnicode_FromString(url.c_str()), PyUnicode_FromString(ip.c_str()), PyLong_FromLong(port));
+
+    // Call the check function
+    PyObject* py_result = PyObject_CallObject(check_func, args);
+    Py_DECREF(args);
+    Py_DECREF(check_func);
+    Py_DECREF(poc_module);
+
+    if (py_result) {
+        if (py_result != Py_None) {
+            result = PyUnicode_AsUTF8(py_result);
+        }
+        Py_DECREF(py_result);
+    }
+    else {
+        PyErr_Print();
+        std::cerr << "Failed to call function 'check'" << std::endl;
+    }
+
+    // Finalize the Python interpreter
+    Py_Finalize();
+
+    return result;
+
+}
+
+

@@ -39,7 +39,11 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "MyCppProject::@6890427a1f51a3e7e1df",
+<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/codemodel-v2-8e75ad53209f53d35101.json
 					"jsonFile" : "target-MyCppProject-Debug-4f3dcb1de65c41de21f3.json",
+========
+					"jsonFile" : "target-MyCppProject-Debug-f2071e2508bd6da763d4.json",
+>>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/codemodel-v2-428202c7aa4d298837bb.json
 					"name" : "MyCppProject",
 					"projectIndex" : 0
 				}
@@ -49,12 +53,21 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
+<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/codemodel-v2-8e75ad53209f53d35101.json
 		"build" : "/root/.vs/cyber_seproject2/8cf44de5-c72a-44b7-b30d-6effcd345537/out/build/Linux-GCC-Debug",
 		"source" : "/root/.vs/cyber_seproject2/8cf44de5-c72a-44b7-b30d-6effcd345537/src"
+========
+		"build" : "/home/c/.vs/cyber_security_assessment/2a1921a7-7d8e-468c-b6af-1e98f5e79f91/out/build/Linux-GCC-Debug",
+		"source" : "/home/c/.vs/cyber_security_assessment/2a1921a7-7d8e-468c-b6af-1e98f5e79f91/src"
+>>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/codemodel-v2-428202c7aa4d298837bb.json
 	},
 	"version" : 
 	{
 		"major" : 2,
+<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/codemodel-v2-8e75ad53209f53d35101.json
 		"minor" : 7
+========
+		"minor" : 4
+>>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/codemodel-v2-428202c7aa4d298837bb.json
 	}
 }
