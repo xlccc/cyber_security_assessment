@@ -2,7 +2,7 @@
 #include"../utils/utils.h"
 #include<unistd.h>
 #include<algorithm>
-
+#include"config.h"
 
 
 std::string executeCommand(const std::string& command) {
@@ -37,14 +37,19 @@ std::string performPortScan(const std::string& targetHost) {
     std::cout << timeStamp << std::endl;
 
     std::string outputFileName = "output_" + targetHost + "_" + timeStamp + ".xml";
-    //输出到/home/c/projects/nmap_output
+    //输出到out/nmap_output
     std::string outputPath = "../../output_nmap/" + outputFileName;
 
     //替换斜杠为下划线
     std::replace(outputFileName.begin(), outputFileName.end(), '/', '_');
 
-    std::string command1 = "sudo nmap -A -O " + targetHost + " -oX " + outputPath;
-    std::string command2 = "sudo chown root:root " + outputPath;
+    std::string command1 = "";
+    //是否启用扫描所有端口
+    if(ALL_PORTS)   //耗时非常久
+        command1 = "sudo nmap -A -O -p 1-65535 " + targetHost + " -oX " + outputPath;
+    else
+        command1 = "sudo nmap -A -O " + targetHost + " -oX " + outputPath;
+    std::string command2 = "sudo chown c:c " + outputPath;
     std::string command3 = "sudo chmod 666 " + outputPath;
     
 

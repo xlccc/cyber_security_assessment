@@ -52,6 +52,7 @@ std::string exec(const char* cmd) {
     return result;
 }
 
+
 // Function to extract login information from hydra output
 std::string extract_login_info(const std::string& output) {
     std::regex pattern(R"(\[\d+\]\[[^\]]+\] host:\s*[^\s]+\s+login:\s*[^\s]+\s+password:\s*[^\s]+)");
@@ -62,37 +63,29 @@ std::string extract_login_info(const std::string& output) {
     return "No login info found";
 }
 
-bool isValidPassword(const std::string& password)
-{
-    if (password.length() < 8 || password.length() > 12) {
+
+//判断上传的POC是否为平台支持的格式
+bool is_supported_extension(const std::string& filename) {
+    auto pos = filename.find_last_of(".");
+    if (pos == std::string::npos) {
         return false;
     }
+    std::string extension = filename.substr(pos + 1);
+    return std::find(supported_extensions.begin(), supported_extensions.end(), extension) != supported_extensions.end();
+}
 
-    bool hasLower = false;
-    bool hasUpper = false;
-    bool hasDigit = false;
+//去掉文件名后缀
+std::string removeExtension(const std::string& filename) {
+    // 查找最后一个"."的位置
+    size_t dotPosition = filename.find_last_of(".");
 
-    for (char ch : password) {
-        if (std::islower(ch)) {
-            hasLower = true;
-        }
-        else if (std::isupper(ch)) {
-            hasUpper = true;
-        }
-        else if (std::isdigit(ch)) {
-            hasDigit = true;
-        }
-        else if (std::ispunct(ch)) {
-            // If there's any special character, the password is invalid
-            return false;
-        }
-
-        // If all conditions are met, we can stop checking further
-        if (hasLower && hasUpper && hasDigit) {
-            return true;
-        }
+    // 如果找到了"."，且它不是字符串的第一个字符（防止像 ".txt" 这样的情况）
+    if (dotPosition != std::string::npos && dotPosition != 0) {
+        // 去掉后缀返回
+        return filename.substr(0, dotPosition);
     }
-
-    // If any condition is not met
-    return hasLower && hasUpper && hasDigit;
+    else {
+        // 没有找到后缀，原样返回文件名
+        return filename;
+    }
 }

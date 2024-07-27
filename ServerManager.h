@@ -4,6 +4,9 @@
 #include <cpprest/json.h>
 #include <cpprest/uri.h>
 #include <cpprest/uri_builder.h>
+#include <cpprest/filestream.h>
+#include <cpprest/containerstream.h>
+#include <cpprest/producerconsumerstream.h>
 #include <map>
 #include <vector>
 #include <string>
@@ -25,6 +28,10 @@
 #include "scan/portScan.h"
 #include "utils_scan.h"
 #include "convert_string_t.h"
+#include "poc_check.h"
+#include <sys/stat.h>
+
+
 using namespace web;
 using namespace web::http;
 using namespace web::http::experimental::listener;
@@ -41,8 +48,11 @@ public:
     void stop();
     vector<ScanHostResult> scan_host_result;
     void fetch_and_padding_cves(std::map<std::string, std::vector<CVE>>& cpes, int limit = 10);
+
+
 private:
-    // 存储portId和service_name的map
+
+    // ´æ´¢portIdºÍservice_nameµÄmap
     std::map<std::string, std::string> port_services;
 
     std::unique_ptr<http_listener> listener;
@@ -66,7 +76,20 @@ private:
     json::value ScanResult_to_json(const ScanResult& scan_result);
     json::value ScanHostResult_to_json(const ScanHostResult& scan_host_result);
 
-    
+    // 从内存中处理POC文件上传
+    void handle_file_upload_from_memory(const std::string& body, const std::string& content_type, std::string& filename, std::string& error_message);
+    // 将请求体保存到临时文件
+    void save_request_to_temp_file(http_request request);
+    //查看POC内容
+    void handle_get_poc_content(http_request request);
+
+    //POC搜索
+    void handle_post_poc_search(http_request request);
+    //POC验证
+    void handle_post_poc_verify(http_request request);
+    //设置需要执行POC验证的CVE条目
+    void setIfCheckByIds(ScanHostResult& hostResult, const std::vector<std::string>& cve_ids, bool value);
+
     DatabaseManager dbManager;
     std::vector<POC> poc_list;
 
