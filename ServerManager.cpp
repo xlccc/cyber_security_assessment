@@ -339,8 +339,12 @@ void ServerManager::handle_post_get_Nmap(http_request request)
 }
 
 void ServerManager::handle_post_hydra(http_request request) {
+    std::cout << "Entered handle_post_hydra function" << std::endl;
     request.extract_json().then([this, &request](json::value body) {
         try {
+            std::cout << "Entered JSON extraction" << std::endl;
+            std::cout << "Received request: " << body.serialize() << std::endl;
+
             if (!body.has_field(U("ip")) || !body.has_field(U("service_name")) || !body.has_field(U("portId"))) {
                 throw std::runtime_error("Invalid input JSON");
             }
@@ -352,15 +356,18 @@ void ServerManager::handle_post_hydra(http_request request) {
             std::string usernameFile = "/hydra/usernames.txt";
             std::string passwordFile = "/hydra/passwords.txt";
 
-            //ËµÃ÷ÓÐÕâ¸ö·þÎñ
+            //è¯´æ˜Žæœ‰è¿™ä¸ªæœåŠ¡
             if (port_services.find(service_name) != port_services.end()) {
                 // Construct the hydra command
                 std::string command = "hydra -L " + usernameFile + " -P " + passwordFile + " -f " + service_name + "://" + ip;
+                std::cout << "Executing command: " << command << std::endl;
 
                 // Execute the command and get the output
                 std::string output = exec(command.c_str());
+                std::cout << "Command output: " << output << std::endl;
 
                 std::string res = extract_login_info(output);
+                std::cout << "Extracted login info: " << res << std::endl;
 
                 std::regex pattern(R"(\[(\d+)\]\[([^\]]+)\] host:\s*([^\s]+)\s+login:\s*([^\s]+)\s+password:\s*([^\s]+))");
                 std::smatch match;
@@ -393,7 +400,7 @@ void ServerManager::handle_post_hydra(http_request request) {
                 json::value json_array = json::value::array();
                 json_array[0] = json_obj;
 
-                // ´´½¨ÏìÓ¦
+                // åˆ›å»ºå“åº”
                 http_response response(status_codes::OK);
                 response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
                 response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, PUT, DELETE, OPTIONS"));
@@ -403,12 +410,12 @@ void ServerManager::handle_post_hydra(http_request request) {
                 request.reply(response);
             }
             else {
-                // ·þÎñ²»´æÔÚ£¬·µ»Ø´íÎóÐÅÏ¢
+                // æœåŠ¡ä¸å­˜åœ¨ï¼Œè¿”å›žé”™è¯¯ä¿¡æ¯
                 json::value error_response = json::value::object();
                 error_response[U("error")] = json::value::string(U("Service not found"));
                 error_response[U("service_name")] = json::value::string(service_name);
 
-                // ´´½¨ÏìÓ¦
+                // åˆ›å»ºå“åº”
                 http_response response(status_codes::NotFound);
                 response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
                 response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, PUT, DELETE, OPTIONS"));
@@ -434,7 +441,6 @@ void ServerManager::handle_post_hydra(http_request request) {
 }
 
 
-
 //void ServerManager::handle_post_hydra(http_request request)
 //{
 //    request.extract_json().then([this, &request](json::value body) {
@@ -445,7 +451,7 @@ void ServerManager::handle_post_hydra(http_request request) {
 //        std::string usernameFile = "/hydra/usernames.txt";
 //        std::string passwordFile = "/hydra/passwords.txt";
 //
-//        //ËµÃ÷ÓÐÕâ¸ö·þÎñ
+//        //Ëµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 //        if (port_services.find(service_name) != port_services.end()) {
 //            // Construct the hydra command
 //            std::string command = "hydra -L " + usernameFile + " -P " + passwordFile + " -f" + service_name + "://" + ip;
@@ -486,7 +492,7 @@ void ServerManager::handle_post_hydra(http_request request) {
 //            json::value json_array = json::value::array();
 //            json_array[0] = json_obj;
 //
-//            // ´´½¨ÏìÓ¦
+//            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦
 //            http_response response(status_codes::OK);
 //            response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
 //            response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, PUT, DELETE, OPTIONS"));
@@ -498,12 +504,12 @@ void ServerManager::handle_post_hydra(http_request request) {
 //            request.reply(response);
 //        }
 //        else {
-//            // ·þÎñ²»´æÔÚ£¬·µ»Ø´íÎóÐÅÏ¢
+//            // ï¿½ï¿½ï¿½ñ²»´ï¿½ï¿½Ú£ï¿½ï¿½ï¿½ï¿½Ø´ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢
 //            json::value error_response = json::value::object();
 //            error_response[U("error")] = json::value::string(U("Service not found"));
 //            error_response[U("service_name")] = json::value::string(service_name);
 //
-//            // ´´½¨ÏìÓ¦
+//            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦
 //            http_response response(status_codes::NotFound);
 //            response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
 //            response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, PUT, DELETE, OPTIONS"));
@@ -516,7 +522,7 @@ void ServerManager::handle_post_hydra(http_request request) {
 //}
 
 void ServerManager::fetch_and_padding_cves(map<std::string, vector<CVE>>& cpes, int limit) {
-    std::string base_url = "http://192.168.29.129:5000/api/cvefor";
+    std::string base_url = "http://192.168.177.129:5000/api/cvefor";
     std::string cpe_id = "";
     for (auto& cpe : cpes) {
         cpe_id = cpe.first;
