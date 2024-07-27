@@ -1,4 +1,4 @@
-﻿#include"Login.h"
+#include"Login.h"
 ssh_session initialize_ssh_session(const char* hostname, const char* username, const char* password)
 {
     ssh_session session = ssh_new();

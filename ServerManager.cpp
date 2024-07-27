@@ -80,6 +80,10 @@ void ServerManager::handle_request(http_request request) {
     else if (first_segment == U("getWeakPassword") && request.method() == methods::POST) {
         handle_post_hydra(request);
     }
+    else if (first_segment == U("testWeakPassword") && request.method() == methods::POST) {
+        handle_post_testWeak(request);
+    }
+
     else if (first_segment == U("getPOCContent") && request.method() == methods::GET) {
         handle_get_poc_content(request);    //查看POC代码
     }
@@ -108,14 +112,15 @@ void ServerManager::handle_get_userinfo(http_request request) {
     ServerInfo[U("version")] = json::value::string(info_new.version);
     json::value response_data = json::value::array();
 
-    for (size_t i = 0; i < new_Event.size(); ++i) {
+    for (size_t i = 0; i < Event.size(); ++i) {
         json::value user_data;
-        user_data[U("basis")] = json::value::string(new_Event[i].basis);
-        user_data[U("command")] = json::value::string(new_Event[i].command);
-        user_data[U("description")] = json::value::string(new_Event[i].description);
-        user_data[U("IsComply")] = json::value::string(new_Event[i].IsComply);
-        user_data[U("recommend")] = json::value::string(new_Event[i].recommend);
-        user_data[U("result")] = json::value::string(new_Event[i].result);
+
+        user_data[U("basis")] = json::value::string(utility::conversions::to_string_t(Event[i].basis));
+        user_data[U("command")] = json::value::string(utility::conversions::to_string_t(Event[i].command));
+        user_data[U("description")] = json::value::string(utility::conversions::to_string_t(Event[i].description));
+        user_data[U("IsComply")] = json::value::string(utility::conversions::to_string_t(Event[i].IsComply));
+        user_data[U("recommend")] = json::value::string(utility::conversions::to_string_t(Event[i].recommend));
+        user_data[U("result")] = json::value::string(utility::conversions::to_string_t(Event[i].result));
         response_data[i] = user_data;
     }
     main_body[U("ServerInfo")] = ServerInfo;
@@ -131,7 +136,7 @@ void ServerManager::handle_post_login(http_request request) {
         this->global_ip = jsonReq[U("ip")].as_string();
         this->global_pd = jsonReq[U("pd")].as_string();
 
-        //pd������
+        //pd是密码
         string ip = (global_ip);
         string pd = (global_pd);
 
@@ -141,9 +146,9 @@ void ServerManager::handle_post_login(http_request request) {
             return;
         }
 
-        vector<event> Event;
+
         fun(Event, session);
-        new_Event = ConvertEvents(Event);
+
         for (int i = 0; i < Event.size(); i++) {
             cout << "描述信息：" << Event[i].description << " "
                 << "执行指令:  " << Event[i].command << " 执行结果：" << Event[i].result << " "
@@ -604,6 +609,7 @@ void ServerManager::handle_post_get_Nmap(http_request request)
 void ServerManager::handle_post_hydra(http_request request) {
     std::cout << "Entered handle_post_hydra function" << std::endl;
     request.extract_json().then([this, &request](json::value body) {
+        cout << "测试2：";
         try {
             std::cout << "Entered JSON extraction" << std::endl;
             std::cout << "Received request: " << body.serialize() << std::endl;
@@ -700,6 +706,34 @@ void ServerManager::handle_post_hydra(http_request request) {
             response.set_body(error_response);
             request.reply(response);
         }
+        }).wait();
+}
+
+void ServerManager::handle_post_testWeak(http_request request)
+{
+    request.extract_json().then([this, &request](json::value body) {
+        std::string password = body[U("pd")].as_string();
+        bool isValidPd = isValidPassword(password);
+        string message = "";
+        if (isValidPassword) {
+            message = "true";
+        }
+        else {
+            message = "false";
+        }
+
+
+        // 创建响应
+        http_response response(status_codes::OK);
+        response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
+        response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, PUT, DELETE, OPTIONS"));
+        response.headers().add(U("Access-Control-Allow-Headers"), U("Content-Type"));
+
+        json::value response_data;
+        response_data[U("message")] = json::value::string(U(message));
+        response.set_body(response_data);
+        request.reply(response);
+
         }).wait();
 }
 

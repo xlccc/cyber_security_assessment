@@ -26,6 +26,8 @@ std::string exec(const char* cmd);
 
 std::string extract_login_info(const std::string& output);
 
+bool isValidPassword(const std::string& password);
+
 //判断上传的POC是否为平台支持的格式
 bool is_supported_extension(const std::string& filename);
 

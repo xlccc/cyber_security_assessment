@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <string>
 #include <vector>
 #include <cpprest/details/basic_types.h> // 引入 utility::string_t
