@@ -1,7 +1,7 @@
 {
   "host_identifier": "1006238338",
   "predefines": {
-    "cpp_compiler": "g++",
+    "cpp_compiler": "/usr/bin/g++",
     "cpp_compiler_defines": {
       "__SSP_STRONG__": "3",
       "__DBL_MIN_EXP__": "(-1021)",
@@ -396,7 +396,7 @@
     },
     "cpp_user_defines": {},
     "cpp_user_undefines": [],
-    "c_compiler": "gcc",
+    "c_compiler": "/usr/bin/gcc",
     "c_compiler_defines": {
       "__SSP_STRONG__": "3",
       "__DBL_MIN_EXP__": "(-1021)",

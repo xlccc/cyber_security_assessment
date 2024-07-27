@@ -11,11 +11,7 @@
 				}
 			],
 			"type" : "STRING",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libboost_atomic.a"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/debug/lib/libboost_atomic.a"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "Boost_ATOMIC_LIBRARY_RELEASE",
@@ -27,11 +23,7 @@
 				}
 			],
 			"type" : "STRING",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/lib/libboost_atomic.a"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/lib/libboost_atomic.a"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "Boost_CHRONO_LIBRARY_DEBUG",
@@ -43,11 +35,7 @@
 				}
 			],
 			"type" : "STRING",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libboost_chrono.a"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/debug/lib/libboost_chrono.a"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "Boost_CHRONO_LIBRARY_RELEASE",
@@ -59,11 +47,7 @@
 				}
 			],
 			"type" : "STRING",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/lib/libboost_chrono.a"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/lib/libboost_chrono.a"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "Boost_DATE_TIME_LIBRARY_DEBUG",
@@ -75,11 +59,7 @@
 				}
 			],
 			"type" : "STRING",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libboost_date_time.a"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/debug/lib/libboost_date_time.a"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "Boost_DATE_TIME_LIBRARY_RELEASE",
@@ -91,11 +71,7 @@
 				}
 			],
 			"type" : "STRING",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/lib/libboost_date_time.a"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/lib/libboost_date_time.a"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "Boost_DIR",
@@ -111,11 +87,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "Boost_FILESYSTEM_LIBRARY_DEBUG",
@@ -127,11 +99,7 @@
 				}
 			],
 			"type" : "STRING",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libboost_filesystem.a"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/debug/lib/libboost_filesystem.a"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "Boost_FILESYSTEM_LIBRARY_RELEASE",
@@ -143,11 +111,7 @@
 				}
 			],
 			"type" : "STRING",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/lib/libboost_filesystem.a"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/lib/libboost_filesystem.a"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "Boost_INCLUDE_DIR",
@@ -159,11 +123,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/include"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/include"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "Boost_RANDOM_LIBRARY_DEBUG",
@@ -175,11 +135,7 @@
 				}
 			],
 			"type" : "STRING",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libboost_random.a"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/debug/lib/libboost_random.a"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "Boost_RANDOM_LIBRARY_RELEASE",
@@ -191,11 +147,7 @@
 				}
 			],
 			"type" : "STRING",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/lib/libboost_random.a"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/lib/libboost_random.a"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "Boost_REGEX_LIBRARY_DEBUG",
@@ -207,11 +159,7 @@
 				}
 			],
 			"type" : "STRING",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libboost_regex.a"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/debug/lib/libboost_regex.a"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "Boost_REGEX_LIBRARY_RELEASE",
@@ -223,11 +171,7 @@
 				}
 			],
 			"type" : "STRING",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/lib/libboost_regex.a"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/lib/libboost_regex.a"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "Boost_SYSTEM_LIBRARY_DEBUG",
@@ -239,11 +183,7 @@
 				}
 			],
 			"type" : "STRING",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libboost_system.a"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/debug/lib/libboost_system.a"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "Boost_SYSTEM_LIBRARY_RELEASE",
@@ -255,11 +195,7 @@
 				}
 			],
 			"type" : "STRING",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/lib/libboost_system.a"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/lib/libboost_system.a"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "Boost_THREAD_LIBRARY_DEBUG",
@@ -271,11 +207,7 @@
 				}
 			],
 			"type" : "STRING",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libboost_thread.a"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/debug/lib/libboost_thread.a"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "Boost_THREAD_LIBRARY_RELEASE",
@@ -287,11 +219,7 @@
 				}
 			],
 			"type" : "STRING",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/lib/libboost_thread.a"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/lib/libboost_thread.a"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "CMAKE_ADDR2LINE",
@@ -347,11 +275,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/.vs/cyber_seproject2/8cf44de5-c72a-44b7-b30d-6effcd345537/out/build/Linux-GCC-Debug"
-========
-			"value" : "/home/c/.vs/cyber_security_assessment/2a1921a7-7d8e-468c-b6af-1e98f5e79f91/out/build/Linux-GCC-Debug"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "CMAKE_CACHE_MAJOR_VERSION",
@@ -375,11 +299,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "29"
-========
-			"value" : "24"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "CMAKE_CACHE_PATCH_VERSION",
@@ -394,6 +314,22 @@
 			"value" : "2"
 		},
 		{
+			"name" : "CMAKE_COLOR_MAKEFILE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Enable/Disable color output during build."
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
 			"name" : "CMAKE_COMMAND",
 			"properties" : 
 			[
@@ -403,11 +339,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/usr/local/bin/cmake"
-========
-			"value" : "/opt/cmake-3.24.2/bin/cmake"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "CMAKE_CPACK_COMMAND",
@@ -419,11 +351,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/usr/local/bin/cpack"
-========
-			"value" : "/opt/cmake-3.24.2/bin/cpack"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "CMAKE_CTEST_COMMAND",
@@ -435,11 +363,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/usr/local/bin/ctest"
-========
-			"value" : "/opt/cmake-3.24.2/bin/ctest"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "CMAKE_CXX_COMPILER",
@@ -451,11 +375,11 @@
 				},
 				{
 					"name" : "HELPSTRING",
-					"value" : "CXX compiler"
+					"value" : "No help, variable specified on the command line."
 				}
 			],
-			"type" : "FILEPATH",
-			"value" : "/usr/bin/c++"
+			"type" : "STRING",
+			"value" : "g++"
 		},
 		{
 			"name" : "CMAKE_CXX_COMPILER_AR",
@@ -570,6 +494,18 @@
 			"value" : "-O2 -g -DNDEBUG"
 		},
 		{
+			"name" : "CMAKE_CXX_STANDARD",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "No help, variable specified on the command line."
+				}
+			],
+			"type" : "STRING",
+			"value" : "14"
+		},
+		{
 			"name" : "CMAKE_C_COMPILER",
 			"properties" : 
 			[
@@ -579,11 +515,11 @@
 				},
 				{
 					"name" : "HELPSTRING",
-					"value" : "C compiler"
+					"value" : "No help, variable specified on the command line."
 				}
 			],
-			"type" : "FILEPATH",
-			"value" : "/usr/bin/cc"
+			"type" : "STRING",
+			"value" : "gcc"
 		},
 		{
 			"name" : "CMAKE_C_COMPILER_AR",
@@ -712,18 +648,6 @@
 			],
 			"type" : "FILEPATH",
 			"value" : "CMAKE_DLLTOOL-NOTFOUND"
-		},
-		{
-			"name" : "CMAKE_EDIT_COMMAND",
-			"properties" : 
-			[
-				{
-					"name" : "HELPSTRING",
-					"value" : "Path to cache edit program executable."
-				}
-			],
-			"type" : "INTERNAL",
-			"value" : "/opt/cmake-3.24.2/bin/ccmake"
 		},
 		{
 			"name" : "CMAKE_EXECUTABLE_FORMAT",
@@ -855,11 +779,7 @@
 				}
 			],
 			"type" : "STATIC",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/.vs/cyber_seproject2/8cf44de5-c72a-44b7-b30d-6effcd345537/out/build/Linux-GCC-Debug/CMakeFiles/pkgRedirects"
-========
-			"value" : "/home/c/.vs/cyber_security_assessment/2a1921a7-7d8e-468c-b6af-1e98f5e79f91/out/build/Linux-GCC-Debug/CMakeFiles/pkgRedirects"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "CMAKE_GENERATOR",
@@ -871,7 +791,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "Ninja"
+			"value" : "Unix Makefiles"
 		},
 		{
 			"name" : "CMAKE_GENERATOR_INSTANCE",
@@ -955,11 +875,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/.vs/cyber_seproject2/8cf44de5-c72a-44b7-b30d-6effcd345537/src"
-========
-			"value" : "/home/c/.vs/cyber_security_assessment/2a1921a7-7d8e-468c-b6af-1e98f5e79f91/src"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "CMAKE_INSTALL_PREFIX",
@@ -971,11 +887,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/.vs/cyber_seproject2/8cf44de5-c72a-44b7-b30d-6effcd345537/out/install/Linux-GCC-Debug"
-========
-			"value" : "/home/c/.vs/cyber_security_assessment/2a1921a7-7d8e-468c-b6af-1e98f5e79f91/out/install/Linux-GCC-Debug"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "CMAKE_INSTALL_SO_NO_EXE",
@@ -1015,11 +927,11 @@
 				},
 				{
 					"name" : "HELPSTRING",
-					"value" : "Program used to build from build.ninja files."
+					"value" : "Path to a program."
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/bin/ninja"
+			"value" : "/usr/bin/make"
 		},
 		{
 			"name" : "CMAKE_MODULE_LINKER_FLAGS",
@@ -1251,11 +1163,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/usr/local/share/cmake-3.29"
-========
-			"value" : "/opt/cmake-3.24.2/share/cmake-3.24"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "CMAKE_SHARED_LINKER_FLAGS",
@@ -1491,16 +1399,11 @@
 				},
 				{
 					"name" : "HELPSTRING",
-					"value" : "The CMake toolchain file"
+					"value" : "No help, variable specified on the command line."
 				}
 			],
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"type" : "UNINITIALIZED",
 			"value" : "/root/vcpkg/scripts/buildsystems/vcpkg.cmake"
-========
-			"type" : "FILEPATH",
-			"value" : "/home/c/vcpkg/scripts/buildsystems/vcpkg.cmake"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "CMAKE_UNAME",
@@ -1556,11 +1459,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "[/root/vcpkg/installed/x64-linux/share/boost/BoostConfig.cmake][cfound components: random system thread filesystem chrono atomic date_time regex ][v1.85.0()]"
-========
-			"value" : "[/home/c/vcpkg/installed/x64-linux/share/boost/BoostConfig.cmake][cfound components: random system thread filesystem chrono atomic date_time regex ][v1.85.0()]"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "FIND_PACKAGE_MESSAGE_DETAILS_ICU",
@@ -1572,11 +1471,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "[/root/vcpkg/installed/x64-linux/include][/root/vcpkg/installed/x64-linux/debug/lib/libicuuc.a;/root/vcpkg/installed/x64-linux/debug/lib/libicui18n.a;/root/vcpkg/installed/x64-linux/debug/lib/libicuio.a;/root/vcpkg/installed/x64-linux/debug/lib/libicudata.a][ON][v74.2()]"
-========
-			"value" : "[/home/c/vcpkg/installed/x64-linux/include][/home/c/vcpkg/installed/x64-linux/debug/lib/libicuuc.a;/home/c/vcpkg/installed/x64-linux/debug/lib/libicui18n.a;/home/c/vcpkg/installed/x64-linux/debug/lib/libicuio.a;/home/c/vcpkg/installed/x64-linux/debug/lib/libicudata.a][ON][v74.2()]"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "FIND_PACKAGE_MESSAGE_DETAILS_OpenSSL",
@@ -1588,11 +1483,19 @@
 				}
 			],
 			"type" : "INTERNAL",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "[/root/vcpkg/installed/x64-linux/debug/lib/libcrypto.a][/root/vcpkg/installed/x64-linux/include][c ][v3.3.1()]"
-========
-			"value" : "[/home/c/vcpkg/installed/x64-linux/debug/lib/libcrypto.a][/home/c/vcpkg/installed/x64-linux/include][c ][v3.3.0()]"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
+		},
+		{
+			"name" : "FIND_PACKAGE_MESSAGE_DETAILS_Python",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Details about finding Python"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "[/usr/bin/python3.8][/usr/include/python3.8][/usr/lib/x86_64-linux-gnu/libpython3.8.so][cfound components: Interpreter Development Development.Module Development.Embed ][v3.8.10(3.8)]"
 		},
 		{
 			"name" : "FIND_PACKAGE_MESSAGE_DETAILS_SQLite3",
@@ -1604,11 +1507,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "[/root/vcpkg/installed/x64-linux/include][/root/vcpkg/installed/x64-linux/debug/lib/libsqlite3.a][v3.46.0()]"
-========
-			"value" : "[/home/c/vcpkg/installed/x64-linux/include][/home/c/vcpkg/installed/x64-linux/debug/lib/libsqlite3.a][v3.45.3()]"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "FIND_PACKAGE_MESSAGE_DETAILS_Threads",
@@ -1632,11 +1531,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "[optimized;/root/vcpkg/installed/x64-linux/lib/libz.a;debug;/root/vcpkg/installed/x64-linux/debug/lib/libz.a][/root/vcpkg/installed/x64-linux/include][c ][v1.3.1()]"
-========
-			"value" : "[optimized;/home/c/vcpkg/installed/x64-linux/lib/libz.a;debug;/home/c/vcpkg/installed/x64-linux/debug/lib/libz.a][/home/c/vcpkg/installed/x64-linux/include][v1.3.1()]"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "I18N_FOUND",
@@ -1665,22 +1560,6 @@
 				{
 					"name" : "HELPSTRING",
 					"value" : ""
-				}
-			],
-			"type" : "UNINITIALIZED",
-			"value" : ""
-		},
-		{
-			"name" : "ICU_DATA_FOUND",
-			"properties" : 
-			[
-				{
-					"name" : "ADVANCED",
-					"value" : "1"
-				},
-				{
-					"name" : "HELPSTRING",
-					"value" : "(This variable does not exist and should not be used)"
 				}
 			],
 			"type" : "UNINITIALIZED",
@@ -1716,11 +1595,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libicudata.a"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/debug/lib/libicudata.a"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "ICU_DERB_EXECUTABLE",
@@ -1736,11 +1611,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/derb"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/tools/icu/bin/derb"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "ICU_GENBRK_EXECUTABLE",
@@ -1756,11 +1627,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/genbrk"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/tools/icu/bin/genbrk"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "ICU_GENCCODE_EXECUTABLE",
@@ -1776,11 +1643,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/genccode"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/tools/icu/bin/genccode"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "ICU_GENCFU_EXECUTABLE",
@@ -1796,11 +1659,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/gencfu"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/tools/icu/bin/gencfu"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "ICU_GENCMN_EXECUTABLE",
@@ -1816,11 +1675,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/gencmn"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/tools/icu/bin/gencmn"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "ICU_GENCNVAL_EXECUTABLE",
@@ -1836,11 +1691,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/gencnval"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/tools/icu/bin/gencnval"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "ICU_GENDICT_EXECUTABLE",
@@ -1856,11 +1707,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/gendict"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/tools/icu/bin/gendict"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "ICU_GENNORM2_EXECUTABLE",
@@ -1876,11 +1723,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/gennorm2"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/tools/icu/bin/gennorm2"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "ICU_GENRB_EXECUTABLE",
@@ -1896,11 +1739,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/genrb"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/tools/icu/bin/genrb"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "ICU_GENSPREP_EXECUTABLE",
@@ -1916,11 +1755,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/gensprep"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/tools/icu/bin/gensprep"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "ICU_I18N_FOUND",
@@ -1932,11 +1767,7 @@
 				},
 				{
 					"name" : "HELPSTRING",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 					"value" : ""
-========
-					"value" : "(This variable does not exist and should not be used)"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 				}
 			],
 			"type" : "UNINITIALIZED",
@@ -1972,11 +1803,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libicui18n.a"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/debug/lib/libicui18n.a"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "ICU_ICU-CONFIG_EXECUTABLE",
@@ -1992,11 +1819,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/icu-config"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/tools/icu/bin/icu-config"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "ICU_ICUINFO_EXECUTABLE",
@@ -2012,11 +1835,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/icuinfo"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/tools/icu/bin/icuinfo"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "ICU_ICUPKG_EXECUTABLE",
@@ -2032,11 +1851,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/icupkg"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/tools/icu/bin/icupkg"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "ICU_INCLUDE_DIR",
@@ -2052,11 +1867,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/include"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/include"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "ICU_IO_FOUND",
@@ -2068,11 +1879,7 @@
 				},
 				{
 					"name" : "HELPSTRING",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 					"value" : ""
-========
-					"value" : "(This variable does not exist and should not be used)"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 				}
 			],
 			"type" : "UNINITIALIZED",
@@ -2108,11 +1915,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libicuio.a"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/debug/lib/libicuio.a"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "ICU_MAKECONV_EXECUTABLE",
@@ -2128,11 +1931,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/makeconv"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/tools/icu/bin/makeconv"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "ICU_MAKEFILE_INC",
@@ -2148,7 +1947,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/lib/x86_64-linux-gnu/icu/Makefile.inc"
+			"value" : "ICU_MAKEFILE_INC-NOTFOUND"
 		},
 		{
 			"name" : "ICU_PKGDATA_EXECUTABLE",
@@ -2164,11 +1963,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/pkgdata"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/tools/icu/bin/pkgdata"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "ICU_PKGDATA_INC",
@@ -2184,7 +1979,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/lib/x86_64-linux-gnu/icu/pkgdata.inc"
+			"value" : "ICU_PKGDATA_INC-NOTFOUND"
 		},
 		{
 			"name" : "ICU_UCONV_EXECUTABLE",
@@ -2200,11 +1995,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/tools/icu/bin/uconv"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/tools/icu/bin/uconv"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "ICU_UC_FOUND",
@@ -2216,11 +2007,7 @@
 				},
 				{
 					"name" : "HELPSTRING",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 					"value" : ""
-========
-					"value" : "(This variable does not exist and should not be used)"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 				}
 			],
 			"type" : "UNINITIALIZED",
@@ -2256,11 +2043,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libicuuc.a"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/debug/lib/libicuuc.a"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "IO_FOUND",
@@ -2288,11 +2071,7 @@
 				}
 			],
 			"type" : "STATIC",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/.vs/cyber_seproject2/8cf44de5-c72a-44b7-b30d-6effcd345537/out/build/Linux-GCC-Debug"
-========
-			"value" : "/home/c/.vs/cyber_security_assessment/2a1921a7-7d8e-468c-b6af-1e98f5e79f91/out/build/Linux-GCC-Debug"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "MyCppProject_IS_TOP_LEVEL",
@@ -2316,11 +2095,7 @@
 				}
 			],
 			"type" : "STATIC",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/.vs/cyber_seproject2/8cf44de5-c72a-44b7-b30d-6effcd345537/src"
-========
-			"value" : "/home/c/.vs/cyber_security_assessment/2a1921a7-7d8e-468c-b6af-1e98f5e79f91/src"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "OPENSSL_CRYPTO_LIBRARY",
@@ -2336,11 +2111,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libcrypto.a"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/debug/lib/libcrypto.a"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "OPENSSL_DL_LIBRARY",
@@ -2368,11 +2139,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/include"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/include"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "OPENSSL_SSL_LIBRARY",
@@ -2388,11 +2155,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libssl.a"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/debug/lib/libssl.a"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "PKG_CONFIG_ARGN",
@@ -2427,6 +2190,54 @@
 			"value" : "/usr/bin/pkg-config"
 		},
 		{
+			"name" : "PYBIND11_PYTHON_VERSION",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "No help, variable specified on the command line."
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : "3.8"
+		},
+		{
+			"name" : "Python3_INCLUDE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "No help, variable specified on the command line."
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : "/usr/include/python3.8"
+		},
+		{
+			"name" : "Python3_LIBRARY",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "No help, variable specified on the command line."
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : "/usr/lib/x86_64-linux-gnu/libpython3.8.so"
+		},
+		{
+			"name" : "Python3_ROOT_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "No help, variable specified on the command line."
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : "/usr"
+		},
+		{
 			"name" : "SQLite3_INCLUDE_DIR",
 			"properties" : 
 			[
@@ -2440,11 +2251,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/include"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/include"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "SQLite3_LIBRARY",
@@ -2460,11 +2267,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libsqlite3.a"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/debug/lib/libsqlite3.a"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "THREADS_HAVE_PTHREAD_ARG",
@@ -2516,11 +2319,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed"
-========
-			"value" : "/home/c/vcpkg/installed"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "VCPKG_MANIFEST_DIR",
@@ -2569,6 +2368,18 @@
 			],
 			"type" : "BOOL",
 			"value" : "OFF"
+		},
+		{
+			"name" : "VCPKG_ROOT",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "No help, variable specified on the command line."
+				}
+			],
+			"type" : "STRING",
+			"value" : "/root/vcpkg"
 		},
 		{
 			"name" : "VCPKG_SETUP_CMAKE_PROGRAM_PATH",
@@ -2660,11 +2471,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/include"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/include"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "ZLIB_LIBRARY_DEBUG",
@@ -2680,11 +2487,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libz.a"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/debug/lib/libz.a"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "ZLIB_LIBRARY_RELEASE",
@@ -2700,11 +2503,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/lib/libz.a"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/lib/libz.a"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "Z_VCPKG_CHECK_MANIFEST_MODE",
@@ -2740,11 +2539,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg"
-========
-			"value" : "/home/c/vcpkg"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "_CMAKE_LINKER_PUSHPOP_STATE_SUPPORTED",
@@ -2768,11 +2563,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "-I/root/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../../include"
-========
-			"value" : "-I/home/c/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../../include"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "_OPENSSL_CFLAGS_I",
@@ -2820,11 +2611,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../../include"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../../include"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "_OPENSSL_INCLUDE_DIRS",
@@ -2836,11 +2623,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../../include"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../../include"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "_OPENSSL_LDFLAGS",
@@ -2852,11 +2635,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "-L/root/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../lib;-lssl;-lcrypto;-ldl;-pthread"
-========
-			"value" : "-L/home/c/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../lib;-lssl;-lcrypto;-ldl;-pthread"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "_OPENSSL_LDFLAGS_OTHER",
@@ -2880,11 +2659,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../lib"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../lib"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "_OPENSSL_LIBRARIES",
@@ -2908,11 +2683,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../lib"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../lib"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "_OPENSSL_LIBS",
@@ -2984,11 +2755,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../.."
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../.."
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "_OPENSSL_STATIC_CFLAGS",
@@ -3000,11 +2767,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "-I/root/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../../include"
-========
-			"value" : "-I/home/c/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../../include"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "_OPENSSL_STATIC_CFLAGS_I",
@@ -3040,11 +2803,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../../include"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../../include"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "_OPENSSL_STATIC_LDFLAGS",
@@ -3056,11 +2815,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "-L/root/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../lib;-lssl;-lcrypto;-ldl;-pthread"
-========
-			"value" : "-L/home/c/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../lib;-lssl;-lcrypto;-ldl;-pthread"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "_OPENSSL_STATIC_LDFLAGS_OTHER",
@@ -3108,11 +2863,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../lib"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../lib"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "_OPENSSL_STATIC_LIBS",
@@ -3223,6 +2974,138 @@
 			"value" : ""
 		},
 		{
+			"name" : "_Python_Compiler_REASON_FAILURE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Compiler reason failure"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : ""
+		},
+		{
+			"name" : "_Python_DEVELOPMENT_EMBED_SIGNATURE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : ""
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "f46c6c5540682aa3310450d2a3f07ff2"
+		},
+		{
+			"name" : "_Python_DEVELOPMENT_MODULE_SIGNATURE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : ""
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "817d8341069b4752a7212a198bc10d86"
+		},
+		{
+			"name" : "_Python_Development_REASON_FAILURE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Development reason failure"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : ""
+		},
+		{
+			"name" : "_Python_EXECUTABLE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : ""
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "/usr/bin/python3.8"
+		},
+		{
+			"name" : "_Python_INCLUDE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : ""
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "/usr/include/python3.8"
+		},
+		{
+			"name" : "_Python_INTERPRETER_PROPERTIES",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Python Properties"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "Python;3;8;10;64;;cpython-38-x86_64-linux-gnu;abi3;/usr/lib/python3.8;/usr/lib/python3.8;/usr/lib/python3/dist-packages;/usr/lib/python3/dist-packages"
+		},
+		{
+			"name" : "_Python_INTERPRETER_SIGNATURE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : ""
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "f9ea82840d1201080e18d521b0be0876"
+		},
+		{
+			"name" : "_Python_Interpreter_REASON_FAILURE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Interpreter reason failure"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : ""
+		},
+		{
+			"name" : "_Python_LIBRARY_RELEASE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : ""
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "/usr/lib/x86_64-linux-gnu/libpython3.8.so"
+		},
+		{
+			"name" : "_Python_NumPy_REASON_FAILURE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "NumPy reason failure"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : ""
+		},
+		{
 			"name" : "_VCPKG_INSTALLED_DIR",
 			"properties" : 
 			[
@@ -3232,11 +3115,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed"
-========
-			"value" : "/home/c/vcpkg/installed"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "__pkg_config_arguments__OPENSSL",
@@ -3272,11 +3151,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_algorithm"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_algorithm"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_align_DIR",
@@ -3288,11 +3163,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_align"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_align"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_array_DIR",
@@ -3304,11 +3175,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_array"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_array"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_assert_DIR",
@@ -3320,11 +3187,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_assert"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_assert"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_atomic_DIR",
@@ -3336,11 +3199,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_atomic"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_atomic"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_bind_DIR",
@@ -3352,11 +3211,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_bind"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_bind"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_chrono_DIR",
@@ -3368,11 +3223,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_chrono"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_chrono"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_concept_check_DIR",
@@ -3384,11 +3235,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_concept_check"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_concept_check"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_config_DIR",
@@ -3400,11 +3247,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_config"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_config"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_container_DIR",
@@ -3416,11 +3259,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_container"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_container"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_container_hash_DIR",
@@ -3432,11 +3271,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_container_hash"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_container_hash"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_conversion_DIR",
@@ -3448,11 +3283,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_conversion"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_conversion"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_core_DIR",
@@ -3464,11 +3295,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_core"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_core"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_date_time_DIR",
@@ -3480,11 +3307,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_date_time"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_date_time"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_describe_DIR",
@@ -3496,11 +3319,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_describe"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_describe"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_detail_DIR",
@@ -3512,11 +3331,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_detail"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_detail"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_dynamic_bitset_DIR",
@@ -3528,11 +3343,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_dynamic_bitset"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_dynamic_bitset"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_exception_DIR",
@@ -3544,11 +3355,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_exception"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_exception"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_filesystem_DIR",
@@ -3560,11 +3367,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_filesystem"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_filesystem"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_function_DIR",
@@ -3576,11 +3379,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_function"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_function"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_function_types_DIR",
@@ -3592,11 +3391,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_function_types"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_function_types"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_functional_DIR",
@@ -3608,11 +3403,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_functional"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_functional"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_fusion_DIR",
@@ -3624,11 +3415,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_fusion"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_fusion"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_headers_DIR",
@@ -3640,11 +3427,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_headers"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_headers"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_integer_DIR",
@@ -3656,11 +3439,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_integer"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_integer"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_intrusive_DIR",
@@ -3672,11 +3451,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_intrusive"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_intrusive"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_io_DIR",
@@ -3688,11 +3463,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_io"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_io"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_iterator_DIR",
@@ -3704,11 +3475,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_iterator"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_iterator"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_lexical_cast_DIR",
@@ -3720,11 +3487,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_lexical_cast"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_lexical_cast"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_move_DIR",
@@ -3736,11 +3499,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_move"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_move"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_mp11_DIR",
@@ -3752,11 +3511,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_mp11"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_mp11"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_mpl_DIR",
@@ -3768,11 +3523,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_mpl"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_mpl"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_numeric_conversion_DIR",
@@ -3784,11 +3535,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_numeric_conversion"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_numeric_conversion"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_optional_DIR",
@@ -3800,11 +3547,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_optional"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_optional"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_predef_DIR",
@@ -3816,11 +3559,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_predef"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_predef"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_preprocessor_DIR",
@@ -3832,11 +3571,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_preprocessor"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_preprocessor"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_random_DIR",
@@ -3848,11 +3583,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_random"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_random"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_range_DIR",
@@ -3864,11 +3595,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_range"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_range"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_ratio_DIR",
@@ -3880,11 +3607,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_ratio"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_ratio"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_regex_DIR",
@@ -3896,11 +3619,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_regex"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_regex"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_scope_DIR",
@@ -3912,11 +3631,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_scope"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_scope"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_smart_ptr_DIR",
@@ -3928,11 +3643,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_smart_ptr"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_smart_ptr"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_static_assert_DIR",
@@ -3944,11 +3655,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_static_assert"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_static_assert"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_system_DIR",
@@ -3960,11 +3667,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_system"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_system"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_thread_DIR",
@@ -3976,11 +3679,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_thread"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_thread"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_throw_exception_DIR",
@@ -3992,11 +3691,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_throw_exception"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_throw_exception"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_tokenizer_DIR",
@@ -4008,11 +3703,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_tokenizer"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_tokenizer"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_tuple_DIR",
@@ -4024,11 +3715,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_tuple"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_tuple"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_type_traits_DIR",
@@ -4040,11 +3727,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_type_traits"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_type_traits"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_typeof_DIR",
@@ -4056,11 +3739,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_typeof"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_typeof"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_unordered_DIR",
@@ -4072,11 +3751,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_unordered"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_unordered"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_utility_DIR",
@@ -4088,11 +3763,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_utility"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_utility"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_variant2_DIR",
@@ -4104,11 +3775,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_variant2"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_variant2"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "boost_winapi_DIR",
@@ -4120,11 +3787,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/boost_winapi"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/boost_winapi"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "cpprestsdk_DIR",
@@ -4136,11 +3799,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/cpprestsdk"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/cpprestsdk"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "libssh_DIR",
@@ -4152,11 +3811,7 @@
 				}
 			],
 			"type" : "PATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/share/libssh"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/share/libssh"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "pkgcfg_lib__OPENSSL_crypto",
@@ -4172,11 +3827,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libcrypto.a"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/debug/lib/libcrypto.a"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "pkgcfg_lib__OPENSSL_dl",
@@ -4208,11 +3859,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/libssl.a"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/debug/lib/libssl.a"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		},
 		{
 			"name" : "prefix_result",
@@ -4224,11 +3871,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-<<<<<<<< HEAD:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-1e90923458414c8bae76.json
 			"value" : "/root/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../lib"
-========
-			"value" : "/home/c/vcpkg/installed/x64-linux/debug/lib/pkgconfig/../../lib"
->>>>>>>> c8e11c3cc10dbad9133156b7d378ff110e06a431:out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-a2a86871e68a3ff8a4e6.json
 		}
 	],
 	"kind" : "cache",
