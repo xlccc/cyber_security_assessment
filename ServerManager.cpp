@@ -50,12 +50,15 @@ void ServerManager::handle_request(http_request request) {
     }
 
     auto first_segment = path[0];
+    //返回基线检测的结果
     if (first_segment == U("userinfo") && request.method() == methods::GET) {
         handle_get_userinfo(request);
     }
+    //基线检测的账号密码登录
     else if (first_segment == U("login") && request.method() == methods::POST) {
         handle_post_login(request);
     }
+    //返回主机所有可能的cve漏洞，调用cve-search
     else if (first_segment == U("cveScan") && request.method() == methods::GET) {
         handle_get_cve_scan(request);
     }
@@ -93,6 +96,14 @@ void ServerManager::handle_request(http_request request) {
     else if (first_segment == U("pocVerify") && request.method() == methods::POST) {
         handle_post_poc_verify(request);
     }
+    //根据前端传来的进行等级保护计算
+    else if (first_segment == U("classifyProtect") && request.method() == methods::POST) {
+        handle_post_classify_protect(request);
+    }
+    //    vector<scoreMeasure> vecScoreMeasure 转json传回前端
+    else if (first_segment == U("classifyProtectGetRes") && request.method() == methods::GET) {
+        handle_get_classify_protect(request);
+    }
     else {
         request.reply(status_codes::NotFound, U("Path not found"));
     }
@@ -121,6 +132,7 @@ void ServerManager::handle_get_userinfo(http_request request) {
         user_data[U("IsComply")] = json::value::string(utility::conversions::to_string_t(Event[i].IsComply));
         user_data[U("recommend")] = json::value::string(utility::conversions::to_string_t(Event[i].recommend));
         user_data[U("result")] = json::value::string(utility::conversions::to_string_t(Event[i].result));
+        user_data[U("importantLevel")] = json::value::string(utility::conversions::to_string_t(Event[i].importantLevel));
         response_data[i] = user_data;
     }
     main_body[U("ServerInfo")] = ServerInfo;
@@ -730,6 +742,111 @@ void ServerManager::handle_post_testWeak(http_request request)
         }).wait();
 }
 
+void ServerManager::handle_post_classify_protect(http_request request) {
+    request.extract_json().then([this, &request](json::value body) {
+        try {
+            // 清空现有数据
+            vecScoreMeasure.clear();
+
+            // 检查 JSON 结构
+            if (body.is_object() && body.has_field(U("scoreMeasures")) && body.at(U("scoreMeasures")).is_array()) {
+                auto json_array = body.at(U("scoreMeasures")).as_array();
+                for (auto& item : json_array) {
+                    if (item.is_object()) {
+                        scoreMeasure measure;
+                        measure.importantLevelJson = utility::conversions::to_utf8string(item.at(U("importantLevelJson")).as_string());
+                        measure.IsComplyLevel = utility::conversions::to_utf8string(item.at(U("IsComplyLevel")).as_string());
+                        vecScoreMeasure.push_back(measure);
+                    }
+                }
+                int n = vecScoreMeasure.size(); // 项数
+                double sum = 0.0;
+                // 累加每一项的得分
+                for (int k = 0; k < n; k++) {
+                    double importantLevel = stod(vecScoreMeasure[k].importantLevelJson);
+                    double complyLevel = stod(vecScoreMeasure[k].IsComplyLevel);
+                    sum += importantLevel * (1.0 - complyLevel);
+
+                    // 输出每一项的计算值用于调试
+                    std::cout << "Item " << k << ": importantLevel = " << importantLevel << ", complyLevel = " << complyLevel << ", partialSum = " << sum << std::endl;
+                }
+
+                // 输出总和用于调试
+                std::cout << "Total sum: " << sum << std::endl;
+
+                // 计算最终评分
+                double M = 100.0 - (100.0 * sum / n);
+
+                // 输出最终评分用于调试
+                std::cout << "Final score (M): " << M << std::endl;
+                // 构造响应消息
+                json::value response_data;
+                response_data[U("message")] = json::value::string("Scores received and processed successfully");
+                response_data[U("score")] = json::value::number(M); // 将评分结果添加到响应中
+                // 创建响应
+                http_response response(status_codes::OK);
+                response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
+                response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, PUT, DELETE, OPTIONS"));
+                response.headers().add(U("Access-Control-Allow-Headers"), U("Content-Type"));
+                response.set_body(response_data);
+
+                // 发送响应
+                request.reply(response);
+            }
+            else {
+                // JSON 结构不符合预期
+                json::value response_data;
+                response_data[U("message")] = json::value::string("Invalid JSON structure");
+
+                http_response response(status_codes::BadRequest);
+                response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
+                response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, PUT, DELETE, OPTIONS"));
+                response.headers().add(U("Access-Control-Allow-Headers"), U("Content-Type"));
+                response.set_body(response_data);
+
+                request.reply(response);
+            }
+        }
+        catch (const std::exception& e) {
+            json::value response_data;
+            response_data[U("message")] = json::value::string("Exception occurred: " + std::string(e.what()));
+
+            http_response response(status_codes::InternalError);
+            response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
+            response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, PUT, DELETE, OPTIONS"));
+            response.headers().add(U("Access-Control-Allow-Headers"), U("Content-Type"));
+            response.set_body(response_data);
+
+            request.reply(response);
+        }
+        }).wait();
+}
+void ServerManager::handle_get_classify_protect(http_request request) {
+    // 创建 JSON 数组
+    json::value json_array = json::value::array();
+
+    // 填充 JSON 数组
+    size_t index = 0;
+    for (const auto& measure : vecScoreMeasure) {
+        json::value json_object;
+        json_object[U("importantLevelJson")] = json::value::string(measure.importantLevelJson);
+        json_object[U("IsComplyLevel")] = json::value::string(measure.IsComplyLevel);
+        json_array[index++] = json_object;
+    }
+
+    // 创建响应
+    json::value response_data;
+    response_data[U("scoreMeasures")] = json_array;
+
+    http_response response(status_codes::OK);
+    response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
+    response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, PUT, DELETE, OPTIONS"));
+    response.headers().add(U("Access-Control-Allow-Headers"), U("Content-Type"));
+    response.set_body(response_data);
+
+    // 发送响应
+    request.reply(response);
+}
 //void ServerManager::handle_post_hydra(http_request request)
 //{
 //    request.extract_json().then([this, &request](json::value body) {

@@ -33,6 +33,17 @@ void fun(vector<event>& Event, ssh_session session) {
 	password_lifetime.command = "cat /etc/login.defs | grep PASS_MAX_DAYS | grep -v ^# | awk '{print $2}' ";
 	password_lifetime.result = execute_commands(session, password_lifetime.command);
 	password_lifetime.recommend = "口令生存周期为不大于3个月的时间";
+	password_lifetime.importantLevel = "3";
+	pos = password_lifetime.result.find_last_not_of('\n');
+	if (pos != string::npos) {
+		
+		// 从开头到最后一个非换行符的字符复制字符串
+		password_lifetime.result = password_lifetime.result.substr(0, pos + 1);
+	}
+	else {
+		// 如果没有找到，说明没有换行符，直接复制原始字符串
+		password_lifetime.result = password_lifetime.result;
+	}
 
 	//将生存周期转为Int来比较
 	int num = atoi(password_lifetime.result.c_str());
@@ -42,6 +53,10 @@ void fun(vector<event>& Event, ssh_session session) {
 		{
 			password_lifetime.IsComply = "true";
 		}
+		else {
+			password_lifetime.IsComply = "false";
+		}
+
 	}
 	else
 	{
@@ -59,13 +74,17 @@ void fun(vector<event>& Event, ssh_session session) {
 	password_min_length.command = "cat /etc/login.defs | grep PASS_MIN_LEN | grep -v ^# | awk '{print $2}' ";
 	password_min_length.result = execute_commands(session, password_min_length.command);
 	password_min_length.recommend = "口令最小长度不小于8";
-
+	password_min_length.importantLevel = "3";
 	num = atoi(password_min_length.result.c_str());
 	if (password_min_length.result.compare(""))
 	{
 		if (num >= 8)
 		{
 			password_lifetime.IsComply = "true";
+
+		}
+		else {
+			password_lifetime.IsComply = "false";
 		}
 	}
 	else
@@ -83,7 +102,7 @@ void fun(vector<event>& Event, ssh_session session) {
 	password_warn_days.command = "cat /etc/login.defs | grep PASS_WARN_AGE | grep -v ^#| awk '{print $2}' ";
 	password_warn_days.result = execute_commands(session, password_min_length.command);
 	password_warn_days.recommend = "口令过期前应至少提前30天警告";
-
+	password_warn_days.importantLevel = "3";
 	num = atoi(password_warn_days.result.c_str());
 	if (password_warn_days.result.compare(""))
 	{
@@ -91,6 +110,10 @@ void fun(vector<event>& Event, ssh_session session) {
 		{
 			password_warn_days.IsComply = "true";
 		}
+		else {
+			password_warn_days.IsComply = "false";
+		}
+
 	}
 	else
 	{
@@ -110,7 +133,7 @@ void fun(vector<event>& Event, ssh_session session) {
 	password_complex.description = "检查设备密码复杂度策略";
 	password_complex.basis = "至少包含1个大写字母、1个小写字母、1个数字、1个特殊字符";
 	password_complex.recommend = "密码至少包含1个大写字母、1个小写字母、1个数字、1个特殊字符";
-
+	password_complex.importantLevel = "3";
 	//此部分要求不一，检查/etc/pam.d/system-auth和/etc/security/pwquality.conf
 	//先检查/etc/pam.d/system-auth
 	//将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
@@ -199,6 +222,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//2.5检查是否存在空口令账号
 	event password_empty;
+	password_empty.importantLevel = "3";
 	password_empty.description = "检查是否存在空口令账号";
 	password_empty.basis = "不存在空口令账号";
 	//" "内要加"时需要转义：\"
@@ -223,7 +247,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	uid0_except_root.result = execute_commands(session, uid0_except_root.command);
 	uid0_except_root.recommend = "不可设置除了root之外，第二个具有root权限的账号。root之外的用户其UID应为0。";
-
+	uid0_except_root.importantLevel = "2";
 	if (uid0_except_root.result.compare("") == 0)
 	{
 		uid0_except_root.IsComply = "true";
@@ -241,7 +265,7 @@ void fun(vector<event>& Event, ssh_session session) {
 	umask_cshrc.description = "检查/etc/csh.cshrc中的用户umask设置";
 	umask_cshrc.basis = "=027 或 =077";
 	umask_cshrc.recommend = "用户权限要求不严格可设置为027，严格可设置为077";
-
+	umask_cshrc.importantLevel = "2";
 	//fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
 	//将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
 	fileIsExist = "cat /etc/csh.cshrc 2>&1 | grep cat: ";
@@ -280,7 +304,7 @@ void fun(vector<event>& Event, ssh_session session) {
 	umask_bashrc.description = "检查/etc/bashrc中的用户umask设置";
 	umask_bashrc.basis = "=027 或 =077";
 	umask_bashrc.recommend = "用户权限要求不严格可设置为027，严格可设置为077";
-
+	umask_bashrc.importantLevel = "2";
 	//fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
 	//将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
 	fileIsExist = "cat /etc/bashrc 2>&1 | grep cat: ";
@@ -320,7 +344,7 @@ void fun(vector<event>& Event, ssh_session session) {
 	umask_profile.description = "检查/etc/profile中的用户umask设置";
 	umask_profile.basis = "=027 或 =077";
 	umask_profile.recommend = "用户权限要求不严格可设置为027，严格可设置为077";
-
+	umask_profile.importantLevel = "2";
 	//fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
 	//将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
 	fileIsExist = "cat /etc/profile 2>&1 | grep cat: ";
@@ -361,7 +385,7 @@ void fun(vector<event>& Event, ssh_session session) {
 	mod_xinetd.description = "检查/etc/xinetd.conf文件权限";
 	mod_xinetd.basis = "<=600";
 	mod_xinetd.recommend = "/etc/xinted.conf的权限应该小于等于600";
-
+	mod_xinetd.importantLevel = "2";
 	//fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
 	//将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
 	fileIsExist = "stat -c %a /etc/xineted.conf 2>&1 | grep stat: ";
@@ -394,7 +418,7 @@ void fun(vector<event>& Event, ssh_session session) {
 	mod_group.description = "检查/etc/group文件权限";
 	mod_group.basis = "<=644";
 	mod_group.recommend = "/etc/group的权限应该小于等于644";
-
+	mod_group.importantLevel = "2";
 	//fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
 	//将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
 	fileIsExist = "stat -c %a /etc/group 2>&1 | grep stat: ";
@@ -427,7 +451,7 @@ void fun(vector<event>& Event, ssh_session session) {
 	mod_shadow.description = "检查/etc/shadow文件权限";
 	mod_shadow.basis = "<=400";
 	mod_shadow.recommend = "/etc/shadow的权限应该小于等于400";
-
+	mod_shadow.importantLevel = "2";
 	//fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
 	//将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
 	fileIsExist = "stat -c %a /etc/shadow 2>&1 | grep stat: ";
@@ -460,7 +484,7 @@ void fun(vector<event>& Event, ssh_session session) {
 	mod_services.description = "检查/etc/services文件权限";
 	mod_services.basis = "<=644";
 	mod_services.recommend = "/etc/services的权限应该小于等于644";
-
+	mod_services.importantLevel = "2";
 	//fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
 	//将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
 	fileIsExist = "stat -c %a /etc/services 2>&1 | grep stat: ";
@@ -493,7 +517,7 @@ void fun(vector<event>& Event, ssh_session session) {
 	mod_security.description = "检查/etc/security目录权限";
 	mod_security.basis = "<=600";
 	mod_security.recommend = "/etc/security的权限应该小于等于600";
-
+	mod_security.importantLevel = "2";
 	//fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
 	//将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
 	fileIsExist = "stat -c %a /etc/security 2>&1 | grep stat: ";
@@ -526,7 +550,7 @@ void fun(vector<event>& Event, ssh_session session) {
 	mod_passwd.description = "检查/etc/passwd文件权限";
 	mod_passwd.basis = "<=644";
 	mod_passwd.recommend = "/etc/passwd的权限应该小于等于644";
-
+	mod_passwd.importantLevel = "2";
 	//fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
 	//将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
 	fileIsExist = "stat -c %a /etc/passwd 2>&1 | grep stat: ";
@@ -559,7 +583,7 @@ void fun(vector<event>& Event, ssh_session session) {
 	mod_rc6.description = "检查/etc/rc6.d目录权限";
 	mod_rc6.basis = "<=750";
 	mod_rc6.recommend = "/etc/rc6.d的权限应该小于等于750";
-
+	mod_rc6.importantLevel = "2";
 	//fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
 	//将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
 	fileIsExist = "stat -c %a /etc/rc6.d 2>&1 | grep stat: ";
@@ -589,6 +613,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//3.2.8检查/etc/rc0.d目录权限
 	event mod_rc0;
+	mod_rc0.importantLevel = "2";
 	mod_rc0.description = "检查/etc/rc0.d目录权限";
 	mod_rc0.basis = "<=750";
 	mod_rc0.recommend = "/etc/rc0.d的权限应该小于等于750";
@@ -622,6 +647,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//3.2.9检查/etc/rc1.d目录权限
 	event mod_rc1;
+	mod_rc1.importantLevel = "2";
 	mod_rc1.description = "检查/etc/rc1.d目录权限";
 	mod_rc1.basis = "<=750";
 	mod_rc1.recommend = "/etc/rc1.d的权限应该小于等于750";
@@ -655,6 +681,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//3.2.10检查/etc/rc2.d目录权限
 	event mod_rc2;
+	mod_rc2.importantLevel = "2";
 	mod_rc2.description = "检查/etc/xinetd.conf文件权限";
 	mod_rc2.basis = "<=750";
 	mod_rc2.recommend = "/etc/rc2.d的权限应该小于等于750";
@@ -688,6 +715,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//3.2.11检查/etc目录权限
 	event mod_etc;
+	mod_etc.importantLevel = "2";
 	mod_etc.description = "检查/etc目录权限";
 	mod_etc.basis = "<=750";
 	mod_etc.recommend = "/etc/的权限应该小于等于750";
@@ -721,6 +749,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//3.2.12检查/etc/rc4.d目录权限
 	event mod_rc4;
+	mod_rc4.importantLevel = "2";
 	mod_rc4.description = "检查/etc/rc4.d目录权限";
 	mod_rc4.basis = "<=750";
 	mod_rc4.recommend = "/etc/rc4.d的权限应该小于等于750";
@@ -754,6 +783,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//3.2.13检查/etc/rc5.d目录权限
 	event mod_rc5;
+	mod_rc5.importantLevel = "2";
 	mod_rc5.description = "检查/etc/rc5.d目录权限";
 	mod_rc5.basis = "<=750";
 	mod_rc5.recommend = "/etc/rc5.d的权限应该小于等于750";
@@ -787,6 +817,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//3.2.14检查/etc/rc3.d目录权限
 	event mod_rc3;
+	mod_rc3.importantLevel = "2";
 	mod_rc3.description = "检查/etc/rc3.d目录权限";
 	mod_rc3.basis = "<=750";
 	mod_rc3.recommend = "/etc/rc3.d的权限应该小于等于750";
@@ -820,6 +851,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//3.2.15检查/etc/rc.d/init.d目录权限
 	event mod_init;
+	mod_init.importantLevel = "2";
 	mod_init.description = "检查/etc/rc.d/init.d目录权限";
 	mod_init.basis = "<=750";
 	mod_init.recommend = "/etc/rc.d/init.d的权限应该小于等于750";
@@ -853,6 +885,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//3.2.16检查/tmp目录权限
 	event mod_tmp;
+	mod_tmp.importantLevel = "2";
 	mod_tmp.description = "检查/tmp目录权限";
 	mod_tmp.basis = "<=750";
 	mod_tmp.recommend = "/tmp的权限应该小于等于750";
@@ -886,6 +919,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//3.2.17检查/etc/grub.conf文件权限
 	event mod_grub;
+	mod_grub.importantLevel = "2";
 	mod_grub.description = "检查/etc/grub.conf文件权限";
 	mod_grub.basis = "<=600";
 	mod_grub.recommend = "/etc/grub.conf的权限应该小于等于600";
@@ -919,6 +953,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//3.2.18检查/etc/grub/grub.conf文件权限
 	event mod_grub_grub;
+	mod_grub_grub.importantLevel = "2";
 	mod_grub_grub.description = "检查/etc/grub/grub.conf文件权限";
 	mod_grub_grub.basis = "<=600";
 	mod_grub_grub.recommend = "/etc/grub/grub.conf的权限应该小于等于600";
@@ -951,7 +986,9 @@ void fun(vector<event>& Event, ssh_session session) {
 	Event.push_back(mod_grub_grub);
 
 	//3.2.19检查/etc/lilo.conf文件权限
+
 	event mod_lilo;
+	mod_lilo.importantLevel = "2";
 	mod_lilo.description = "检查/etc/lilo.conf文件权限";
 	mod_lilo.basis = "<=600";
 	mod_lilo.recommend = "/etc/lilo.conf的权限应该小于等于600";
@@ -986,6 +1023,7 @@ void fun(vector<event>& Event, ssh_session session) {
 	//3.3检查重要文件属性设置
 	//3.3.1检查/etc/passwd的文件属性
 	event attribute_passwd;
+	attribute_passwd.importantLevel = "2";
 	attribute_passwd.description = "检查/etc/passwd的文件属性";
 	attribute_passwd.basis = "是否设置了i属性";
 	attribute_passwd.recommend = "应设置重要文件为i属性（如：chattr +i /etc/passwd），设定文件不能删除、改名、设定链接关系等";
@@ -1018,6 +1056,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//3.3.2检查/etc/shadow的文件属性
 	event attribute_shadow;
+	attribute_shadow.importantLevel = "2";
 	attribute_shadow.description = "检查/etc/shadow的文件属性";
 	attribute_shadow.basis = "是否设置了i属性";
 	attribute_shadow.recommend = "应设置重要文件为i属性（如：chattr +i /etc/shadow），设定文件不能删除、改名、设定链接关系等";
@@ -1049,6 +1088,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//3.3.3检查/etc/group的文件属性
 	event attribute_group;
+	attribute_group.importantLevel = "2";
 	attribute_group.description = "检查/etc/group的文件属性";
 	attribute_group.basis = "是否设置了i属性";
 	attribute_group.recommend = "应设置重要文件为i属性（如：chattr +i /etc/group），设定文件不能删除、改名、设定链接关系等";
@@ -1080,6 +1120,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//3.3.4检查/etc/gshadow的文件属性
 	event attribute_gshadow;
+	attribute_gshadow.importantLevel = "2";
 	attribute_gshadow.description = "检查/etc/gshadow的文件属性";
 	attribute_gshadow.basis = "是否设置了i属性";
 	attribute_gshadow.recommend = "应设置重要文件为i属性（如：chattr +i /etc/gshadow），设定文件不能删除、改名、设定链接关系等";
@@ -1117,6 +1158,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//3.4检查用户目录缺省访问权限设置
 	event umask_login;
+	umask_login.importantLevel = "3";
 	umask_login.description = "检查用户目录缺省访问权限设置";
 	umask_login.basis = "=027";
 	umask_login.recommend = "文件目录缺省访问权限修改为 027";
@@ -1163,6 +1205,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//3.5检查是否设置ssh登录前警告Banner
 	event ssh_Banner;
+	ssh_Banner.importantLevel = "1";
 	ssh_Banner.description = "检查是否设置ssh登录前警告Banner";
 	ssh_Banner.basis = "/etc/ssh/sshd_config 是否开启 Banner";
 	ssh_Banner.recommend = "检查SSH配置文件:/etc/ssh/sshd_config，启用banner或合理设置banner的内容";
@@ -1213,11 +1256,13 @@ void fun(vector<event>& Event, ssh_session session) {
 		syslog_ng.result = "已配置syslog-ng远程日志功能";
 		syslog_ng.IsComply = "true";
 	}
+	syslog_ng.importantLevel = "1";
 	syslog_ng.recommend = "/etc/syslog-ng/syslog-ng.conf中配置远程日志功能";
 	Event.push_back(syslog_ng);
 
 	//4.1.2 rsyslog是否配置远程日志功能
 	event rsyslog;
+	rsyslog.importantLevel = "1";
 	rsyslog.description = "rsyslog是否配置远程日志功能";
 	rsyslog.basis = "查找配置文件是否有相应行";
 	rsyslog.command = "grep '^*.* @' /etc/rsyslog.conf";
@@ -1236,6 +1281,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//4.1.3 syslog是否配置远程日志功能
 	event syslog;
+	syslog.importantLevel = "1";
 	syslog.description = "syslog是否配置远程日志功能";
 	syslog.basis = "查找配置文件是否有相应行";
 	syslog.command = "grep '^*.* @' /etc/syslog.conf";
@@ -1254,6 +1300,7 @@ void fun(vector<event>& Event, ssh_session session) {
 	//4.2检查是否配置安全事件日志
 	//4.2.1 syslog_ng是否配置安全事件日志
 	event  syslog_ng_safe;
+	syslog_ng_safe.importantLevel = "1";
 	syslog_ng_safe.description = "syslog_ng是否配置安全事件日志";
 	syslog_ng_safe.basis = "查找配置文件是否有相应行";
 	syslog_ng_safe.command = "grep  \"filter f_msgs\" /etc/syslog-ng/syslog-ng.conf";
@@ -1271,6 +1318,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//4.2.2 rsyslog是否配置安全事件日志
 	event  rsyslog_safe;
+	rsyslog_safe.importantLevel = "1";
 	rsyslog_safe.description = "rsyslog_safe是否配置安全事件日志";
 	rsyslog_safe.basis = "查找配置文件是否有相应行";
 	rsyslog_safe.command = "grep '^\\*\\.err;kern\\.debug;daemon\\.notice /var/adm/messages' /etc/rsyslog.conf";
@@ -1288,6 +1336,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//4.2.3 检查syslog是否配置安全事件日志 
 	event syslog_safe;
+	syslog_safe.importantLevel = "1";
 	syslog_safe.description = "rsyslog_safe是否配置安全事件日志";
 	syslog_safe.basis = "查找配置文件是否有相应行";
 	syslog_safe.command = "grep -E 'auth\\.|authpriv\\.|daemon\\.|kern\\.' /etc/syslog.conf";
@@ -1304,7 +1353,9 @@ void fun(vector<event>& Event, ssh_session session) {
 	Event.push_back(syslog_safe);
 
 	//4.3检查日志文件是否other用户不可写
+	//4.3.1检查/var/log/cron日志文件是否other用户不可写
 	event cron;
+	cron.importantLevel = "1";
 	cron.description = "检查/var/log/cron日志文件是否other用户不可写";
 	cron.basis = "ls -l检查";
 	cron.command = "ls -l /var/log/cron";
@@ -1318,7 +1369,9 @@ void fun(vector<event>& Event, ssh_session session) {
 	cron.recommend = "/var/log/cron日志文件other用户不可写";
 	Event.push_back(cron);
 
+	//4.3.2检查/var/log/secure日志文件是否other用户不可写";
 	event secure;
+	secure.importantLevel = "1";
 	secure.description = "检查/var/log/secure日志文件是否other用户不可写";
 	secure.basis = "ls -l检查";
 	secure.command = "ls -l /var/log/secure";
@@ -1331,7 +1384,9 @@ void fun(vector<event>& Event, ssh_session session) {
 	secure.recommend = "/var/log/secure日志文件other用户不可写";
 	Event.push_back(secure);
 
+	//4.3.3 检查/var/log/messages日志文件是否other用户不可写
 	event message;
+	message.importantLevel = "1";
 	message.description = "检查/var/log/messages日志文件是否other用户不可写";
 	message.basis = "ls -l检查";
 	message.command = "ls -l /var/log/messages";
@@ -1345,7 +1400,10 @@ void fun(vector<event>& Event, ssh_session session) {
 	message.recommend = "/var/log/messages日志文件other用户不可写";
 	Event.push_back(message);
 
+	//4.3.4 检查/var/log/boot.log日志文件是否other用户不可写
+
 	event boot_log;
+	boot_log.importantLevel = "1";
 	boot_log.description = "检查/var/log/boot.log日志文件是否other用户不可写";
 	boot_log.basis = "ls -l检查";
 	boot_log.command = "ls -l /var/log/boot.log";
@@ -1358,7 +1416,9 @@ void fun(vector<event>& Event, ssh_session session) {
 	boot_log.recommend = "/var/log/boot.log日志文件other用户不可写";
 	Event.push_back(boot_log);
 
+	//4.3.5检查/var/log/mail日志文件是否other用户不可写
 	event mail;
+	mail.importantLevel = "1";
 	mail.description = "检查/var/log/mail日志文件是否other用户不可写";
 	mail.basis = "ls -l检查";
 	mail.command = "ls -l /var/log/mail";
@@ -1371,7 +1431,9 @@ void fun(vector<event>& Event, ssh_session session) {
 	mail.recommend = "/var/log/mail日志文件other用户不可写";
 	Event.push_back(mail);
 
+	//4.3.6 检查/var/log/spooler日志文件是否other用户不可写
 	event spooler;
+	spooler.importantLevel = "1";
 	spooler.description = "检查/var/log/spooler日志文件是否other用户不可写";
 	spooler.basis = "ls -l检查";
 	spooler.command = "ls -l /var/log/spooler";
@@ -1384,7 +1446,25 @@ void fun(vector<event>& Event, ssh_session session) {
 	spooler.recommend = "/var/log/spooler日志文件other用户不可写";
 	Event.push_back(spooler);
 
+	//4.3.7 检查/var/log/localmessages日志文件是否other用户不可写
+	event localmessages;
+	localmessages.importantLevel = "1";
+	localmessages.description = "检查/var/log/localmessages日志文件是否other用户不可写";
+	localmessages.basis = "ls -l检查";
+	localmessages.command = "ls -l /var/log/localmessages";
+	localmessages.result = execute_commands(session, localmessages.command);
+	if (localmessages.result == "") {
+		localmessages.result = "没有这个文件";
+	}
+	command_Iscomply = "ls -l /var/log/localmessages | grep -q \".\\{7\\}[^ w]\" && echo -n true || echo -n false";
+	localmessages.IsComply = execute_commands(session, command_Iscomply);
+	localmessages.recommend = "/var/log/spooler日志文件other用户不可写";
+	Event.push_back(localmessages);
+
+
+	//4.3.8 检查/var/log/maillog日志文件是否other用户不可写
 	event maillog;
+	maillog.importantLevel = "1";
 	maillog.description = "检查/var/log/maillog日志文件是否other用户不可写";
 	maillog.basis = "ls -l检查";
 	maillog.command = "ls -l /var/log/maillog";
@@ -1399,6 +1479,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//4.4是否对登录进行日志记录
 	event last;
+	last.importantLevel = "3";
 	last.description = "是否对登录进行日志记录";
 	last.basis = "last检查";
 	last.command = "last";
@@ -1416,6 +1497,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//检查是否配置su命令使用情况记录
 	event su_log;
+	su_log.importantLevel = "1";
 	su_log.description = "是否对su命令进行日志记录";
 	su_log.basis = "基于Debian或者RPM访问不同的文件";
 	if (type_os == "Debian") {
@@ -1440,6 +1522,7 @@ void fun(vector<event>& Event, ssh_session session) {
 	//5.1检查系统openssh安全配置
 
 	event openssh_config;
+	openssh_config.importantLevel = "2";
 	openssh_config.description = "检查系统openssh安全配置";
 	openssh_config.basis = "/etc/ssh/sshd_config中的Protocol配置值为2";
 	openssh_config.command = "grep - i Protocol / etc / ssh / sshd_config | egrep - v '^\s*#' | awk '{print $2}'";
@@ -1460,7 +1543,9 @@ void fun(vector<event>& Event, ssh_session session) {
 	//5.2检查是否已修改snmp默认团体字
 	//5.2.1 检查SNMP服务是否运行
 
+
 	event running_snmp;
+	running_snmp.importantLevel = "2";
 	running_snmp.description = "检查SNMP服务是否在运行";
 	running_snmp.basis = "查看是否存在SNMP进程";
 	running_snmp.command = "ps -ef|grep \"snmpd\"|grep -v \"grep\"";
@@ -1471,13 +1556,14 @@ void fun(vector<event>& Event, ssh_session session) {
 	}
 	else {
 		running_snmp.result = "snmp进程正在运行,需要进一步检测";
-		running_snmp.IsComply = "--";
+		running_snmp.IsComply = "false";
 	}
 	running_snmp.recommend = "无";
 	Event.push_back(running_snmp);
 	//5.2.2检查是否已修改snmp默认团体字，进程未开启就不用
 
 	event snmp_config;
+	snmp_config.importantLevel = "2";
 	snmp_config.description = "检查是否已修改snmp默认团体字";
 	snmp_config.basis = "检查是否已修改snmp默认团体字";
 	snmp_config.command = "cat /etc/snmp/snmpd.conf | grep com2sec  | grep public | grep -v ^#";
@@ -1502,6 +1588,8 @@ void fun(vector<event>& Event, ssh_session session) {
 	//5.3检查使用ip协议远程维护的设备是否配置ssh协议，禁用telnet协议
 	//5.3.1是否配置ssh协议
 	event ssh_config;
+
+	ssh_config.importantLevel = "3";
 	ssh_config.description = "是否配置ssh协议";
 	ssh_config.basis = "根据22号端口是否开放检测是否配置ssh协议";
 	ssh_config.command = "ss -tuln | grep \":22\"";
@@ -1518,6 +1606,7 @@ void fun(vector<event>& Event, ssh_session session) {
 	Event.push_back(ssh_config);//复制一个临时对象，然后存进去的，所以后面再次修改ssh_config也不会改变Event里面的值
 	//5.3.2是否配置telnet协议
 	event telnet_config;
+	telnet_config.importantLevel = "3";
 	telnet_config.description = "由于telnet明文传输，所以应该禁止telnet协议";
 	telnet_config.basis = "根据23号端口是否开放检测是否配置telnet协议";
 	telnet_config.command = "ss -tuln | grep \":23\"";
@@ -1535,6 +1624,7 @@ void fun(vector<event>& Event, ssh_session session) {
 	//5.4检查是否禁止root用户登录ftp
 	//5.4.1检查是否在运行ftp服务
 	event running_ftp;
+	running_ftp.importantLevel = "2";
 	running_ftp.description = "检查是否在运行ftp";
 	running_ftp.basis = "判断相应的服务是否后台运行";
 	running_ftp.command = "ps -ef | grep ftp | grep -v grep";
@@ -1545,11 +1635,12 @@ void fun(vector<event>& Event, ssh_session session) {
 	}
 	else {
 		running_ftp.result = "ftp服务在运行，还要进一步检测配置文件";
-		running_ftp.IsComply = "--";
+		running_ftp.IsComply = "false";
 	}
 	Event.push_back(running_ftp);
 
 	event ftp_config;
+	ftp_config.importantLevel = "2";
 	ftp_config.description = "检查是否禁止root用户登录ftp";
 	ftp_config.basis = "/etc/vsftpd/ftpusers文件中是否包含root用户";
 	ftp_config.command = "grep '^[^#]*root' /etc/vsftpd/ftpusers";
@@ -1571,6 +1662,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//5.5检查是否禁止匿名用户登录FTP
 	event anonymous_ftp;
+	anonymous_ftp.importantLevel = "3";
 	anonymous_ftp.description = "检查是否禁止匿名用户登录FTP";
 	anonymous_ftp.basis = "/etc/vsftpd/vsftpd.conf文件中是否存在anonymous_enable=NO配置";
 	anonymous_ftp.command = "cat /etc/vsftpd/vsftpd.conf | grep \"anonymous_enable=NO\" | grep -v ^#";
@@ -1589,6 +1681,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//6.1检查是否设置命令行界面超时退出
 	event cmd_timeout;
+	cmd_timeout.importantLevel = "3";
 	cmd_timeout.description = "检查是否设置命令行界面超时退出";
 	cmd_timeout.basis = "<=600";
 	cmd_timeout.recommend = "建议命令行界面超时自动登出时间TMOUT应不大于600s，检查项建议系统管理员根据系统情况自行判断";
@@ -1633,6 +1726,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//6.2检查是否设置系统引导管理器密码
 	event password_bootloader;
+	password_bootloader.importantLevel = "1";
 	password_bootloader.description = "检查是否设置系统引导管理器密码";
 	password_bootloader.basis = "系统引导管理器grub2或grub或lilo是否设置了密码";
 	password_bootloader.recommend = "根据引导器不同类型（grub2或grub或lilo），为其设置引导管理器密码。";
@@ -1730,6 +1824,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//6.3检查系统coredump设置
 	event core_dump;
+	core_dump.importantLevel = "2";
 	core_dump.description = "检查系统coredump设置";
 	core_dump.basis = "检查/etc/security/limits.conf是否设置* hard core 0 和 * soft core 0";
 	core_dump.recommend = "检查系统cire dump设置，防止内存状态信息暴露，设置* soft  core、* hard core为0，且注释掉ulimit -S -c 0 > /dev/null 2>&1";
@@ -1769,6 +1864,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//6.4检查历史命令设置
 	event hist_size;
+	hist_size.importantLevel = "1";
 	hist_size.description = "检查历史命令设置";
 	hist_size.basis = "HISTFILESIZE和HISTSIZE的值应<=5";
 	hist_size.recommend = "历史命令文件HISTFILESIZE和HISTSIZE的值应小于等于5";
@@ -1814,6 +1910,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//6.5检查是否使用PAM认证模块禁止wheel组之外的用户su为root
 	event group_wheel;
+	group_wheel.importantLevel = "3";
 	group_wheel.description = "检查是否使用PAM认证模块禁止wheel组之外的用户su为root";
 	group_wheel.basis = "检查/etc/pam.d/su文件中，是否存在如下配置: auth  sufficient pam_rootok.so 和 auth  required pam_wheel.so group=wheel";
 	group_wheel.recommend = "禁止wheel组外用户使用su命令，提高操作系统的完整性";
@@ -1854,6 +1951,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//6.6检查是否对系统账户进行登录限制
 	event inter_login;
+	inter_login.importantLevel = "1";
 	inter_login.description = "检查是否对系统账户进行登录限制";
 	inter_login.basis = "请手动检查文件文件/etc/passwd，/etc/shadow，并使用命令：usermod -s /sbin/nologin username";
 	inter_login.recommend = "对系统账户登录进行限制，禁止账户交互式登录。";
@@ -1863,6 +1961,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//6.7检查密码重复使用次数限制
 	event password_repeatlimit;
+	password_repeatlimit.importantLevel = "2";
 	password_repeatlimit.description = "检查密码重复使用次数限制";
 	password_repeatlimit.basis = ">=5";
 	password_repeatlimit.recommend = "检查密码重复使用次数，使用户不能重复使用最近5次（含5次）内已使用的口令，预防密码重复使用被爆破的风险。";
@@ -1907,6 +2006,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//6.8检查账户认证失败次数限制
 	event auth_failtimes;
+	auth_failtimes.importantLevel = "1";
 	auth_failtimes.description = "检查账户认证失败次数限制";
 	auth_failtimes.basis = "登录失败限制可以使用pam_tally或pam.d，请手工检测/etc/pam.d/system-auth、/etc/pam.d/passwd、/etc/pam.d/common-auth文件。";
 	auth_failtimes.recommend = "应配置密码失败次数限制，预防密码被爆破的风险。";
@@ -1916,6 +2016,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//6.9检查是否关闭绑定多ip功能
 	event multi_ip;
+	multi_ip.importantLevel = "1";
 	multi_ip.description = "检查是否关闭绑定多ip功能";
 	multi_ip.basis = "/etc/host.conf中multi的开启状态";
 	multi_ip.recommend = "应关闭绑定多ip功能，使系统操作责任到人。";
@@ -1949,6 +2050,8 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//6.10检查是否限制远程登录IP范围
 	event login_remote_ip;
+
+	login_remote_ip.importantLevel = "1";
 	login_remote_ip.description = "检查是否限制远程登录IP范围";
 	login_remote_ip.basis = "请手工查看/etc/hosts.allow和/etc/hosts.deny两个文件";
 	login_remote_ip.recommend = "应配置相关设置防止未知ip远程登录，此检查项建议系统管理员根据系统情况自行判断。";
@@ -1957,7 +2060,9 @@ void fun(vector<event>& Event, ssh_session session) {
 	Event.push_back(login_remote_ip);
 
 	//6.11检查别名文件
+
 	event aliases_unnecessary;
+	aliases_unnecessary.importantLevel = "1";
 	aliases_unnecessary.description = "检查别名文件";
 	aliases_unnecessary.basis = "请手工查看/etc/aliases和/etc/mail/aliases两个文件";
 	aliases_unnecessary.recommend = "检查是否禁用不必要的别名，此检查项建议系统管理员根据系统情况自行判断。";
@@ -1968,6 +2073,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//6.12检查重要文件是否存在suid和sgid权限
 	event Perm_suid_sgid;
+	Perm_suid_sgid.importantLevel = "1";
 	Perm_suid_sgid.description = "检查重要文件是否存在suid和sgid权限";
 	Perm_suid_sgid.basis = "重要文件是否存在suid和sgid权限：/usr/bin/chage /usr/bin/gpasswd /usr/bin/wall /usr/bin/chfn /usr/bin/chsh /usr/bin/newgrp /usr/bin/write /usr/sbin/usernetctl /usr/sbin/traceroute /bin/mount /bin/umount /bin/ping /sbin/netreport";
 	Perm_suid_sgid.recommend = "suid管理上有漏洞，易被黑客利用suid来踢拳，来放后门控制linux主机。sgid同样权力过大。对于重要文件建议关闭suid和sgid";
@@ -1982,11 +2088,11 @@ void fun(vector<event>& Event, ssh_session session) {
 		Perm_suid_sgid.IsComply = "true";
 	}
 
-
 	Event.push_back(Perm_suid_sgid);
 
 	//6.13检查是否配置定时自动屏幕锁定（适用于图形化界面）
 	event screen_autolock;
+	screen_autolock.importantLevel = "1";
 	screen_autolock.description = "检查是否配置定时自动屏幕锁定（适用于图形化界面）";
 	screen_autolock.basis = "在屏幕上面的面板中，打开“系统”-->“首选项”-->“屏幕保护程序”";
 	screen_autolock.recommend = "对具有图形化界面的设备应配置定时自动屏幕锁定";
@@ -1996,6 +2102,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//6.14检查系统内核参数配置（可能不全）
 	event tcp_syncookies;
+	tcp_syncookies.importantLevel = "2";
 	tcp_syncookies.description = "检查系统内核参数配置";
 	tcp_syncookies.basis = "=1";
 	tcp_syncookies.recommend = "该项配置主要为了缓解拒绝服务攻击。调整内核安全参数，增强系统安全性，tcp_syncookies的值应设为1";
@@ -2029,6 +2136,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//6.15检查是否按组进行账号管理
 	event group_manage;
+	group_manage.importantLevel = "1";
 	group_manage.description = "检查是否按组进行账号管理";
 	group_manage.basis = "请手工查看/etc/group等文件";
 	group_manage.recommend = "此配置项主要偏向于对系统用户的管理，如账户已分组管理，该检查项可以跳过。此检查项建议系统管理员根据系统情况自行判断";
@@ -2040,6 +2148,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//6.17 检查root用户的path环境变量
 	event root_path_check;
+	root_path_check.importantLevel = "2";
 	root_path_check.description = "检查root用户的path环境变量内容";
 	root_path_check.basis = "不包含（.和..）的路径";
 	root_path_check.command = "sudo sh -c 'echo $PATH' | grep -o -e '\\.\\.' -e '\\.' | wc -l";
@@ -2064,6 +2173,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//6.18 检查系统是否禁用ctrl+alt+del组合键
 	event ctrl_alt_del_disabled;
+	ctrl_alt_del_disabled.importantLevel = "2";
 	ctrl_alt_del_disabled.description = "检查系统是否禁用ctrl+alt+del组合键";
 	ctrl_alt_del_disabled.basis = "禁用Ctrl+Alt+Delete组合键重启系统";
 
@@ -2091,7 +2201,7 @@ void fun(vector<event>& Event, ssh_session session) {
 	event sys_trust_mechanism;
 	sys_trust_mechanism.description = "检查是否关闭系统信任机制";
 	sys_trust_mechanism.basis = "关闭系统信任机制";
-
+	sys_trust_mechanism.importantLevel = "3";
 	sys_trust_mechanism.command = "find / -maxdepth 3 -type f -name .rhosts 2>/dev/null; find / -maxdepth 2 -name hosts.equiv 2>/dev/null";
 	sys_trust_mechanism.recommend = "1.执行命令find / -maxdepth 2 -name hosts.equiv 进入到. hosts.equiv文件存在的目录，执行命令：mv hosts.equiv hosts.equiv.bak。2.执行命令find / -maxdepth 3 -type f -name .rhosts 2>/dev/null 进入到.rhosts文件存在的目录，执行命令：mv .rhosts .rhosts.bak。";
 
@@ -2108,6 +2218,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//6.20 检查系统磁盘分区使用率
 	event disk_partition_usage_rate;
+	disk_partition_usage_rate.importantLevel = "1";
 	disk_partition_usage_rate.description = "检查系统磁盘分区使用率";
 	disk_partition_usage_rate.basis = "<=80";
 
@@ -2128,6 +2239,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//6.21 检查是否删除了潜在危险文件
 	event potential_risk_files;
+	potential_risk_files.importantLevel = "3";
 	potential_risk_files.description = "检查是否删除了潜在危险文件";
 	potential_risk_files.basis = "删除潜在危险文件，包括hosts.equiv文件 .rhosts文件和 .netrc 文件";
 
@@ -2149,6 +2261,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//6.23 检查是否配置用户所需最小权限
 	event user_min_permission;
+	user_min_permission.importantLevel = "2";
 	user_min_permission.description = "检查是否配置用户所需最小权限";
 	user_min_permission.basis = "配置用户所需最小权限,/etc/passwd为644；/etc/group为644；/etc/shadow为600";
 
@@ -2168,6 +2281,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//6.24 检查是否关闭数据包转发功能（适用于不做路由功能的系统）-对于集群系统或者需要数据包转发的系统不做该配置
 	event packet_forward_func;
+	packet_forward_func.importantLevel = "1";
 	packet_forward_func.description = "对检查是否关闭数据包转发功能";
 	packet_forward_func.basis = "对于不做路由功能的系统，应该关闭数据包转发功能";
 
@@ -2201,6 +2315,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//6.26 检查是否使用NTP（网络时间协议）保持时间同步
 	event ntp_sync_status;
+	ntp_sync_status.importantLevel = "1";
 	ntp_sync_status.description = "检查是否使用NTP（网络时间协议）保持时间同步";
 	ntp_sync_status.basis = "检查ntp服务是否开启，若开启则需配置NTP服务器地址";
 	//没有使用ntp，则输出no ntp；使用ntp但没配置地址，则输出no server；使用ntp且配置了地址，则输出配置。
@@ -2227,6 +2342,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//6.27 检查NFS（网络文件系统）服务设置
 	event nfs_server;
+	nfs_server.importantLevel = "1";
 	nfs_server.description = "检查NFS（网络文件系统）服务设置";
 	nfs_server.basis = "如果需要NFS服务，需要限制能够访问NFS服务的IP范围；如果没有必要，需要停止NFS服务";
 	//1."no nfs": 没有NFS服务在运行。2. 输出非注释非空行: 显示了/etc/hosts.allow和/etc/hosts.deny中配置的IP访问限制规则。3."no ip limitation": NFS服务在运行，但没有配置任何IP访问限制规则。
@@ -2256,6 +2372,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//6.29 检查是否设置ssh成功登陆后Banner
 	event ssh_banner;
+	ssh_banner.importantLevel = "1";
 	ssh_banner.description = "检查是否设置ssh成功登陆后Banner";
 	ssh_banner.basis = "设置ssh成功登陆后Banner";
 
@@ -2269,7 +2386,7 @@ void fun(vector<event>& Event, ssh_session session) {
 		ssh_banner.IsComply = "false";
 	}
 	else {
-		ssh_banner.IsComply = "-- 需手动检查文件内容";
+		ssh_banner.IsComply = "false";
 	}
 
 	Event.push_back(ssh_banner);
@@ -2278,8 +2395,12 @@ void fun(vector<event>& Event, ssh_session session) {
 	string rpm_command = "rpm -qa | grep -E 'vsftpd|pure-ftpd' &> /dev/null && (rpm -qa | grep -q 'vsftpd' && echo \"vsftpd\") || (rpm -qa | grep -q 'pure-ftpd' && echo \"pure-ftpd\") || echo \"Neither\"";
 	string Debian_command = "dpkg -l | grep -E 'vsftpd|pure-ftpd' &> /dev/null && (dpkg -l | grep -q 'vsftpd' && echo \"vsftpd\") || (dpkg -l | grep -q 'pure-ftpd' && echo \"pure-ftpd\") || echo \"Neither\"";
 	string soft_ware;
+
+	
 	//6.30 检查FTP用户上传的文件所具有的权限
+
 	event upload_ftp;
+	upload_ftp.importantLevel = "1";
 	upload_ftp.description = "检查FTP用户上传的文件所具有的权限";
 	upload_ftp.basis = "检查是否允许上传和上传权限设置正确";
 	if (type_os == "RPM") {
@@ -2334,6 +2455,7 @@ void fun(vector<event>& Event, ssh_session session) {
 	//6.31检查是否更改默认的ftp登陆警告Banner
 
 	event ftp_baner;
+	ftp_baner.importantLevel = "1";
 	ftp_baner.description = "是否更改默认的ftp登陆警告Banner";
 	ftp_baner.basis = "需要自己检查自定义的banner";
 
@@ -2345,7 +2467,7 @@ void fun(vector<event>& Event, ssh_session session) {
 			ftp_baner.IsComply = "false";
 		}
 		else {
-			ftp_baner.IsComply = "--，需要自己修改";
+			ftp_baner.IsComply = "false";
 		}
 	}
 	else if (soft_ware == "pure-ftpd") {
@@ -2357,7 +2479,7 @@ void fun(vector<event>& Event, ssh_session session) {
 			ftp_baner.recommend = "更改默认的ftp登陆警告Banner";
 		}
 		else {
-			ftp_baner.IsComply = "--需要/usr/share/fortune/zippy中自定义";
+			ftp_baner.IsComply = "false";
 		}
 	}
 	else {
@@ -2371,26 +2493,29 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//6.32检查/usr/bin/目录下可执行文件的拥有者属性
 	event bin_owner;
+	bin_owner.importantLevel = "1";
 	bin_owner.description = "为了保证信息安全的可靠性，需要减产可执行文件的拥有者属性";
 	bin_owner.basis = "所有含有“s”属性的文件，把不必要的“s”属性去掉，或者把不用的直接删除。";
 	bin_owner.command = "find /usr/bin -type f \( -perm -04000 -o -perm -02000 \) -exec ls -lg {} \; ";
 	bin_owner.result = "自行判断";
-	bin_owner.IsComply = "--";
+	bin_owner.IsComply = "false";
 	bin_owner.recommend = "减产可执行文件的拥有者属性";
 	Event.push_back(bin_owner);
 
 
 	//6.33 检查telnet Banner设置
 	event telnet_banner;
+	telnet_banner.importantLevel = "1";
 	telnet_banner.description = "检查是否更改默认的telnet登录警告Banner";
 	telnet_banner.basis = "请手动检查修改文件/etc/issue 和/etc/issue.net中的内容";
 	telnet_banner.recommend = "请手动检查修改文件/etc/issue 和/etc/issue.net中的内容";
-	telnet_banner.IsComply = "--";
+	telnet_banner.IsComply = "false";
 	telnet_banner.result = "自行判断";
 	Event.push_back(telnet_banner);
 
 	//6.34 检查是否限制FTP用户登录后能访问的目录
 	event ftp_directory;
+	ftp_directory.importantLevel = "1";
 	ftp_directory.description = "检查是否限制FTP用户登录后能访问的目录";
 	ftp_directory.basis = "应该限制FTP用户登录后能访问的目录";
 
@@ -2418,6 +2543,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//6.36 检查内核版本是否处于CVE-2021-43267漏洞影响版本
 	event kernel_cve_2021_43267;
+	kernel_cve_2021_43267.importantLevel = "3";
 	kernel_cve_2021_43267.description = "检查内核版本是否处于CVE-2021-43267漏洞影响版本";
 	kernel_cve_2021_43267.basis = "内核版本不在5.10和5.14.16之间";
 	//内核版本在5.10和5.14.16之间则输出版本号，不在则输出"不受CVE - 2021 - 43267影响"
