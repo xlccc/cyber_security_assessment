@@ -71,7 +71,8 @@ private:
     void handle_post_get_Nmap(http_request request);
     void handle_post_hydra(http_request request);
     void handle_post_testWeak(http_request request);
-
+    void handle_post_classify_protect(http_request request);
+    void handle_get_classify_protect(http_request request);
     json::value CVE_to_json(const CVE& cve);
     json::value ScanResult_to_json(const ScanResult& scan_result);
     json::value ScanHostResult_to_json(const ScanHostResult& scan_host_result);
@@ -102,6 +103,7 @@ private:
     ServerInfo_t info_new;
     std::vector<event_t> new_Event;
     vector<event> Event;
+    vector<scoreMeasure> vecScoreMeasure;
 };
 
 #endif // SERVERMANAGER_H

@@ -7,8 +7,13 @@ struct event {
 	string basis;//判定依据
 	string command;//待检查口令
 	string result;//待检查的结果
-	string IsComply;//返回true还是false
+    string IsComply = "false";//返回true还是false
 	string recommend; //建议
+    string importantLevel;// 重要程度，分为1，2，3
+};
+struct scoreMeasure {
+    string importantLevelJson;//重要程度，分为1，2，3
+    string IsComplyLevel; //包含0，0.5, 1
 };
 
 //目标主机相关信息
