@@ -124,3 +124,32 @@ bool isValidPassword(const std::string& password)
     // If any condition is not met
     return hasLower && hasUpper && hasDigit;
 }
+PasswordStrength checkPasswordStrength(const std::string& password)
+{
+    if (std::regex_match(password, STRONG_PATTERN)) {
+        return PasswordStrength::STRONG;
+    }
+    else if (std::regex_match(password, MEDIUM_PATTERN)) {
+        return PasswordStrength::MEDIUM;
+    }
+    else if (std::regex_match(password, WEAK_PATTERN)) {
+        return PasswordStrength::WEAK;
+    }
+    else {
+        return PasswordStrength::INVALID;
+    }
+}
+std::string passwordStrengthToString(PasswordStrength strength)
+{
+    switch (strength) {
+    case PasswordStrength::WEAK:
+        return "Weak";
+    case PasswordStrength::MEDIUM:
+        return "Medium";
+    case PasswordStrength::STRONG:
+        return "Strong";
+    case PasswordStrength::INVALID:
+    default:
+        return "Invalid";
+    }
+}

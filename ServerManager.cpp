@@ -725,14 +725,9 @@ void ServerManager::handle_post_testWeak(http_request request)
 {
     request.extract_json().then([this, &request](json::value body) {
         std::string password = body[U("pd")].as_string();
-        bool isValidPd = isValidPassword(password);
-        string message = "";
-        if (isValidPassword) {
-            message = "true";
-        }
-        else {
-            message = "false";
-        }
+        PasswordStrength strength = checkPasswordStrength(password);
+
+        string message = passwordStrengthToString(strength);
 
 
         // 创建响应
