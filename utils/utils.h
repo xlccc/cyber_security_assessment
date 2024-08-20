@@ -34,4 +34,18 @@ bool is_supported_extension(const std::string& filename);
 //去掉文件名后缀
 std::string removeExtension(const std::string& filename);
 
+enum class PasswordStrength {
+    WEAK,
+    MEDIUM,
+    STRONG,
+    INVALID
+};
+
+const std::regex WEAK_PATTERN("^(\\d{6,18}|[a-z]{6,18}|[A-Z]{6,18})$");
+const std::regex MEDIUM_PATTERN("^(?=.*[0-9])(?=.*[a-zA-Z]).{6,18}$|^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{6,18}$|^(?=.*[0-9])(?=.*[^a-zA-Z0-9\\s]).{6,18}$|^(?=.*[a-z])(?=.*[^a-zA-Z0-9\\s]).{6,18}$|^(?=.*[A-Z])(?=.*[^a-zA-Z0-9\\s]).{6,18}$");
+const std::regex STRONG_PATTERN("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[^\\w\\s]).{6,18}$");
+
+PasswordStrength checkPasswordStrength(const std::string& password);
+std::string passwordStrengthToString(PasswordStrength strength);
+
 #endif // UTILS_H
