@@ -1,19 +1,19 @@
-#pragma once
+ï»¿#pragma once
 #ifndef DB_CONFIG_H
 #define DB_CONFIG_H
 
 #include<vector>
 #include<string>
 
-// ¶¨ÒåÊı¾İ¿âÎÄ¼şÂ·¾¶µÄÈ«¾Ö³£Á¿
+// å®šä¹‰æ•°æ®åº“æ–‡ä»¶è·¯å¾„çš„å…¨å±€å¸¸é‡
 //const char* const DB_PATH = "./database/poc.db";
-const char* const DB_PATH = "/home/c/.vs/ÍøÂç°²È«²âÊÔÆ½Ì¨-ĞÂ-linux-2.0-CMake/26bbbde1-7e92-4836-b250-1203a21a6665/src/database/poc.db";
+const char* const DB_PATH = "/home/c/.vs/cyber_security_assessment/8e509499-79aa-4583-a94f-9ac2aefdaefd/src/database/poc.db";
 
 
-//Ö§³ÖµÄpoc½Å±¾ÀàĞÍ
+//æ”¯æŒçš„pocè„šæœ¬ç±»å‹
 extern std::vector<std::string> supported_extensions;
 
-// ÉÏ´«POCÎÄ¼şËùĞèÒªµÄ¹Ì¶¨µÄÁÙÊ±ÎÄ¼şÃû
+// ä¸Šä¼ POCæ–‡ä»¶æ‰€éœ€è¦çš„å›ºå®šçš„ä¸´æ—¶æ–‡ä»¶å
 const std::string TEMP_FILENAME = "/tmp/uploaded_body_temp";
 
 

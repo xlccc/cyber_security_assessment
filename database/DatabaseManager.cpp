@@ -163,7 +163,8 @@ std::vector<POC> DatabaseManager::searchData(const std::string& keyword) {
     std::vector<POC> records;
 
     // 使用通配符%构建LIKE模式
-    std::string pattern = "%" + convertToUTF8(keyword, "GBK") + "%";
+    //std::string pattern = "%" + convertToUTF8(keyword, "GBK") + "%";
+    std::string pattern = "%" + keyword + "%";
     std::string sql = "SELECT * FROM POC WHERE "
         "CVE_id LIKE '" + pattern + "' OR "
         "Vul_name LIKE '" + pattern + "' OR "

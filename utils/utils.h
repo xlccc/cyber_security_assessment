@@ -14,6 +14,7 @@
 #include <regex>
 #include <uchardet/uchardet.h>
 #include <iconv.h>
+#include<sys/stat.h>
 
 //获取当前时间
 std::string getCurrentTimestamp();
@@ -55,5 +56,8 @@ const std::regex STRONG_PATTERN("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[^\\w\\s
 
 PasswordStrength checkPasswordStrength(const std::string& password);
 std::string passwordStrengthToString(PasswordStrength strength);
+
+// 判断路径是否为目录
+bool is_directory(const std::string& path);
 
 #endif // UTILS_H
