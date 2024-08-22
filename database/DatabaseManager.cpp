@@ -72,13 +72,13 @@ bool DatabaseManager::insertData(const std::string& cve_id, const std::string& v
         return false;
     }
     //将值绑定到参数
-    sqlite3_bind_text(stmt, 1, convertToUTF8(cve_id, "GBK").c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 2, convertToUTF8(vul_name, "GBK").c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 3, convertToUTF8(type, "GBK").c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 4, convertToUTF8(description, "GBK").c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 5, convertToUTF8(script_type, "GBK").c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 6, convertToUTF8(script, "GBK").c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 7, convertToUTF8(timestamp, "GBK").c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 1, cve_id.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 2, vul_name.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 3, type.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 4, description.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 5, script_type.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 6, script.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 7, timestamp.c_str(), -1, SQLITE_TRANSIENT);
     //执行SQL语句
     int rc = sqlite3_step(stmt);
     //sqlite3_finalize() 函数来删除准备好的语句。
@@ -106,7 +106,7 @@ bool DatabaseManager::deleteDataById(int id) {
 
 //根据选中POC记录对应的id，修改POC数据
 bool DatabaseManager::updateDataById(int id, const POC& poc) {
-    // 首先检查ID是否存在
+    //首先检查ID是否存在
     std::string checkSql = "SELECT COUNT(*) FROM POC WHERE ID = ?;";
     sqlite3_stmt* checkStmt;
     if (sqlite3_prepare_v2(db, checkSql.c_str(), -1, &checkStmt, nullptr) != SQLITE_OK) {
@@ -136,13 +136,13 @@ bool DatabaseManager::updateDataById(int id, const POC& poc) {
         return false;
     }
     //将值绑定到参数
-    sqlite3_bind_text(stmt, 1, convertToUTF8(poc.cve_id, "GBK").c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 2, convertToUTF8(poc.vul_name, "GBK").c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 3, convertToUTF8(poc.type, "GBK").c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 4, convertToUTF8(poc.description, "GBK").c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 5, convertToUTF8(poc.script_type, "GBK").c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 6, convertToUTF8(poc.script, "GBK").c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 7, convertToUTF8(timestamp, "GBK").c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 1, poc.cve_id.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 2, poc.vul_name.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 3, poc.type.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 4, poc.description.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 5, poc.script_type.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 6, poc.script.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 7, timestamp.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_int(stmt, 8, id);
 
     //执行SQL语句
@@ -220,6 +220,29 @@ std::string DatabaseManager::searchPOCById(const int & id) {
     POC_filename = records[0].script;
     POC_filename = "../../../src/scan/scripts/" + POC_filename;
     return POC_filename;
+}
+
+
+//依据id搜索POC数据
+bool DatabaseManager::searchDataById(const int& id, POC& poc) {
+    std::vector<POC> records;
+    // SQL语句搜索数据
+    std::string sql = "SELECT * FROM POC WHERE ID='" + std::to_string(id) + "';";
+    char* errMsg = nullptr;
+    ;
+    // 执行SQL语句，并处理结果
+    int rc = sqlite3_exec(db, sql.c_str(), callback, &records, &errMsg);
+    if (rc != SQLITE_OK) {
+        std::cerr << "SQL error: " << errMsg << std::endl;
+        sqlite3_free(errMsg);
+    }
+    if (records.empty())    //没有ID对应的POC数据
+    {
+        std::cerr << "SQL error: ID does not exist." << std::endl;
+        return false;
+    }
+    poc = records[0];
+    return true;
 }
 
 //回调函数，sql功能命令执行结果的进一步处理，按行循环调用回调函数处理。

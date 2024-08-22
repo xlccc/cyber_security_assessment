@@ -7,15 +7,18 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # 设置 vcpkg 的工具链文件，用于集成 vcpkg 管理的库
 if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-    set(CMAKE_TOOLCHAIN_FILE "/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
+    set(CMAKE_TOOLCHAIN_FILE "/home/c/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
 endif()
 
 # 设置 vcpkg 的路径
-set(VCPKG_DIR "/vcpkg")
+set(VCPKG_DIR "/home/c/vcpkg")
 
 # 添加 vcpkg 的 include 和 library 路径
 include_directories(${VCPKG_DIR}/installed/x64-linux/include)
 link_directories(${VCPKG_DIR}/installed/x64-linux/lib)
+
+#添加vcpkg相关路径，以便 CMake 能够找到安装库的配置文件
+#set(CMAKE_PREFIX_PATH "${VCPKG_DIR}/installed/x64-linux/share" CACHE PATH "Path to vcpkg installed libraries")
 
 
 # 查找并加载必要的库
@@ -23,6 +26,7 @@ find_package(cpprestsdk CONFIG REQUIRED)
 find_package(libssh CONFIG REQUIRED)
 find_package(ICU REQUIRED COMPONENTS uc i18n io data)
 find_package(SQLite3 REQUIRED)
+find_package(uchardet CONFIG REQUIRED)
 
 
 # 手动设置Python路径
@@ -111,6 +115,7 @@ target_link_libraries(MyCppProject PRIVATE
     ${ICU_LIBRARIES}
     ${SQLite3_LIBRARIES}
     ${Python_LIBRARIES}
+    uchardet::libuchardet
 )
 
  #支持 Unicode 文件名和路径

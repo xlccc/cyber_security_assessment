@@ -12,12 +12,20 @@
 #include"database/db_config.h"
 #include<algorithm>
 #include <regex>
+#include <uchardet/uchardet.h>
+#include <iconv.h>
 
 //获取当前时间
 std::string getCurrentTimestamp();
 
 //GBK转UTF-8编码
 std::string convertToUTF8(const std::string& input, const std::string& fromEncoding);
+
+//转换编码
+std::string convertEncoding(const std::string& input, const char* fromEncoding, const char* toEncoding);
+
+//自动识别编码转utf-8
+std::string autoConvertToUTF8(const std::string& input);
 
 // Function to execute a command and get the output
 std::string exec(const char* cmd);
