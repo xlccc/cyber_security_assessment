@@ -6,7 +6,7 @@ using namespace web::http::experimental::listener;
 using namespace concurrency::streams;
 
 ServerManager::ServerManager() : dbManager(DB_PATH) {
-    utility::string_t address = U("http://192.168.29.129:8081/");
+    utility::string_t address = U("http://192.168.136.128:8081/");
     uri_builder uri(address);
     auto addr = uri.to_uri().to_string();
     listener = std::make_unique<http_listener>(addr);
@@ -720,6 +720,7 @@ void ServerManager::handle_post_hydra(http_request request){
 void ServerManager::handle_post_testWeak(http_request request)
 {
     request.extract_json().then([this, &request](json::value body) {
+        std::string password = body[U("pd")].as_string();
         PasswordStrength strength = checkPasswordStrength(password);
 
         string message = passwordStrengthToString(strength);
