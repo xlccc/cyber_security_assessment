@@ -37,6 +37,9 @@ public:
     //依据id搜索POC名称，用于删除对应POC
     std::string searchPOCById(const int& id);
 
+    //依据id搜索POC数据
+    bool searchDataById(const int& id, POC& poc);
+
     //获取所有数据
     std::vector<POC> getAllData();
 

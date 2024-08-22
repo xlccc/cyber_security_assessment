@@ -5,17 +5,17 @@
 #include<vector>
 #include<string>
 
-// 定义数据库文件路径的全局常量
+// �������ݿ��ļ�·����ȫ�ֳ���
 //const char* const DB_PATH = "./database/poc.db";
 const char* const DB_PATH = "/root/.vs/cyber_seproject2/8cf44de5-c72a-44b7-b30d-6effcd345537/src/database/poc.db";
 
 
 
-//支持的poc脚本类型
+//֧�ֵ�poc�ű�����
 extern std::vector<std::string> supported_extensions;
 
-// 上传POC文件所需要的固定的临时文件名
+// �ϴ�POC�ļ�����Ҫ�Ĺ̶�����ʱ�ļ���
 const std::string TEMP_FILENAME = "/tmp/uploaded_body_temp";
 
 
-#endif
+#endif#pragma once

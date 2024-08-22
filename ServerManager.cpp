@@ -279,16 +279,19 @@ void ServerManager::handle_post_insert_data(http_request request) {
                 //std::cout << "Headers: " << headers << std::endl;
                 //std::cout << "Data: " << data << std::endl;
 
+                // 使用autoConvertToUTF8将数据从GBK转换为UTF-8
+                std::string decoded_data = autoConvertToUTF8(data);
+
                 if (headers.find("filename=") == std::string::npos) {
                     auto name_pos = headers.find("name=");
                     if (name_pos != std::string::npos) {
                         std::string name = headers.substr(name_pos + 6);
                         name = name.substr(0, name.find("\"", 1)); // Extract name between quotes
-                        if (name == "cve_id") cve_id = data;
-                        else if (name == "vul_name") vul_name = data;
-                        else if (name == "type") type = data;
-                        else if (name == "description") description = data;
-                        else if (name == "script_type") script_type = data;
+                        if (name == "cve_id") cve_id = decoded_data;
+                        else if (name == "vul_name") vul_name = decoded_data;
+                        else if (name == "type") type = decoded_data;
+                        else if (name == "description") description = decoded_data;
+                        else if (name == "script_type") script_type = decoded_data;
                     }
                 }
             }

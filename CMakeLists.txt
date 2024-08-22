@@ -17,12 +17,16 @@ set(VCPKG_DIR "/root/vcpkg")
 include_directories(${VCPKG_DIR}/installed/x64-linux/include)
 link_directories(${VCPKG_DIR}/installed/x64-linux/lib)
 
+#添加vcpkg相关路径，以便 CMake 能够找到安装库的配置文件
+#set(CMAKE_PREFIX_PATH "${VCPKG_DIR}/installed/x64-linux/share" CACHE PATH "Path to vcpkg installed libraries")
+
 
 # 查找并加载必要的库
 find_package(cpprestsdk CONFIG REQUIRED)
 find_package(libssh CONFIG REQUIRED)
 find_package(ICU REQUIRED COMPONENTS uc i18n io data)
 find_package(SQLite3 REQUIRED)
+find_package(uchardet CONFIG REQUIRED)
 
 
 # 手动设置Python路径
@@ -111,6 +115,7 @@ target_link_libraries(MyCppProject PRIVATE
     ${ICU_LIBRARIES}
     ${SQLite3_LIBRARIES}
     ${Python_LIBRARIES}
+    uchardet::libuchardet
 )
 
  #支持 Unicode 文件名和路径

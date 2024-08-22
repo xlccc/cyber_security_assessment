@@ -12,12 +12,20 @@
 #include"database/db_config.h"
 #include<algorithm>
 #include <regex>
+#include <uchardet/uchardet.h>
+#include <iconv.h>
 
 //获取当前时间
 std::string getCurrentTimestamp();
 
 //GBK转UTF-8编码
 std::string convertToUTF8(const std::string& input, const std::string& fromEncoding);
+
+//转换编码
+std::string convertEncoding(const std::string& input, const char* fromEncoding, const char* toEncoding);
+
+//自动识别编码转utf-8
+std::string autoConvertToUTF8(const std::string& input);
 
 // Function to execute a command and get the output
 std::string exec(const char* cmd);
@@ -33,6 +41,7 @@ bool is_supported_extension(const std::string& filename);
 
 //去掉文件名后缀
 std::string removeExtension(const std::string& filename);
+
 enum class PasswordStrength {
     WEAK,
     MEDIUM,
@@ -46,4 +55,5 @@ const std::regex STRONG_PATTERN("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[^\\w\\s
 
 PasswordStrength checkPasswordStrength(const std::string& password);
 std::string passwordStrengthToString(PasswordStrength strength);
+
 #endif // UTILS_H

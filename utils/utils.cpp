@@ -1,4 +1,5 @@
 ﻿#include"utils.h"
+#include <iostream>
 
 //获取当前时间，字符串表示
 std::string getCurrentTimestamp() {
@@ -32,6 +33,58 @@ std::string convertToUTF8(const std::string& input, const std::string& fromEncod
     icu::UnicodeString sourceStr(input.c_str(), fromEncoding.c_str());
     std::string output;
     sourceStr.toUTF8String(output);
+
+    // 输出调试信息
+    std::cout << "Original data (" << fromEncoding << "): " << input << std::endl;
+    std::cout << "Converted data (UTF-8): " << output << std::endl;
+
+    return output;
+}
+
+//转换编码
+std::string convertEncoding(const std::string& input, const char* fromEncoding, const char* toEncoding) {
+    iconv_t cd = iconv_open(toEncoding, fromEncoding);
+    if (cd == (iconv_t)-1) {
+        std::cerr << "Error: iconv_open failed" << std::endl;
+        return "";
+    }
+
+    size_t inBytesLeft = input.size();
+    size_t outBytesLeft = input.size() * 4; // Output buffer should be larger to accommodate larger characters
+    char* inBuf = const_cast<char*>(input.c_str());
+    std::string output(outBytesLeft, '\0');
+    char* outBuf = &output[0];
+
+    if (iconv(cd, &inBuf, &inBytesLeft, &outBuf, &outBytesLeft) == (size_t)-1) {
+        std::cerr << "Error: iconv conversion failed" << std::endl;
+        iconv_close(cd);
+        return "";
+    }
+
+    iconv_close(cd);
+    output.resize(output.size() - outBytesLeft); // Resize output string to actual converted size
+    return output;
+}
+//识别编码并转换
+std::string autoConvertToUTF8(const std::string& input) {
+    // 使用 uchardet 检测编码
+    uchardet_t ud = uchardet_new();
+    uchardet_handle_data(ud, input.c_str(), input.size());
+    uchardet_data_end(ud);
+    const char* detectedEncoding = uchardet_get_charset(ud);
+
+    std::string output;
+    if (strcmp(detectedEncoding, "UTF-8") == 0) {
+        output = input; // 如果已是UTF-8编码，直接使用
+    }
+    else {
+        output = convertEncoding(input, detectedEncoding, "UTF-8");
+    }
+
+    std::cout << "Original data (" << detectedEncoding << "): " << input << std::endl;
+    std::cout << "Converted data (UTF-8): " << output << std::endl;
+
+    uchardet_delete(ud);
     return output;
 }
 
@@ -124,6 +177,7 @@ bool isValidPassword(const std::string& password)
     // If any condition is not met
     return hasLower && hasUpper && hasDigit;
 }
+
 PasswordStrength checkPasswordStrength(const std::string& password)
 {
     if (std::regex_match(password, STRONG_PATTERN)) {
