@@ -71,9 +71,11 @@ void ServerManager::handle_request(http_request request) {
     else if (first_segment == U("insertData") && request.method() == methods::POST) {
         handle_post_insert_data(request);
     }
+    //更新数据 by id
     else if (first_segment == U("updateDataById") && request.method() == methods::PUT) {
         handle_put_update_data_by_id(request);
     }
+    //删除数据 by id
     else if (first_segment == U("deleteDataById") && request.method() == methods::DEL) {
         handle_delete_data_by_id(request);
     }
