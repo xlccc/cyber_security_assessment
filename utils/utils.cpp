@@ -207,3 +207,12 @@ std::string passwordStrengthToString(PasswordStrength strength)
         return "Invalid";
     }
 }
+
+// 判断路径是否为目录
+bool is_directory(const std::string& path) {
+    struct stat s;
+    if (stat(path.c_str(), &s) == 0) {
+        return S_ISDIR(s.st_mode);
+    }
+    return false;
+}

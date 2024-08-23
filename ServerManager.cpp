@@ -1144,10 +1144,16 @@ void ServerManager::handle_get_poc_content(http_request request) {
             return;
         }
 
-        std::string file_path = "../../../src/scan/scripts/" + poc_filename;
+        //验证路径是否为文件
+        if (is_directory(poc_filename)) {
+            std::cerr << "The path is a directory, not a file（no POC file）: " << poc_filename << std::endl;
+            request.reply(status_codes::InternalError, U("{\"error\": \"缺少POC文件\"}"));
+            return;
+        }
+
 
         // 读取文件内容
-        std::ifstream file(file_path, std::ios::binary);
+        std::ifstream file(poc_filename, std::ios::binary);
         if (!file.is_open()) {
             request.reply(status_codes::OK, U("{\"content\": \"\"}"));
             return;

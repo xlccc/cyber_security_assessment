@@ -3,8 +3,8 @@
 ################################################################################
 
 /.vs
+/out/build
 /out/build/Linux-GCC-Debug/.cmake/api/v1/reply/index-2024-06-21T02-57-40-0474.json
-/database/db_config.h
 /out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cache-v2-03ab5bdd317fdcdc6162.json
 /out/build/Linux-GCC-Debug/isenseconfig/iconfig.json
 /out/build/Linux-GCC-Debug/.cmake/api/v1/reply/cmakeFiles-v1-16d672cf7e02c34ff7fb.json
@@ -15,3 +15,5 @@
 /out/build/Linux-GCC-Debug/isenseconfig/iconfig.json
 /ter
 /build
+/out/build/x64-Debug
+/out/build/x64-Debug/CMakeCache.txt
