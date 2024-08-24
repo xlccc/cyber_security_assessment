@@ -79,8 +79,10 @@ private:
     json::value ScanResult_to_json(const ScanResult& scan_result);
     json::value ScanHostResult_to_json(const ScanHostResult& scan_host_result);
 
+    //检验文件是否存在，并获取文件名
+    bool check_and_get_filename(const std::string& body, const std::string& content_type, std::string& filename, std::string& data, std::string& error_message);
     // 从内存中处理POC文件上传
-    void handle_file_upload_from_memory(const std::string& body, const std::string& content_type, std::string& filename, std::string& error_message);
+    void upload_file(const std::string& filename, const std::string& data);
     // 将请求体保存到临时文件
     void save_request_to_temp_file(http_request request);
     //查看POC内容
