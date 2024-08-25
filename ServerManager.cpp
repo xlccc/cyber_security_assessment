@@ -312,8 +312,25 @@ void ServerManager::handle_post_insert_data(http_request request) {
         // 处理文件上传，使用已经读取的请求体
         std::string filename = "";
         std::string error_message = "";
-        handle_file_upload_from_memory(body, content_type, filename, error_message);
-
+        std::string data = ""; //文件内容
+        if (!check_and_get_filename(body, content_type, filename, data, error_message))
+        {
+            //有文件上传
+            if(filename != "")
+                upload_file(filename, data);
+        }
+        else
+        {
+            http_response response;
+            json::value response_data;
+            response_data[U("message")] = json::value::string(U("添加失败！文件名已存在，请修改！"));
+            response.set_status_code(status_codes::BadRequest);
+            response.set_body(response_data);
+            request.reply(response);
+            return;
+        }
+        
+        /*
         if (!error_message.empty()) {
             json::value response_data;
             response_data[U("message")] = json::value::string(U(error_message));
@@ -322,6 +339,7 @@ void ServerManager::handle_post_insert_data(http_request request) {
             request.reply(response);
             return;
         }
+        */
 
         // 插入数据到数据库
         bool success = dbManager.insertData(cve_id, vul_name, type, description, script_type, filename);
@@ -329,7 +347,7 @@ void ServerManager::handle_post_insert_data(http_request request) {
         json::value response_data;
         http_response response;
         if (success) {
-            poc_list = dbManager.getAllData();
+            poc_list = dbManager.getAllData();  //更新POC列表
             response_data[U("message")] = json::value::string(U("添加成功！"));
             response.set_status_code(status_codes::OK);
         }
@@ -451,53 +469,79 @@ void ServerManager::handle_put_update_data_by_id(http_request request)
             }
         }
 
-        // 删除本地POC文件
-        std::string POC_filename = dbManager.searchPOCById(poc.id);
-        bool fileSuccess = true;
 
-        if (!POC_filename.empty()) {
-            if (std::remove(POC_filename.c_str()) != 0) {
-                std::cerr << "Error deleting file: " << POC_filename << std::endl;
-                fileSuccess = false;
-            }
-        }
+        // 处理文件上传，使用已经读取的请求体
+        std::string filename = ""; //新文件名
+        std::string POC_filename = dbManager.searchPOCById(poc.id); //原文件名
+        std::string error_message = "";
+        std::string data = ""; //文件内容
 
-            // 处理文件上传，使用已经读取的请求体
-            std::string filename = "";
-            std::string error_message = "";
-            bool file_exists = false;
-            handle_file_upload_from_memory(body, content_type, filename, error_message);
+        //poc.script默认为原文件名
+        poc.script = POC_filename.substr(POC_filename.find_last_of('/')+1);
 
-            if (error_message == "File already exists") {
-                file_exists = true;
-                error_message.clear(); // 清除错误信息，继续处理
-            }
-
-            poc.script = filename;
-
-            // 更新数据
-            bool success = dbManager.updateDataById(poc.id, poc);
-
-            http_response response;
-            json::value response_data;
-            if (success) {
-                poc_list = dbManager.getAllData();
-                response_data[U("message")] = json::value::string(U("更新成功"));
-                if (file_exists) {
-                    response_data[U("warning")] = json::value::string(U("File already exists."));
-                }
-                response.set_status_code(status_codes::OK);
-                response.set_body(response_data);
-            }
-            else {
-                response_data[U("message")] = json::value::string(U("更新失败"));
+        //文件名是否已经存在，并给filename赋值
+        bool fileExist = check_and_get_filename(body, content_type, filename, data, error_message);
+        
+        //新上传了文件
+        if (filename != "")
+        {
+            //有同名文件，且不是该POC记录的，报错
+            if (fileExist && filename != poc.script)
+            {
+                http_response response;
+                json::value response_data;
+                response_data[U("message")] = json::value::string(U("更新失败！文件名已在其他漏洞的POC中存在，请修改！"));
                 response.set_status_code(status_codes::BadRequest);
                 response.set_body(response_data);
+                request.reply(response);
+                return;
             }
-            response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
-            response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, PUT, DELETE, OPTIONS"));
-            response.headers().add(U("Access-Control-Allow-Headers"), U("Content-Type"));
-            request.reply(response);
+
+            // 删除原POC文件
+            if (!POC_filename.empty())
+            {
+                //判断是一个文件，而非目录
+                if (!POC_filename.substr(POC_filename.find_last_of('/') + 1).empty()) {
+                    if (std::remove(POC_filename.c_str()) != 0) {
+                        std::cerr << "Error deleting file: " << POC_filename << std::endl;
+
+                        http_response response;
+                        json::value response_data;
+                        response_data[U("message")] = json::value::string(U("更新失败！删除原POC文件失败，请联系管理员！"));
+                        response.set_status_code(status_codes::BadRequest);
+                        response.set_body(response_data);
+                        request.reply(response);
+                        return;
+                    }
+                }
+            }
+            //上传新文件
+            upload_file(filename, data);
+            //更新poc路径
+            poc.script = filename;
+        }
+
+
+        // 更新数据
+        bool success = dbManager.updateDataById(poc.id, poc);
+
+        http_response response;
+        json::value response_data;
+        if (success) {
+            poc_list = dbManager.getAllData();  //更新POC列表
+            response_data[U("message")] = json::value::string(U("更新成功"));
+            response.set_status_code(status_codes::OK);
+            response.set_body(response_data);
+        }
+        else {
+            response_data[U("message")] = json::value::string(U("更新失败"));
+            response.set_status_code(status_codes::BadRequest);
+            response.set_body(response_data);
+        }
+        response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
+        response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, PUT, DELETE, OPTIONS"));
+        response.headers().add(U("Access-Control-Allow-Headers"), U("Content-Type"));
+        request.reply(response);
     }
     catch (const std::exception& e) {
         std::cerr << "Error while processing update data request: " << e.what() << std::endl;
@@ -522,18 +566,30 @@ void ServerManager::handle_delete_data_by_id(http_request request) {
             for (auto& val : idsArray) {
                 int id = val.as_integer();
                 std::string POC_filename = dbManager.searchPOCById(id);
-
                 // 删除数据库信息
                 if (!dbManager.deleteDataById(id)) {
                     dbSuccess = false;
                     break;
                 }
+                else
+                {
+                    // 删除本地POC文件
+                    if (!POC_filename.empty()) {
+                        if (!POC_filename.substr(POC_filename.find_last_of('/') + 1).empty())
+                        {
+                            if (std::remove(POC_filename.c_str()) != 0) {
+                                std::cerr << "Error deleting file: " << POC_filename << std::endl;
+                                fileSuccess = false;
 
-                // 删除本地POC文件
-                if (!POC_filename.empty()) {
-                    if (std::remove(POC_filename.c_str()) != 0) {
-                        std::cerr << "Error deleting file: " << POC_filename << std::endl;
-                        fileSuccess = false;
+                                http_response response;
+                                json::value response_data;
+                                response_data[U("message")] = json::value::string(U("删除失败！删除POC文件失败，请联系管理员！"));
+                                response.set_status_code(status_codes::BadRequest);
+                                response.set_body(response_data);
+                                request.reply(response);
+                                return;
+                            }
+                        }
                     }
                 }
             }
@@ -549,12 +605,24 @@ void ServerManager::handle_delete_data_by_id(http_request request) {
             else {
                 // 删除本地POC文件
                 if (!POC_filename.empty()) {
-                    if (std::remove(POC_filename.c_str()) != 0) {
-                        std::cerr << "Error deleting file: " << POC_filename << std::endl;
-                        fileSuccess = false;
+                    if (!POC_filename.substr(POC_filename.find_last_of('/') + 1).empty())
+                    {
+                        if (std::remove(POC_filename.c_str()) != 0) {
+                            std::cerr << "Error deleting file: " << POC_filename << std::endl;
+                            fileSuccess = false;
+
+                            http_response response;
+                            json::value response_data;
+                            response_data[U("message")] = json::value::string(U("删除失败！删除POC文件失败，请联系管理员！"));
+                            response.set_status_code(status_codes::BadRequest);
+                            response.set_body(response_data);
+                            request.reply(response);
+                            return;
+                        }
                     }
                 }
-            }
+            }  
+
         }
 
         http_response response;
@@ -1063,8 +1131,8 @@ json::value ServerManager::ScanHostResult_to_json(const ScanHostResult& scan_hos
     return result;
 }
 
-// 从本地中处理文件上传
-void ServerManager::handle_file_upload_from_memory(const std::string& body, const std::string& content_type, std::string& filename, std::string& error_message) {
+//检验文件是否存在，并获取文件名
+bool ServerManager::check_and_get_filename(const std::string& body, const std::string& content_type, std::string& filename, std::string& data, std::string& error_message) {
     auto boundary_pos = content_type.find("boundary=");
     if (boundary_pos != std::string::npos) {
         std::string boundary = "--" + content_type.substr(boundary_pos + 9);
@@ -1077,37 +1145,51 @@ void ServerManager::handle_file_upload_from_memory(const std::string& body, cons
             if (header_end_pos == std::string::npos) continue;
 
             std::string headers = part.substr(0, header_end_pos);
-            std::string data = part.substr(header_end_pos + 4, part.length() - header_end_pos - 6); // Exclude trailing CRLF
 
             if (headers.find("filename=") != std::string::npos) {
                 auto name_pos = headers.find("filename=");
                 if (name_pos != std::string::npos) {
-                    filename = headers.substr(name_pos + 10); // 10 = length of 'filename="'
-                    filename = filename.substr(0, filename.find("\"")); // Remove trailing quote
-                    std::cout << "Received file: " << filename << std::endl;
+                    filename = headers.substr(name_pos + 10);  // 10 = length of 'filename="'
+                    filename = filename.substr(0, filename.find("\""));  // Remove trailing quote
+                    std::cout << "Extracted filename: " << filename << std::endl;
 
+                    // 构建文件路径
                     auto path = U("../../../src/scan/scripts/") + utility::conversions::to_string_t(filename);
 
+                    // 解析并返回文件内容
+                    data = part.substr(header_end_pos + 4, part.length() - header_end_pos - 6);  // Exclude trailing CRLF
+                    
                     // 检查文件是否已经存在
                     std::ifstream infile(path);
-                    if (infile.good()) {
+                    if (infile.good() && filename != "") {
                         error_message = "File already exists";
-                        return;
+                        return true;  // 文件已存在
                     }
-
-                    concurrency::streams::fstream::open_ostream(path).then([=](concurrency::streams::ostream outFile) mutable {
-                        auto fileStream = std::make_shared<concurrency::streams::ostream>(outFile);
-                        std::vector<uint8_t> file_data(data.begin(), data.end());
-                        auto buf = concurrency::streams::container_buffer<std::vector<uint8_t>>(std::move(file_data));
-                        fileStream->write(buf, buf.size()).then([=](size_t) {
-                            fileStream->close().get();
-                            }).wait();
-                        }).wait();
+                    return false;  // 文件不存在
                 }
             }
         }
     }
+    error_message = "No valid filename found in the request";
+    return false;  // 文件不存在
 }
+
+//上传文件
+void ServerManager::upload_file(const std::string& filename, const std::string& data) {
+    // 构建文件路径
+    auto path = U("../../../src/scan/scripts/") + utility::conversions::to_string_t(filename);
+
+    // 打开输出流并写入数据
+    concurrency::streams::fstream::open_ostream(path).then([=](concurrency::streams::ostream outFile) mutable {
+        auto fileStream = std::make_shared<concurrency::streams::ostream>(outFile);
+        std::vector<uint8_t> file_data(data.begin(), data.end());  // 将string数据转换为字节数组
+        auto buf = concurrency::streams::container_buffer<std::vector<uint8_t>>(std::move(file_data));
+        fileStream->write(buf, buf.size()).then([=](size_t) {
+            fileStream->close().get();  // 关闭文件流
+            }).wait();
+        }).wait();
+}
+
 
 //POC上传文件的工具函数
 void ServerManager::save_request_to_temp_file(http_request request) {
@@ -1227,6 +1309,11 @@ void ServerManager::handle_post_poc_verify(http_request request) {
 
             // 执行 POC 验证
             verifyPOCs(scan_host_result);
+
+            // 重置 ifCheck 标志
+            for (auto& scanHostResult : scan_host_result) {
+                setIfCheckByIds(scanHostResult, cve_ids, false);
+            }
 
             // 使用 handle_get_cve_scan 返回验证结果
             handle_get_cve_scan(request);
