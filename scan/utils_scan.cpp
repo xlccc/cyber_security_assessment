@@ -144,9 +144,9 @@ std::string runPythonScript(const std::string& scriptPath_extension, const std::
     //脚本尝试进行相对导入，但Python不知道相对导入的父包路径。所以需要确保sys.path包含这些父包路径。
     PyObject* sys = PyImport_ImportModule("sys");
     PyObject* sys_path = PyObject_GetAttrString(sys, "path");
-    PyList_Append(sys_path, PyUnicode_FromString("/home/c/.vs/网络安全测试平台-新-linux-2.0-CMake/26bbbde1-7e92-4836-b250-1203a21a6665/src/scan/scripts"));
-    PyList_Append(sys_path, PyUnicode_FromString("/home/c/.vs/网络安全测试平台-新-linux-2.0-CMake/26bbbde1-7e92-4836-b250-1203a21a6665/src/scan"));
-    PyList_Append(sys_path, PyUnicode_FromString("/home/c/.vs/网络安全测试平台-新-linux-2.0-CMake/26bbbde1-7e92-4836-b250-1203a21a6665/src"));
+    PyList_Append(sys_path, PyUnicode_FromString("/home/c/.vs/cyber_security_assessment/8e509499-79aa-4583-a94f-9ac2aefdaefd/src/scan/scripts"));
+    PyList_Append(sys_path, PyUnicode_FromString("/home/c/.vs/cyber_security_assessment/8e509499-79aa-4583-a94f-9ac2aefdaefd/src/scan"));
+    PyList_Append(sys_path, PyUnicode_FromString("/home/c/.vs/cyber_security_assessment/8e509499-79aa-4583-a94f-9ac2aefdaefd/src"));
 
 
     //用于测试：打印sys.path，看是否正确设置了

@@ -97,7 +97,7 @@ private:
 
     DatabaseManager dbManager;
     std::vector<POC> poc_list;
-
+     
     // Additional member variables
     std::string global_ip;
     std::string global_pd;

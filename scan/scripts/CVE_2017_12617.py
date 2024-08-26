@@ -21,7 +21,7 @@ def checking(url):
         # 验证文件是否上传成功
         response = requests.get(url + filename)
         if response.status_code == 200 and 'hello' in response.text:
-            return ('[+] {0} 存在CVE-2017-12615 Tomcat 任意文件读写漏洞'.format(url))
+            return ('[+] {0} 存在CVE-2017-12617 Apache Tomcat PUT文件上传漏洞'.format(url))
         else:
             return None
     except Exception as e:
