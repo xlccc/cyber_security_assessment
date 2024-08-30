@@ -142,6 +142,23 @@ std::string removeExtension(const std::string& filename) {
         return filename;
     }
 }
+void initializePython()
+{
+    // 初始化Python解释器
+    Py_Initialize();
+
+    // 设置sys.path
+    PyObject* sys = PyImport_ImportModule("sys");
+    PyObject* sys_path = PyObject_GetAttrString(sys, "path");
+    PyList_Append(sys_path, PyUnicode_FromString("/root/.vs/cyber_seproject/6731b597-df0c-4866-ab56-292bdcaceae0/src/scan/scripts"));
+    PyList_Append(sys_path, PyUnicode_FromString("/root/.vs/cyber_seproject/6731b597-df0c-4866-ab56-292bdcaceae0/src/scan"));
+    PyList_Append(sys_path, PyUnicode_FromString("/root/.vs/cyber_seproject/6731b597-df0c-4866-ab56-292bdcaceae0/src"));
+}
+void finalizePython()
+{
+    // 终止Python解释器
+    Py_Finalize();
+}
 //检查密码复杂度
 bool isValidPassword(const std::string& password)
 {

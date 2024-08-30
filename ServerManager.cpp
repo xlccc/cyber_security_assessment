@@ -6,7 +6,7 @@ using namespace web::http::experimental::listener;
 using namespace concurrency::streams;
 
 ServerManager::ServerManager() : dbManager(DB_PATH) {
-    utility::string_t address = U("http://192.168.136.128:8081/");
+    utility::string_t address = U("http://192.168.29.129:8081/");
     uri_builder uri(address);
     auto addr = uri.to_uri().to_string();
     listener = std::make_unique<http_listener>(addr);
@@ -103,6 +103,9 @@ void ServerManager::handle_request(http_request request) {
     //    vector<scoreMeasure> vecScoreMeasure 转json传回前端
     else if (first_segment == U("classifyProtectGetRes") && request.method() == methods::GET) {
         handle_get_classify_protect(request);
+    }
+    else if (first_segment == U("pocExcute") && request.method() == methods::POST) {
+        handle_post_poc_excute(request);
     }
     else {
         request.reply(status_codes::NotFound, U("Path not found"));
@@ -994,7 +997,7 @@ void ServerManager::handle_get_classify_protect(http_request request) {
 //}
 
 void ServerManager::fetch_and_padding_cves(map<std::string, vector<CVE>>& cpes, int limit) {
-    std::string base_url = "http://192.168.136.128:5000/api/cvefor";
+    std::string base_url = "http://192.168.29.129:5000/api/cvefor";
     std::string cpe_id = "";
     for (auto& cpe : cpes) {
         cpe_id = cpe.first;
@@ -1343,6 +1346,31 @@ void ServerManager::setIfCheckByIds(ScanHostResult& hostResult, const std::vecto
             }
         }
     }
+}
+
+void ServerManager::handle_post_poc_excute(http_request request)
+{
+    request.extract_json().then([this, &request](json::value body) {
+        std::string CVE_id = body[U("CVE_id")].as_string();
+        std::string script = findScriptByCveId(scan_host_result, CVE_id);
+        std::string portId = findPortIdByCveId(scan_host_result, CVE_id);
+        std::string ip = scan_host_result[0].ip;
+        std::string url = scan_host_result[0].url;
+
+        std::string result = runPythonWithOutput(script, url,ip, std::stoi(portId));
+
+        // 创建响应
+        http_response response(status_codes::OK);
+        response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
+        response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, PUT, DELETE, OPTIONS"));
+        response.headers().add(U("Access-Control-Allow-Headers"), U("Content-Type"));
+
+        json::value response_data;
+        response_data[U("message")] = json::value::string(result);
+        response.set_body(response_data);
+        request.reply(response);
+
+    }).wait();
 }
 
 
