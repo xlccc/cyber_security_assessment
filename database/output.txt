@@ -1,6 +1,0 @@
-10|CVE-2021-1234|XSS|示例描述|python|#
-int main(){ print('hello world');
- return 0;}|2024-05-07 21:04:25
-14|CVE-2021-1234|XSS|示例描述|python|print('hello world')|2024-05-11 15:12:52
-15|CVE-2021-1234|XSS|示例描述|python|print('hello world')|2024-05-11 15:18:10
-16|CVE-2021-1234|XSS|示例描述|python|print('hello world')|2024-05-11 18:29:32
