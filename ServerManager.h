@@ -95,11 +95,14 @@ private:
     void setIfCheckByIds(ScanHostResult& hostResult, const std::vector<std::string>& cve_ids, bool value);
     //执行并回显poc代码
     void handle_post_poc_excute(http_request request);
+    //根据CVE编号添加POC代码、或更新已有的POC代码
+    void update_poc_by_cve(http_request request);
+
 
 
     DatabaseManager dbManager;
     std::vector<POC> poc_list;
-
+     
     // Additional member variables
     std::string global_ip;
     std::string global_pd;

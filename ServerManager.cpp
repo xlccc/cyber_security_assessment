@@ -96,6 +96,9 @@ void ServerManager::handle_request(http_request request) {
     else if (first_segment == U("pocVerify") && request.method() == methods::POST) {
         handle_post_poc_verify(request);
     }
+    else if (first_segment == U("updatePoc") && request.method() == methods::PUT) {
+        update_poc_by_cve(request);
+    }
     //根据前端传来的进行等级保护计算
     else if (first_segment == U("classifyProtect") && request.method() == methods::POST) {
         handle_post_classify_protect(request);
@@ -1347,6 +1350,152 @@ void ServerManager::setIfCheckByIds(ScanHostResult& hostResult, const std::vecto
         }
     }
 }
+
+//根据CVE编号添加POC代码、或更新已有的POC代码
+void ServerManager::update_poc_by_cve(http_request request) {
+    try {
+        // 检查是否为multipart/form-data格式
+        auto content_type = request.headers().content_type();
+        if (content_type.find(U("multipart/form-data")) == std::string::npos) {
+            json::value response_data;
+            response_data[U("message")] = json::value::string(U("Invalid content type. Expected multipart/form-data."));
+            http_response response(status_codes::BadRequest);
+            response.set_body(response_data);
+            request.reply(response);
+            return;
+        }
+
+        // 将请求体保存到临时文件
+        save_request_to_temp_file(request);
+
+        std::string cve_id;
+
+        // 解析表单字段
+        std::ifstream temp_file(TEMP_FILENAME, std::ios::binary);
+        std::string body((std::istreambuf_iterator<char>(temp_file)), std::istreambuf_iterator<char>());
+        temp_file.close();
+
+        auto boundary_pos = content_type.find("boundary=");
+        if (boundary_pos != std::string::npos) {
+            std::string boundary = "--" + content_type.substr(boundary_pos + 9);
+            size_t pos = 0, next_pos;
+            while ((next_pos = body.find(boundary, pos)) != std::string::npos) {
+                std::string part = body.substr(pos, next_pos - pos);
+                pos = next_pos + boundary.length() + 2; // Skip boundary and CRLF
+
+                auto header_end_pos = part.find("\r\n\r\n");
+                if (header_end_pos == std::string::npos) continue;
+
+                std::string headers = part.substr(0, header_end_pos);
+                std::string data = part.substr(header_end_pos + 4, part.length() - header_end_pos - 6); // Exclude trailing CRLF
+
+                if (headers.find("filename=") == std::string::npos) {
+                    auto name_pos = headers.find("name=");
+                    if (name_pos != std::string::npos) {
+                        std::string name = headers.substr(name_pos + 6);
+                        name = name.substr(0, name.find("\"", 1)); // Extract name between quotes
+                        if (name == "cve_id") cve_id = data;
+                    }
+                }
+            }
+        }
+
+        // 查找数据库中是否存在该cve_id的POC记录
+        std::vector<POC> poc_records = dbManager.searchDataByCVE(cve_id);
+        if (poc_records.empty()) {
+            json::value response_data;
+            response_data[U("message")] = json::value::string(U("No POC found with the provided CVE ID."));
+            http_response response(status_codes::NotFound);
+            response.set_body(response_data);
+            request.reply(response);
+            return;
+        }
+
+        POC existing_poc = poc_records[0];  // 假设只更新第一个找到的POC记录
+
+        // 处理文件上传
+        std::string filename = "";  // 新文件名
+        std::string error_message = "";
+        std::string data = ""; // 文件内容
+
+        bool fileExist = check_and_get_filename(body, content_type, filename, data, error_message);
+
+        // 上传文件并更新poc记录
+        if (filename != "") {
+            if (fileExist && filename != existing_poc.script) {
+                json::value response_data;
+                response_data[U("message")] = json::value::string(U("文件名已在其他CVE的POC中存在，请修改！"));
+                http_response response(status_codes::BadRequest);
+                response.set_body(response_data);
+                request.reply(response);
+                return;
+            }
+
+            // 删除原POC文件之前，构建文件路径
+            if (!existing_poc.script.empty()) {
+                std::string base_path = "../../../src/scan/scripts/";
+                std::string file_path = base_path + existing_poc.script;  // 构建完整的文件路径
+
+                // 尝试删除文件
+                if (std::remove(file_path.c_str()) != 0) {
+                    perror("Error deleting file");  // 输出删除文件失败的详细错误信息
+                    std::cerr << "Error deleting file: " << file_path << std::endl;
+
+                    // 返回错误响应
+                    json::value response_data;
+                    response_data[U("message")] = json::value::string(U("更新失败！删除原POC文件失败，请联系管理员！"));
+                    http_response response(status_codes::InternalError);
+                    response.set_body(response_data);
+                    request.reply(response);
+                    return;
+                }
+                else {
+                    std::cout << "Successfully deleted file: " << file_path << std::endl;
+                }
+            }
+
+
+            // 上传新文件
+            upload_file(filename, data);
+            existing_poc.script = filename;
+
+            // 更新数据库中的POC数据
+            bool success = dbManager.updateDataById(existing_poc.id, existing_poc);
+
+            // 返回更新结果
+            json::value response_data;
+            if (success) {
+                response_data[U("message")] = json::value::string(U("上传并更新成功"));
+                http_response response(status_codes::OK);
+                response.set_body(response_data);
+                request.reply(response);
+            }
+            else {
+                response_data[U("message")] = json::value::string(U("更新数据库失败，POC路径更新失败"));
+                http_response response(status_codes::BadRequest);
+                response.set_body(response_data);
+                request.reply(response);
+            }
+        }
+        else {
+            json::value response_data;
+            response_data[U("message")] = json::value::string(U("No file uploaded"));
+            http_response response(status_codes::BadRequest);
+            response.set_body(response_data);
+            request.reply(response);
+        }
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Error while processing POC upload request: " << e.what() << std::endl;
+        json::value response_data;
+        response_data[U("message")] = json::value::string(U("上传过程中发生错误：") + utility::conversions::to_string_t(e.what()));
+        http_response response(status_codes::InternalError);
+        response.set_body(response_data);
+        request.reply(response);
+    }
+}
+
+
 
 void ServerManager::handle_post_poc_excute(http_request request)
 {
