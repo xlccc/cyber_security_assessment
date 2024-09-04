@@ -62,6 +62,7 @@ void verifyPOCs(std::vector<ScanHostResult>& scanHostResults) {
             for (auto& cpeEntry : portResult.cpes) {
                 for (auto& cve : cpeEntry.second) {
                     std::cout << "扫描端口漏洞....." << std::endl;
+                    std::cout << "cve_id :  " << cve.CVE_id << "script:  " << cve.script << std::endl;
                     if (cve.pocExist && cve.ifCheck && cve.vulExist == "未验证") {
 
                         //测试

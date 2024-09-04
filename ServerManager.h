@@ -17,7 +17,6 @@
 #include <fstream>
 #include <vector>
 #include <sstream>
-#include <string>
 #include <iostream>
 #include <cpprest/http_client.h>
 #include <cpprest/filestream.h>
@@ -94,8 +93,11 @@ private:
     void handle_post_poc_verify(http_request request);
     //设置需要执行POC验证的CVE条目
     void setIfCheckByIds(ScanHostResult& hostResult, const std::vector<std::string>& cve_ids, bool value);
+    //执行并回显poc代码
+    void handle_post_poc_excute(http_request request);
     //根据CVE编号添加POC代码、或更新已有的POC代码
     void update_poc_by_cve(http_request request);
+
 
 
     DatabaseManager dbManager;
@@ -111,6 +113,8 @@ private:
     std::vector<event_t> new_Event;
     vector<event> Event;
     vector<scoreMeasure> vecScoreMeasure;
+
+
 };
 
 #endif // SERVERMANAGER_H

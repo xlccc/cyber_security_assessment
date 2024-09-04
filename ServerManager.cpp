@@ -107,6 +107,9 @@ void ServerManager::handle_request(http_request request) {
     else if (first_segment == U("classifyProtectGetRes") && request.method() == methods::GET) {
         handle_get_classify_protect(request);
     }
+    else if (first_segment == U("pocExcute") && request.method() == methods::POST) {
+        handle_post_poc_excute(request);
+    }
     else {
         request.reply(status_codes::NotFound, U("Path not found"));
     }
@@ -1494,6 +1497,31 @@ void ServerManager::update_poc_by_cve(http_request request) {
 }
 
 
+
+void ServerManager::handle_post_poc_excute(http_request request)
+{
+    request.extract_json().then([this, &request](json::value body) {
+        std::string CVE_id = body[U("CVE_id")].as_string();
+        std::string script = findScriptByCveId(scan_host_result, CVE_id);
+        std::string portId = findPortIdByCveId(scan_host_result, CVE_id);
+        std::string ip = scan_host_result[0].ip;
+        std::string url = scan_host_result[0].url;
+
+        std::string result = runPythonWithOutput(script, url,ip, std::stoi(portId));
+
+        // 创建响应
+        http_response response(status_codes::OK);
+        response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
+        response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, PUT, DELETE, OPTIONS"));
+        response.headers().add(U("Access-Control-Allow-Headers"), U("Content-Type"));
+
+        json::value response_data;
+        response_data[U("message")] = json::value::string(result);
+        response.set_body(response_data);
+        request.reply(response);
+
+    }).wait();
+}
 
 
 void ServerManager::start() {

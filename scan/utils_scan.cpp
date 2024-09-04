@@ -132,38 +132,88 @@ std::vector<ScanHostResult> parseXmlFile(const std::string& xmlFilePath) {
 
 
 
+//std::string runPythonScript(const std::string& scriptPath_extension, const std::string& url, const std::string& ip, int port) {
+//    std::string result = "";
+//
+//    // Initialize the Python interpreter
+//    Py_Initialize();
+//
+//    // Set sys.argv for the script
+//    //sys.path是Python解释器用来查找模块的搜索路径列表。
+//    //执行一个导入语句时，Python会按照sys.path中的路径顺序查找模块。如果没有找到模块，就会抛出ImportError。
+//    //脚本尝试进行相对导入，但Python不知道相对导入的父包路径。所以需要确保sys.path包含这些父包路径。
+//    PyObject* sys = PyImport_ImportModule("sys");
+//    PyObject* sys_path = PyObject_GetAttrString(sys, "path");
+//    PyList_Append(sys_path, PyUnicode_FromString("/root/.vs/cyber_seproject/6731b597-df0c-4866-ab56-292bdcaceae0/src/scan/scripts"));
+//    PyList_Append(sys_path, PyUnicode_FromString("/root/.vs/cyber_seproject/6731b597-df0c-4866-ab56-292bdcaceae0/src/scan"));
+//    PyList_Append(sys_path, PyUnicode_FromString("/root/.vs/cyber_seproject/6731b597-df0c-4866-ab56-292bdcaceae0/src"));
+//
+//
+//    //用于测试：打印sys.path，看是否正确设置了
+//    PyObject* path_str = PyObject_Str(sys_path);
+//    const char* path_cstr = PyUnicode_AsUTF8(path_str);
+//    std::cout << "sys.path: " << path_cstr << std::endl;
+//    Py_DECREF(path_str);
+//
+//    // Import the POC module
+//    // 以库的形式加载POC插件
+//    std::string scriptPath = removeExtension(scriptPath_extension); //去掉文件名后缀
+//
+//    PyObject* poc_module = PyImport_ImportModule(scriptPath.c_str());
+//    if (!poc_module) {
+//        PyErr_Print();
+//        std::cerr << "Failed to load script: " << scriptPath << std::endl;
+//        Py_Finalize();
+//        return result;
+//    }
+//
+//    // Get the check function from the module
+//    PyObject* check_func = PyObject_GetAttrString(poc_module, "check");
+//    if (!check_func || !PyCallable_Check(check_func)) {
+//        PyErr_Print();
+//        std::cerr << "Cannot find function 'check' in the script" << std::endl;
+//        Py_DECREF(poc_module);
+//        Py_Finalize();
+//        return result;
+//    }
+//
+//    // Prepare arguments for the check function
+//    PyObject* args = PyTuple_Pack(3, PyUnicode_FromString(url.c_str()), PyUnicode_FromString(ip.c_str()), PyLong_FromLong(port));
+//
+//    // Call the check function
+//    PyObject* py_result = PyObject_CallObject(check_func, args);
+//    Py_DECREF(args);
+//    Py_DECREF(check_func);
+//    Py_DECREF(poc_module);
+//
+//    if (py_result) {
+//        if (py_result != Py_None) {
+//            result = PyUnicode_AsUTF8(py_result);
+//        }
+//        Py_DECREF(py_result);
+//    }
+//    else {
+//        PyErr_Print();
+//        std::cerr << "Failed to call function 'check'" << std::endl;
+//    }
+//
+//    // Finalize the Python interpreter
+//    Py_Finalize();
+//
+//    return result;
+//
+//}
+
 std::string runPythonScript(const std::string& scriptPath_extension, const std::string& url, const std::string& ip, int port) {
     std::string result = "";
 
-    // Initialize the Python interpreter
-    Py_Initialize();
-
-    // Set sys.argv for the script
-    //sys.path是Python解释器用来查找模块的搜索路径列表。
-    //执行一个导入语句时，Python会按照sys.path中的路径顺序查找模块。如果没有找到模块，就会抛出ImportError。
-    //脚本尝试进行相对导入，但Python不知道相对导入的父包路径。所以需要确保sys.path包含这些父包路径。
-    PyObject* sys = PyImport_ImportModule("sys");
-    PyObject* sys_path = PyObject_GetAttrString(sys, "path");
-    PyList_Append(sys_path, PyUnicode_FromString("/home/c/.vs/cyber_security_assessment/8e509499-79aa-4583-a94f-9ac2aefdaefd/src/scan/scripts"));
-    PyList_Append(sys_path, PyUnicode_FromString("/home/c/.vs/cyber_security_assessment/8e509499-79aa-4583-a94f-9ac2aefdaefd/src/scan"));
-    PyList_Append(sys_path, PyUnicode_FromString("/home/c/.vs/cyber_security_assessment/8e509499-79aa-4583-a94f-9ac2aefdaefd/src"));
-
-
-    //用于测试：打印sys.path，看是否正确设置了
-    PyObject* path_str = PyObject_Str(sys_path);
-    const char* path_cstr = PyUnicode_AsUTF8(path_str);
-    std::cout << "sys.path: " << path_cstr << std::endl;
-    Py_DECREF(path_str);
-
     // Import the POC module
-    // 以库的形式加载POC插件
-    std::string scriptPath = removeExtension(scriptPath_extension); //去掉文件名后缀
+    std::string scriptPath = removeExtension(scriptPath_extension); // 去掉文件名后缀
 
     PyObject* poc_module = PyImport_ImportModule(scriptPath.c_str());
     if (!poc_module) {
         PyErr_Print();
         std::cerr << "Failed to load script: " << scriptPath << std::endl;
-        Py_Finalize();
         return result;
     }
 
@@ -173,7 +223,6 @@ std::string runPythonScript(const std::string& scriptPath_extension, const std::
         PyErr_Print();
         std::cerr << "Cannot find function 'check' in the script" << std::endl;
         Py_DECREF(poc_module);
-        Py_Finalize();
         return result;
     }
 
@@ -197,11 +246,132 @@ std::string runPythonScript(const std::string& scriptPath_extension, const std::
         std::cerr << "Failed to call function 'check'" << std::endl;
     }
 
-    // Finalize the Python interpreter
-    Py_Finalize();
-
     return result;
-
 }
 
 
+
+
+
+// 返回完整的回显，和在Linux命令行内的一样
+std::string runPythonWithOutput(const std::string& scriptPath_extension, const std::string& url, const std::string& ip, int port) {
+    std::string result = "";
+
+    // 重定向stdout和stderr
+    PyObject* io = PyImport_ImportModule("io");
+    PyObject* string_io = PyObject_CallMethod(io, "StringIO", NULL);
+    if (!string_io) {
+        std::cerr << "Failed to create StringIO." << std::endl;
+        return result;
+    }
+    PyObject* sys = PyImport_ImportModule("sys");
+    PyObject_SetAttrString(sys, "stdout", string_io);
+    PyObject_SetAttrString(sys, "stderr", string_io);
+
+    // 导入POC模块
+    std::string scriptPath = removeExtension(scriptPath_extension);
+    PyObject* poc_module = PyImport_ImportModule(scriptPath.c_str());
+    if (!poc_module) {
+        PyErr_Print();
+        result += "Failed to load script: " + scriptPath + "\n";
+        return result;
+    }
+
+    // 获取check函数
+    PyObject* check_func = PyObject_GetAttrString(poc_module, "check");
+    if (!check_func || !PyCallable_Check(check_func)) {
+        PyErr_Print();
+        result += "Cannot find function 'check' in the script\n";
+        Py_DECREF(poc_module);
+        return result;
+    }
+
+    // 准备参数并调用check函数
+    PyObject* args = PyTuple_Pack(3, PyUnicode_FromString(url.c_str()), PyUnicode_FromString(ip.c_str()), PyLong_FromLong(port));
+    PyObject* py_result = PyObject_CallObject(check_func, args);
+    Py_DECREF(args);
+    Py_DECREF(check_func);
+    Py_DECREF(poc_module);
+
+    // 处理check函数的返回值
+    if (py_result) {
+        if (py_result != Py_None) {
+            result += PyUnicode_AsUTF8(py_result);
+        }
+        else {
+            result += "Function 'check' returned None.\n";
+        }
+        Py_DECREF(py_result);
+    }
+    else {
+        PyErr_Print();
+        result += "Failed to call function 'check'\n";
+    }
+
+    // 获取所有的stdout和stderr输出
+    PyObject* output = PyObject_CallMethod(string_io, "getvalue", NULL);
+    if (output) {
+        result += PyUnicode_AsUTF8(output);
+        Py_DECREF(output);
+    }
+    else {
+        result += "Failed to get output from StringIO.\n";
+    }
+
+    Py_DECREF(string_io);
+    Py_DECREF(io);
+
+    return result;
+}
+
+
+
+
+//根据CVE_Id查Script
+std::string findScriptByCveId(std::vector<ScanHostResult>& scan_host_result, const std::string& cve_id) {
+    // 遍历所有的 ScanHostResult
+    for (const auto& hostResult : scan_host_result) {
+        // 遍历主机的CPES
+        for (const auto& cpe : hostResult.cpes) {
+            for (const auto& cve : cpe.second) {
+                if (cve.CVE_id == cve_id) {
+                    return cve.script; // 找到匹配的CVE，返回script
+                }
+            }
+        }
+
+        // 遍历主机的端口
+        for (const auto& port : hostResult.ports) {
+            for (const auto& cpe : port.cpes) {
+                for (const auto& cve : cpe.second) {
+                    if (cve.CVE_id == cve_id) {
+                        return cve.script; // 找到匹配的CVE，返回script
+                    }
+                }
+            }
+        }
+    }
+
+    return ""; // 如果没有找到，返回空字符串
+}
+
+//根据cve_id查portId
+std::string findPortIdByCveId(std::vector<ScanHostResult>& scan_host_result, const std::string& cve_id) {
+    // 遍历所有的 ScanHostResult
+    for (const auto& hostResult : scan_host_result) {
+        // 遍历主机扫描结果中的端口
+        for (const auto& portResult : hostResult.ports) {
+            // 遍历端口下的CPE条目
+            for (const auto& cpeEntry : portResult.cpes) {
+                // 遍历CPE条目中的CVE列表
+                for (const auto& cve : cpeEntry.second) {
+                    if (cve.CVE_id == cve_id) {
+                        return portResult.portId; // 找到匹配的CVE_id，返回对应的portId
+                    }
+                }
+            }
+        }
+    }
+
+    return ""; // 如果没有找到，返回空字符串
+}
