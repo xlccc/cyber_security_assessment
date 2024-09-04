@@ -6,7 +6,7 @@ using namespace web::http::experimental::listener;
 using namespace concurrency::streams;
 
 ServerManager::ServerManager() : dbManager(DB_PATH) {
-    utility::string_t address = U("http://192.168.136.128:8081/");
+    utility::string_t address = U("http://192.168.6.40:8081/");
     uri_builder uri(address);
     auto addr = uri.to_uri().to_string();
     listener = std::make_unique<http_listener>(addr);
@@ -656,11 +656,13 @@ void ServerManager::handle_post_get_Nmap(http_request request)
     request.extract_json().then([this, &request](json::value body) {
         std::string ip = body[U("ip")].as_string();
 
-        std::string outputPath = performPortScan(ip);
+        // 获取前端传来的 all_ports 参数，判断是否扫描全部端口
+        bool allPorts = body.has_field(U("all_ports")) ? body[U("all_ports")].as_bool() : false;
 
-        //std::string test_outputFileName = "output_192.168.117.100_2024-07-13_14_46_32.xml";
-        //std::string outputPath = "../../output_nmap/" + test_outputFileName;
+        // 根据前端的选择，传递是否扫描所有端口的参数
+        std::string outputPath = performPortScan(ip, allPorts);
 
+        // 处理端口扫描结果
         cout << outputPath << endl;
         scan_host_result = parseXmlFile(outputPath);
 
@@ -676,7 +678,6 @@ void ServerManager::handle_post_get_Nmap(http_request request)
             }
         }
 
-
         // 创建响应
         http_response response(status_codes::OK);
         response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
@@ -684,13 +685,13 @@ void ServerManager::handle_post_get_Nmap(http_request request)
         response.headers().add(U("Access-Control-Allow-Headers"), U("Content-Type"));
 
         json::value response_data;
-        response_data[U("message")] = json::value::string(U("Nmap scan completed and CVE data fetched."));
+        response_data[U("message")] = json::value::string(U("Nmap 扫描完成并获取 CVE 数据。"));
         response.set_body(response_data);
         request.reply(response);
 
         }).wait();
-
 }
+
 
 void ServerManager::handle_post_hydra(http_request request){
     request.extract_json().then([this, &request](json::value body) {
@@ -997,7 +998,7 @@ void ServerManager::handle_get_classify_protect(http_request request) {
 //}
 
 void ServerManager::fetch_and_padding_cves(map<std::string, vector<CVE>>& cpes, int limit) {
-    std::string base_url = "http://192.168.136.128:5000/api/cvefor";
+    std::string base_url = "http://192.168.6.40:5000/api/cvefor";
     std::string cpe_id = "";
     for (auto& cpe : cpes) {
         cpe_id = cpe.first;
