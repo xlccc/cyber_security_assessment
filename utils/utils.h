@@ -17,8 +17,7 @@
 #include<sys/stat.h>
 
 //获取当前时间
-std::string getCurrentTimestamp();
-
+std::string getCurrentTimestamp(int choice = 1);
 //GBK转UTF-8编码
 std::string convertToUTF8(const std::string& input, const std::string& fromEncoding);
 

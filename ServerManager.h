@@ -10,7 +10,6 @@
 #include <map>
 #include <vector>
 #include <string>
-#include "db.h"
 #include "db_config.h"
 #include "poc.h"
 #include <libssh/libssh.h>
@@ -23,7 +22,6 @@
 #include "Login.h"
 #include "Command_Excute.h"
 #include "Padding.h"
-#include "database/db.h"
 #include "scan/portScan.h"
 #include "utils_scan.h"
 #include "convert_string_t.h"
@@ -47,8 +45,7 @@ public:
     void open_listener();
     void start();
     void stop();
-    vector<ScanHostResult> scan_host_result;
-    void fetch_and_padding_cves(std::map<std::string, std::vector<CVE>>& cpes, int limit = 10);
+
 
 
 private:
@@ -114,6 +111,10 @@ private:
     vector<event> Event;
     vector<scoreMeasure> vecScoreMeasure;
 
+    //当前扫描结果
+    vector<ScanHostResult> scan_host_result;
+    //历史扫描结果
+    HistoricalScanData historicalData;
 
 };
 

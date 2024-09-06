@@ -6,7 +6,7 @@ using namespace web::http::experimental::listener;
 using namespace concurrency::streams;
 
 ServerManager::ServerManager() : dbManager(DB_PATH) {
-    utility::string_t address = U("http://192.168.6.40:8081/");
+    utility::string_t address = U("http://192.168.136.128:8081/");
     uri_builder uri(address);
     auto addr = uri.to_uri().to_string();
     listener = std::make_unique<http_listener>(addr);
@@ -665,21 +665,61 @@ void ServerManager::handle_post_get_Nmap(http_request request)
         // 根据前端的选择，传递是否扫描所有端口的参数
         std::string outputPath = performPortScan(ip, allPorts);
 
-        // 处理端口扫描结果
-        cout << outputPath << endl;
+        // 解析XML文件以获取扫描结果（多个主机）
         scan_host_result = parseXmlFile(outputPath);
 
+        // 获取当前时间并记录到每个扫描结果中
+        auto start = std::chrono::high_resolution_clock::now();
+
+        std::string timestamp = getCurrentTimestamp(2);
         for (auto& scanHostResult : scan_host_result) {
-            for (auto& port : scanHostResult.ports) {
-                port_services[port.service_name] = port.portId;
-            }
-            auto& cpes = scanHostResult.cpes;
-            fetch_and_padding_cves(cpes);
-            auto& ports = scanHostResult.ports;
-            for (auto& scanResult : ports) {
-                fetch_and_padding_cves(scanResult.cpes);
+            scanHostResult.scan_time = timestamp;  // 记录当前扫描时间
+        }
+
+        // 比对历史数据
+        if (historicalData.data.find(ip) != historicalData.data.end()) {
+            // 有历史数据，进行比对和增量扫描
+            ScanHostResult old_scan_host_result = historicalData.data[ip];
+
+            // 对比历史数据和当前数据，并更新增量
+            for (auto& scanHostResult : scan_host_result) {
+                compareAndUpdateResults(old_scan_host_result, scanHostResult, 10);  // 这里传递一个限制 limit 值
             }
         }
+        else {
+            // 没有历史数据，直接查询并保存
+            for (auto& scanHostResult : scan_host_result) {
+                // 查询主机层面的 CPE（操作系统 CPE）
+                std::vector<std::string> allCPEs;
+                for (const auto& cpe_pair : scanHostResult.cpes) {
+                    allCPEs.push_back(cpe_pair.first);
+                }
+                fetch_and_padding_cves(scanHostResult.cpes, allCPEs, 10);  // 直接查询所有主机层面 CVE
+
+                // 查询每个端口的 CPE
+                for (auto& scanResult : scanHostResult.ports) {
+                    std::vector<std::string> portCPEs;
+                    for (const auto& cpe_pair : scanResult.cpes) {
+                        portCPEs.push_back(cpe_pair.first);
+                    }
+                    if (!portCPEs.empty()) {
+                        fetch_and_padding_cves(scanResult.cpes, portCPEs, 10);  // 查询端口层面 CVE
+                    }
+                }
+            }
+
+        }
+        // 将新的扫描结果保存为历史数据
+        historicalData.data[ip] = scan_host_result[0];  // 目前只支持单个主机，取第一个
+
+        // 获取结束时间（用于测试）
+        auto end = std::chrono::high_resolution_clock::now();
+        // 计算时间差（以毫秒为单位）
+        std::chrono::duration<double, std::milli> elapsed = end - start;
+        // 输出时间差
+        std::cout << "代码执行时间: " << elapsed.count() << " 毫秒" << std::endl;
+
+        std::cout << "Nmap 扫描完成并获取 CVE 数据。" << std::endl;
 
         // 创建响应
         http_response response(status_codes::OK);
@@ -1000,69 +1040,8 @@ void ServerManager::handle_get_classify_protect(http_request request) {
 //        }).wait();
 //}
 
-void ServerManager::fetch_and_padding_cves(map<std::string, vector<CVE>>& cpes, int limit) {
-    std::string base_url = "http://192.168.6.40:5000/api/cvefor";
-    std::string cpe_id = "";
-    for (auto& cpe : cpes) {
-        cpe_id = cpe.first;
-        auto& vecCVE = cpe.second;
-        uri_builder builder(U(base_url));
-        builder.append_path(U(cpe_id));
-        if (limit > 0) {
-            builder.append_query(U("limit"), limit);
-        }
 
-        http_client client(builder.to_uri());
-        try {
-            client.request(methods::GET)
-                .then([&](http_response response) -> pplx::task<json::value> {
-                if (response.status_code() == status_codes::OK) {
-                    return response.extract_json();
-                }
-                else {
-                    std::cerr << "Failed to fetch CVE data for CPE: " << cpe_id << ", Status code: " << response.status_code() << std::endl;
-                    return pplx::task_from_result(json::value());
-                }
-                    })
-                .then([&](json::value jsonObject) {
-                        if (!jsonObject.is_null()) {
-                            auto cve_array = jsonObject.as_array();
-                            for (auto& cve : cve_array) {
-                                CVE tmp;
-                                tmp.CVE_id = cve[U("id")].as_string();
-                                //std::cout << "CVE ID: " << cve[U("id")].as_string() << std::endl;
-                                std::string cvss_str = "N/A";
-                                if (cve.has_field(U("cvss"))) {
-                                    auto cvss_value = cve[U("cvss")];
-                                    if (cvss_value.is_string()) {
-                                        cvss_str = cvss_value.as_string();
-                                        //std::cout << "CVSS Score: " << cvss_value.as_string() << std::endl;
-                                    }
-                                    else if (cvss_value.is_number()) {
-                                        cvss_str = std::to_string(cvss_value.as_number().to_double());
-                                        //std::cout << "CVSS Score: " << cvss_value.as_number().to_double() << std::endl;
-                                    }
-                                    else {
-                                        //std::cout << "CVSS Score: N/A" << std::endl;
-                                    }
-                                }
-                                else {
-                                    //std::cout << "CVSS Score: N/A" << std::endl;
-                                }
-                                tmp.CVSS = cvss_str;
-                                if (cve.has_field(U("summary"))) {
-                                    //std::cout << "Summary: " << cve[U("summary")].as_string() << std::endl;
-                                }
-                                vecCVE.push_back(tmp);
-                            }
-                        }
-                    }).wait();
-        }
-        catch (const std::exception& e) {
-            std::cerr << "Exception occurred while fetching CVE data for CPE: " << cpe_id << ", Error: " << e.what() << std::endl;
-        }
-    }
-}
+
 
 json::value ServerManager::CVE_to_json(const CVE& cve) {
     json::value result;
@@ -1298,6 +1277,7 @@ void ServerManager::handle_post_poc_verify(http_request request) {
             std::vector<std::string> cve_ids;
             for (const auto& id : body[U("cve_ids")].as_array()) {
                 cve_ids.push_back(id.as_string());
+                std::cout << "cve_id:" << id.as_string() << std::endl;
             }
 
             // 设置 ifCheck 标志

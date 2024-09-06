@@ -375,3 +375,168 @@ std::string findPortIdByCveId(std::vector<ScanHostResult>& scan_host_result, con
 
     return ""; // 如果没有找到，返回空字符串
 }
+
+// 判断 CPE 是否一致，返回不一致的 CPE
+std::vector<std::string> compareCPEs(const std::map<std::string, std::vector<CVE>>& newCPEs, const std::map<std::string, std::vector<CVE>>& oldCPEs) {
+    std::vector<std::string> changedCPEs;
+
+    // 使用 C++14 兼容的方式遍历
+    for (const auto& newCPE_pair : newCPEs) {
+        const auto& newCPE = newCPE_pair.first;
+        if (oldCPEs.find(newCPE) == oldCPEs.end()) {
+            changedCPEs.push_back(newCPE); // 如果找不到对应的 CPE，说明该 CPE 发生了变化
+        }
+    }
+
+    return changedCPEs; // 返回需要查询的 CPE 列表
+}
+
+// 比对并更新结果，根据端口信息和 CPE 信息来决定查询策略
+void compareAndUpdateResults(const ScanHostResult& oldResult, ScanHostResult& newResult, int limit) {
+    // 处理操作系统层面的增量扫描
+    std::cout << "开始操作系统层面的增量扫描..." << std::endl;
+    std::vector<std::string> osCPEsToQuery;  // 用于存储需要查询的操作系统 CPE
+
+    for (auto& newCPE_pair : newResult.cpes) {
+        const auto& newCPE = newCPE_pair.first;
+        auto& newCVEList = newCPE_pair.second;
+
+        if (oldResult.cpes.find(newCPE) != oldResult.cpes.end()) {
+            // CPE 相同，复用历史的 CVE 数据
+            std::cout << "操作系统 CPE " << newCPE << " 沿用历史 CVE 数据。" << std::endl;
+            newCVEList = oldResult.cpes.at(newCPE); // 复用历史 CVE
+        }
+        else {
+            // CPE 不同，记录需要查询的 CPE
+            std::cout << "操作系统 CPE " << newCPE << " 信息有变化，记录查询。" << std::endl;
+            osCPEsToQuery.push_back(newCPE);  // 记录新 CPE 以便批量查询
+        }
+    }
+
+    // 一次性查询操作系统层面的所有新的 CPE 的 CVE
+    if (!osCPEsToQuery.empty()) {
+        fetch_and_padding_cves(newResult.cpes, osCPEsToQuery, limit);
+    }
+
+    // 处理端口层面的增量扫描
+    std::cout << "开始端口层面的增量扫描..." << std::endl;
+    std::unordered_map<std::string, ScanResult> oldPortsMap;
+
+    // 将旧的端口信息存入 map，端口号作为 key
+    for (const auto& oldPort : oldResult.ports) {
+        oldPortsMap[oldPort.portId] = oldPort;
+    }
+
+    // 遍历新扫描的结果
+    for (auto& newPort : newResult.ports) {
+        std::vector<std::string> portCPEsToQuery;  // 用于存储每个端口需要查询的 CPE
+
+        if (oldPortsMap.find(newPort.portId) != oldPortsMap.end()) {
+            // 找到相同的端口，判断其他信息是否一致
+            const auto& oldPort = oldPortsMap[newPort.portId];
+
+            if (newPort.protocol == oldPort.protocol &&
+                newPort.service_name == oldPort.service_name &&
+                newPort.status == oldPort.status){
+
+                // 其他信息一致，逐个 CPE 进行比对和处理
+                for (auto& newCPE_pair : newPort.cpes) {
+                    const auto& newCPE = newCPE_pair.first;
+                    auto& newCVEList = newCPE_pair.second;
+
+                    if (oldPort.cpes.find(newCPE) != oldPort.cpes.end()) {
+                        // CPE 相同，复用历史的 CVE 数据
+                        std::cout << "端口 " << newPort.portId << " 的 CPE " << newCPE << " 沿用历史 CVE 数据。" << std::endl;
+                        newCVEList = oldPort.cpes.at(newCPE); // 复用历史 CVE
+                    }
+                    else {
+                        // CPE 不同，记录需要查询的 CPE
+                        std::cout << "端口 " << newPort.portId << " 的 CPE " << newCPE << " 信息有变化，记录查询。" << std::endl;
+                        portCPEsToQuery.push_back(newCPE);  // 记录新 CPE 以便批量查询
+                    }
+                }
+
+            }
+            else {
+                // 如果其他信息不一致，说明端口变化，重新查询所有 CPE 的 CVE
+                std::cout << "端口 " << newPort.portId << " 信息发生变化，重新查询所有 CPE 的 CVE。" << std::endl;
+                for (const auto& cpe_pair : newPort.cpes) {
+                    portCPEsToQuery.push_back(cpe_pair.first);  // 记录所有 CPE
+                }
+            }
+        }
+        else {
+            // 新增端口，查询所有 CPE
+            std::cout << "端口 " << newPort.portId << " 是新端口，查询所有 CPE 的 CVE。" << std::endl;
+            for (const auto& cpe_pair : newPort.cpes) {
+                portCPEsToQuery.push_back(cpe_pair.first);  // 记录所有 CPE
+            }
+        }
+
+        // 一次性查询端口层面的所有新的 CPE 的 CVE
+        if (!portCPEsToQuery.empty()) {
+            fetch_and_padding_cves(newPort.cpes, portCPEsToQuery, limit);
+        }
+    }
+}
+
+
+// CVE 查询函数
+void fetch_and_padding_cves(std::map<std::string, std::vector<CVE>>& cpes, const std::vector<std::string>& cpes_to_query, int limit) {
+    std::string base_url = "http://192.168.136.128:5000/api/cvefor";
+
+    for (const auto& cpe_id : cpes_to_query) {
+        auto& vecCVE = cpes[cpe_id];
+        web::uri_builder builder(U(base_url));
+        builder.append_path(U(cpe_id));
+        if (limit > 0) {
+            builder.append_query(U("limit"), limit);
+        }
+
+        web::http::client::http_client client(builder.to_uri());
+        try {
+            client.request(web::http::methods::GET)
+                .then([&](web::http::http_response response) -> pplx::task<web::json::value> {
+                if (response.status_code() == web::http::status_codes::OK) {
+                    return response.extract_json();
+                }
+                else {
+                    std::cerr << "Failed to fetch CVE data for CPE: " << cpe_id << ", Status code: " << response.status_code() << std::endl;
+                    return pplx::task_from_result(web::json::value());
+                }
+                    }).then([&](web::json::value jsonObject) {
+                        if (!jsonObject.is_null()) {
+                            auto cve_array = jsonObject.as_array();
+                            for (auto& cve : cve_array) {
+                                CVE tmp;
+                                tmp.CVE_id = cve[U("id")].as_string();
+                                std::string cvss_str = "N/A";  // 默认值为 "N/A"
+                                if (cve.has_field(U("cvss"))) {
+                                    auto cvss_value = cve[U("cvss")];
+                                    if (cvss_value.is_string()) {
+                                        cvss_str = cvss_value.as_string();  // 处理字符串类型的 CVSS
+                                    }
+                                    else if (cvss_value.is_number()) {
+                                        cvss_str = std::to_string(cvss_value.as_number().to_double());  // 处理数字类型的 CVSS
+                                    }
+                                    else {
+                                        std::cerr << "Unexpected CVSS type for CPE: " << cpe_id << std::endl;
+                                    }
+                                }
+                                else {
+                                    std::cout << "CVSS field not present for CPE: " << cpe_id << std::endl;
+                                }
+                                tmp.CVSS = cvss_str;
+                                if (cve.has_field(U("summary"))) {
+                                    //std::cout << "Summary: " << cve[U("summary")].as_string() << std::endl;
+                                }
+                                vecCVE.push_back(tmp);
+                            }
+                        }
+                        }).wait();
+        }
+        catch (const std::exception& e) {
+            std::cerr << "Exception occurred while fetching CVE data for CPE: " << cpe_id << ", Error: " << e.what() << std::endl;
+        }
+    }
+}

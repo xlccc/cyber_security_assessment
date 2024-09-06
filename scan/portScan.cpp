@@ -72,6 +72,7 @@ std::string performPortScan(const std::string& targetHost, bool allPorts) {
 }
 
 
+/*/
 extern "C" const char* executePortScan(const char* targetHost) {
     try {
         std::string outputFileName = performPortScan(targetHost);
@@ -81,4 +82,5 @@ extern "C" const char* executePortScan(const char* targetHost) {
         std::cerr << "Unknown exception caught." << std::endl;
         return nullptr;
     }
-}
+
+}*/

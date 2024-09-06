@@ -2,7 +2,9 @@
 #include <iostream>
 
 //获取当前时间，字符串表示
-std::string getCurrentTimestamp() {
+//choice = 1时，用于文件名附加时间
+//choice = 2时，用于漏洞扫描时间
+std::string getCurrentTimestamp(int choice) {
     auto now = std::chrono::system_clock::now();
     auto in_time_t = std::chrono::system_clock::to_time_t(now);
 
@@ -17,7 +19,16 @@ std::string getCurrentTimestamp() {
 #endif
 
     std::stringstream ss;
-    ss << std::put_time(&timestamp, "%Y-%m-%d %X");
+    
+    switch (choice) {
+        case 1:
+            ss << std::put_time(&timestamp, "%Y-%m-%d %X");
+            break;
+        case 2:
+            ss << std::put_time(&timestamp, "%Y-%m-%d %H:%M:%S");
+            break;
+    }
+    
     return ss.str();
 }
 
@@ -150,9 +161,9 @@ void initializePython()
     // 设置sys.path
     PyObject* sys = PyImport_ImportModule("sys");
     PyObject* sys_path = PyObject_GetAttrString(sys, "path");
-    PyList_Append(sys_path, PyUnicode_FromString("/root/.vs/cyber_seproject/6731b597-df0c-4866-ab56-292bdcaceae0/src/scan/scripts"));
-    PyList_Append(sys_path, PyUnicode_FromString("/root/.vs/cyber_seproject/6731b597-df0c-4866-ab56-292bdcaceae0/src/scan"));
-    PyList_Append(sys_path, PyUnicode_FromString("/root/.vs/cyber_seproject/6731b597-df0c-4866-ab56-292bdcaceae0/src"));
+    PyList_Append(sys_path, PyUnicode_FromString("/home/c/.vs/cyber_security_assessment/8e509499-79aa-4583-a94f-9ac2aefdaefd/src/scan/scripts"));
+    PyList_Append(sys_path, PyUnicode_FromString("/home/c/.vs/cyber_security_assessment/8e509499-79aa-4583-a94f-9ac2aefdaefd/src/scan"));
+    PyList_Append(sys_path, PyUnicode_FromString("/home/c/.vs/cyber_security_assessment/8e509499-79aa-4583-a94f-9ac2aefdaefd/src"));
 }
 void finalizePython()
 {

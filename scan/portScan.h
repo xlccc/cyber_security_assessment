@@ -9,7 +9,7 @@
 
 std::string executeCommand(const std::string& command);
 
-std::string performPortScan(const std::string& targetHost);
+std::string performPortScan(const std::string& targetHost, bool allPorts);
 
 //µ÷ÓÃC¿âº¯Êý
 extern "C" const char* executePortScan(const char* targetHost);

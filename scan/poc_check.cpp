@@ -31,8 +31,6 @@ void searchPOCs(ScanHostResult& hostResult, DatabaseManager& dbManager) {
                     {
                         cve.pocExist = true;
                         cve.script = pocRecords[0].script; // 将 script 字段更新为数据库中的相应值
-
-                        cve.ifCheck = true;     //全部POC验证（测试，需删除）
                     }
                 }
             }
@@ -42,13 +40,13 @@ void searchPOCs(ScanHostResult& hostResult, DatabaseManager& dbManager) {
 
 //执行选中的POC脚本进行漏洞验证
 void verifyPOCs(std::vector<ScanHostResult>& scanHostResults) {
-    std::cout << "共有主机数：" << scanHostResults.size() << std::endl;
+    //std::cout << "共有主机数：" << scanHostResults.size() << std::endl;
 
+    std::cout << "------扫描操作系统漏洞-----" << std::endl;
     for (auto& hostResult : scanHostResults) {
         
         // 操作系统级别漏洞进行POC验证
         for (auto& cpeEntry : hostResult.cpes) {
-            std::cout << "扫描操作系统漏洞....."  << std::endl;
             for (auto& cve : cpeEntry.second) {
                 if (cve.pocExist && cve.ifCheck && cve.vulExist == "未验证") {
                     std::string result = runPythonScript(cve.script, hostResult.url, hostResult.ip, 0);
@@ -56,13 +54,12 @@ void verifyPOCs(std::vector<ScanHostResult>& scanHostResults) {
                 }
             }
         }
+        std::cout << "------扫描端口漏洞-----" << std::endl;
         // 端口级别漏洞进行POC验证
         for (auto& portResult : hostResult.ports) {
-
             for (auto& cpeEntry : portResult.cpes) {
                 for (auto& cve : cpeEntry.second) {
-                    std::cout << "扫描端口漏洞....." << std::endl;
-                    std::cout << "cve_id :  " << cve.CVE_id << "script:  " << cve.script << std::endl;
+                    //std::cout << "cve_id :  " << cve.CVE_id << std::endl << "script:  " << cve.script << std::endl;
                     if (cve.pocExist && cve.ifCheck && cve.vulExist == "未验证") {
 
                         //测试

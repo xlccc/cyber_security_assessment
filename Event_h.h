@@ -3,6 +3,8 @@
 #include <vector>
 #include <cpprest/details/basic_types.h> // 引入 utility::string_t
 
+
+
 // 新的事件结构体，使用 utility::string_t
 struct event_t {
     utility::string_t description; // 待检查项
@@ -12,6 +14,8 @@ struct event_t {
     utility::string_t IsComply; // 返回 "true" 或 "false"
     utility::string_t recommend; // 建议
 };
+
+
 
 //目标主机相关信息
 struct ServerInfo_t {
