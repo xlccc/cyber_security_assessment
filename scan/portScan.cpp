@@ -26,32 +26,26 @@ std::string executeCommand(const std::string& command) {
 }
 
 
-std::string performPortScan(const std::string& targetHost) {
-
+std::string performPortScan(const std::string& targetHost, bool allPorts) {
     std::string timeStamp = getCurrentTimestamp();
-    // 替换冒号、空格为下划线
     std::replace(timeStamp.begin(), timeStamp.end(), ':', '_');
     std::replace(timeStamp.begin(), timeStamp.end(), ' ', '_');
-    
-
-    std::cout << timeStamp << std::endl;
 
     std::string outputFileName = "output_" + targetHost + "_" + timeStamp + ".xml";
-    //输出到out/nmap_output
     std::string outputPath = "../../output_nmap/" + outputFileName;
-
-    //替换斜杠为下划线
     std::replace(outputFileName.begin(), outputFileName.end(), '/', '_');
 
     std::string command1 = "";
-    //是否启用扫描所有端口
-    if(ALL_PORTS)   //耗时非常久
+    // 根据前端的选择决定是否扫描所有端口
+    if (allPorts) {
         command1 = "sudo nmap -A -O -p 1-65535 " + targetHost + " -oX " + outputPath;
-    else
+    }
+    else {
         command1 = "sudo nmap -A -O " + targetHost + " -oX " + outputPath;
+    }
+
     std::string command2 = "sudo chown c:c " + outputPath;
     std::string command3 = "sudo chmod 666 " + outputPath;
-    
 
     std::cout << "Execute nmap port scan at " + targetHost << std::endl;
 
@@ -65,7 +59,6 @@ std::string performPortScan(const std::string& targetHost) {
         throw;
     }
 
-    // 检查文件是否存在
     if (access(outputPath.c_str(), F_OK) != -1) {
         std::cout << "File exists after scan: " << outputPath << std::endl;
     }
@@ -78,6 +71,8 @@ std::string performPortScan(const std::string& targetHost) {
     return outputPath;
 }
 
+
+/*/
 extern "C" const char* executePortScan(const char* targetHost) {
     try {
         std::string outputFileName = performPortScan(targetHost);
@@ -87,4 +82,5 @@ extern "C" const char* executePortScan(const char* targetHost) {
         std::cerr << "Unknown exception caught." << std::endl;
         return nullptr;
     }
-}
+
+}*/

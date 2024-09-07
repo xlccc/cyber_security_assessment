@@ -4,16 +4,18 @@
 #include <string>
 #include <map>
 #include <vector>
+#include<unordered_map>
+#include <chrono> 
 
 //CVE条目
 struct CVE
 {
     std::string CVE_id;     //CVE编号
-    std::string vul_name;   //漏洞名称（补充）
-    std::string script;     //插件名称（补充）
+    std::string vul_name;   //漏洞名称
+    std::string script;     //插件名称
     std::string CVSS;       //严重程度
     bool        pocExist = false;   //对应CVE编号的POC是否存在于POC库中
-    bool        ifCheck =  false;   //是否打算poc验证（补充） 
+    bool        ifCheck =  false;   //是否打算poc验证
     std::string vulExist = "未验证";    //是否存在该漏洞，分为三种：存在、不存在、未验证
 };
 
@@ -29,11 +31,18 @@ struct ScanResult {
 
 //针对主机、操作系统的漏洞扫描每条结果
 struct ScanHostResult {
-    std::string url;        //url（补充）
+    std::string url;        //url（待补充）
     std::string ip;         //ip
-    std::vector<std::string> os_matches;     //操作系统版本（补充）
+    std::vector<std::string> os_matches;     //操作系统版本
     std::map<std::string, std::vector<CVE>> cpes; //操作系统的cpes与潜在CVEs对应信息
     std::vector<ScanResult> ports;  //端口扫描结果
+    std::string scan_time;// 新增扫描时间成员
 };
+
+// 历史扫描数据存储（用于增量扫描）
+struct HistoricalScanData {
+    std::unordered_map<std::string, ScanHostResult> data; // 使用 IP 作为键
+};
+
 
 #endif

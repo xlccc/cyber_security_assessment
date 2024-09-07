@@ -2,7 +2,7 @@
 // utils.h
 #ifndef UTILS_H
 #define UTILS_H
-
+#include <Python.h>
 #include <string>
 #include<chrono>    //用于获取当前系统时间和处理时间相关的操作。
 #include<ctime>     //用于将时间转换为本地时间并格式化时间字符串。
@@ -17,8 +17,7 @@
 #include<sys/stat.h>
 
 //获取当前时间
-std::string getCurrentTimestamp();
-
+std::string getCurrentTimestamp(int choice = 1);
 //GBK转UTF-8编码
 std::string convertToUTF8(const std::string& input, const std::string& fromEncoding);
 
@@ -43,6 +42,13 @@ bool is_supported_extension(const std::string& filename);
 //去掉文件名后缀
 std::string removeExtension(const std::string& filename);
 
+//// 初始化Python解释器
+void initializePython();
+
+//// 终止Python解释器
+void finalizePython();
+
+
 enum class PasswordStrength {
     WEAK,
     MEDIUM,
@@ -59,5 +65,7 @@ std::string passwordStrengthToString(PasswordStrength strength);
 
 // 判断路径是否为目录
 bool is_directory(const std::string& path);
+
+
 
 #endif // UTILS_H
