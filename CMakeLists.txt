@@ -71,7 +71,6 @@ set(SOURCES
     Command_Excute.cpp
     convert_string_t.cpp
     database/DatabaseManager.cpp
-    database/db.cpp
     Login.cpp
     main_1.cpp
     main.cpp
@@ -88,7 +87,6 @@ set(HEADERS
     convert_string_t.h
     database/DatabaseManager.h
     database/db_config.h
-    database/db.h
     database/poc.h
     Event.h
     Event_h.h

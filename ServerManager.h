@@ -1,4 +1,4 @@
-#ifndef SERVERMANAGER_H
+﻿#ifndef SERVERMANAGER_H
 #define SERVERMANAGER_H
 #include <cpprest/http_listener.h>
 #include <cpprest/json.h>
@@ -10,7 +10,6 @@
 #include <map>
 #include <vector>
 #include <string>
-#include "db.h"
 #include "db_config.h"
 #include "poc.h"
 #include <libssh/libssh.h>
@@ -24,7 +23,6 @@
 #include "Login.h"
 #include "Command_Excute.h"
 #include "Padding.h"
-#include "database/db.h"
 #include "scan/portScan.h"
 #include "utils_scan.h"
 #include "convert_string_t.h"
