@@ -196,6 +196,8 @@ void ServerManager::handle_get_cve_scan(http_request request) {
     for (const auto& scan_host_result : scan_host_result) {
         result[index++] = ScanHostResult_to_json(scan_host_result);
     }
+    //std::cout << result.serialize() << std::endl;
+
     request.reply(web::http::status_codes::OK, result);
 }
 
@@ -1076,9 +1078,12 @@ json::value ServerManager::ScanResult_to_json(const ScanResult& scan_result) {
 
 json::value ServerManager::ScanHostResult_to_json(const ScanHostResult& scan_host_result) {
     json::value result;
+    result[U("url")] = json::value::string(scan_host_result.url);
     result[U("ip")] = json::value::string(scan_host_result.ip);
+    result[U("scan_time")] = json::value::string(scan_host_result.scan_time);//新添
+    //std::cout << result.serialize() << std::endl;
 
-    //新添
+
     json::value os_matches_json = json::value::array();
     int index_os = 0;
     for (const auto& os_match : scan_host_result.os_matches) {
