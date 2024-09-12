@@ -1,6 +1,6 @@
 ﻿#已验证
+# Pulse Secure SSL VPN任意文件读取
 # -*- coding: utf-8 -*-
-# poc_scripts/POC1.py
 
 import sys
 from scan.lib.Requests import Requests

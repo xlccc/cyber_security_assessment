@@ -528,7 +528,8 @@ void fetch_and_padding_cves(std::map<std::string, std::vector<CVE>>& cpes, const
                                 }
                                 tmp.CVSS = cvss_str;
                                 if (cve.has_field(U("summary"))) {
-                                    //std::cout << "Summary: " << cve[U("summary")].as_string() << std::endl;
+                                    tmp.summary = cve[U("summary")].as_string();
+                                    std::cout << "Summary: " << cve[U("summary")].as_string() << std::endl;
                                 }
                                 vecCVE.push_back(tmp);
                             }

@@ -1050,6 +1050,7 @@ json::value ServerManager::CVE_to_json(const CVE& cve) {
     result[U("CVE_id")] = json::value::string(cve.CVE_id);
     result[U("vul_name")] = json::value::string(cve.vul_name);
     result[U("CVSS")] = json::value::string(cve.CVSS);
+    result[U("summary")] = json::value::string(cve.summary);
     result[U("pocExist")] = json::value::boolean(cve.pocExist);
     result[U("vulExist")] = json::value::string(cve.vulExist);
     return result;

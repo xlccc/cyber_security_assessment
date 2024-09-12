@@ -14,6 +14,7 @@ struct CVE
     std::string vul_name;   //漏洞名称
     std::string script;     //插件名称
     std::string CVSS;       //严重程度
+    std::string summary;    //漏洞描述（英文）
     bool        pocExist = false;   //对应CVE编号的POC是否存在于POC库中
     bool        ifCheck =  false;   //是否打算poc验证
     std::string vulExist = "未验证";    //是否存在该漏洞，分为三种：存在、不存在、未验证
