@@ -202,6 +202,25 @@ std::vector<POC> DatabaseManager::searchDataByCVE(const std::string& cve_id) {
     return records;
 }
 
+//根据CVE搜索对应POC
+bool DatabaseManager::isExistCVE(const std::string& cve_id)
+{
+    std::vector<POC> records;
+    // SQL语句搜索数据
+    std::string sql = "SELECT * FROM POC WHERE CVE_id='" + cve_id + "';";
+    char* errMsg = nullptr;
+    ;
+    // 执行SQL语句，并处理结果
+    int rc = sqlite3_exec(db, sql.c_str(), callback, &records, &errMsg);
+    if (rc != SQLITE_OK) {
+        std::cerr << "SQL error: " << errMsg << std::endl;
+        sqlite3_free(errMsg);
+    }
+    if (!records.empty())
+        return true;
+    return false;
+}
+
 //依据id搜索POC路径，用于删除对应POC
 std::string DatabaseManager::searchPOCById(const int & id) {
     std::vector<POC> records;
