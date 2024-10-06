@@ -42,15 +42,22 @@ void searchPOCs(ScanHostResult& hostResult, DatabaseManager& dbManager) {
 void verifyPOCs(std::vector<ScanHostResult>& scanHostResults) {
     //std::cout << "共有主机数：" << scanHostResults.size() << std::endl;
 
-    std::cout << "------扫描操作系统漏洞-----" << std::endl;
+
     for (auto& hostResult : scanHostResults) {
-        
+
+        std::cout << "------扫描操作系统漏洞-----" << std::endl;
         // 操作系统级别漏洞进行POC验证
         for (auto& cpeEntry : hostResult.cpes) {
             for (auto& cve : cpeEntry.second) {
                 if (cve.pocExist && cve.ifCheck && cve.vulExist == "未验证") {
-                    std::string result = runPythonScript(cve.script, hostResult.url, hostResult.ip, 0);
-                    cve.vulExist = result.empty() ? "不存在" : "存在";
+                    std::string result = runPythonWithOutput(cve.script, hostResult.url, hostResult.ip, 0);
+                    // 检查result中是否包含[!]来判断漏洞是否存在
+                    if (result.find("[!]") != std::string::npos) {
+                        cve.vulExist = "存在";
+                    }
+                    else {
+                        cve.vulExist = "不存在";
+                    }
                 }
             }
         }
@@ -60,13 +67,25 @@ void verifyPOCs(std::vector<ScanHostResult>& scanHostResults) {
             for (auto& cpeEntry : portResult.cpes) {
                 for (auto& cve : cpeEntry.second) {
                     //std::cout << "cve_id :  " << cve.CVE_id << std::endl << "script:  " << cve.script << std::endl;
-                    if (cve.pocExist && cve.ifCheck && cve.vulExist == "未验证") {
+                    if (cve.pocExist && cve.ifCheck) {
 
                         //测试
-                        std::cout <<"POC脚本：" << cve.script << std::endl;
+                        std::cout << "POC脚本：" << cve.script << std::endl;
 
-                        std::string result = runPythonScript(cve.script, hostResult.url, hostResult.ip, std::stoi(portResult.portId));
-                        cve.vulExist = result.empty() ? "不存在" : "存在";
+                        std::string result = runPythonWithOutput(cve.script, hostResult.url, hostResult.ip, std::stoi(portResult.portId));
+
+                        std::cout << result << std::endl;
+                        // 检查result中是否包含[!]来判断漏洞是否存在
+                        if (result.find("[!]") != std::string::npos) {
+                            cve.vulExist = "存在";
+                        }
+                        else if (result.find("[SAFE]") != std::string::npos) {
+                            cve.vulExist = "不存在";
+                        }
+                        else
+                        {
+                            cve.vulExist = "未验证";
+                        }
                     }
                 }
             }

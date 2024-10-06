@@ -15,8 +15,6 @@ const char* const DB_PATH = "/root/.vs/cyber_seproject2/8cf44de5-c72a-44b7-b30d-
 //支持的poc脚本类型
 extern std::vector<std::string> supported_extensions;
 
-// 上传POC文件所需要的固定的临时文件名
-const std::string TEMP_FILENAME = "/tmp/uploaded_body_temp";
 
 
 #endif

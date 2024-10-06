@@ -28,6 +28,7 @@
 #include "poc_check.h"
 #include <sys/stat.h>
 #include"utils.h"
+#include"utils/config.h"
 
 
 
@@ -94,6 +95,8 @@ private:
     void handle_post_poc_excute(http_request request);
     //根据CVE编号添加POC代码、或更新已有的POC代码
     void update_poc_by_cve(http_request request);
+    // 记录 /poc_callback 路径的请求（待修改）
+    void log_poc_callback(const http_request& request);
 
 
 

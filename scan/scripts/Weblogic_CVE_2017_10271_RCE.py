@@ -1,4 +1,5 @@
 ﻿#已验证
+#XML Decoder反序列化漏洞（CVE-2017-10271）
 import sys
 import requests
 
