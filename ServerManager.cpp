@@ -6,7 +6,7 @@ using namespace web::http::experimental::listener;
 using namespace concurrency::streams;
 
 ServerManager::ServerManager() : dbManager(DB_PATH) {
-    utility::string_t address = U("http://192.168.136.128:8081/");
+    utility::string_t address = U("http://192.168.29.129:8081/");
     uri_builder uri(address);
     auto addr = uri.to_uri().to_string();
     listener = std::make_unique<http_listener>(addr);
@@ -673,6 +673,9 @@ void ServerManager::handle_post_get_Nmap(http_request request)
 
         std::string timestamp = getCurrentTimestamp(2);
         for (auto& scanHostResult : scan_host_result) {
+            for (auto& port : scanHostResult.ports) {
+                port_services[port.service_name] = port.portId;
+            }
             scanHostResult.scan_time = timestamp;  // 记录当前扫描时间
         }
 
