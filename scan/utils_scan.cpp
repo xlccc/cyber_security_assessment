@@ -131,39 +131,17 @@ std::vector<ScanHostResult> parseXmlFile(const std::string& xmlFilePath) {
 }
 
 
-
+//
 //std::string runPythonScript(const std::string& scriptPath_extension, const std::string& url, const std::string& ip, int port) {
 //    std::string result = "";
 //
-//    // Initialize the Python interpreter
-//    Py_Initialize();
-//
-//    // Set sys.argv for the script
-//    //sys.path是Python解释器用来查找模块的搜索路径列表。
-//    //执行一个导入语句时，Python会按照sys.path中的路径顺序查找模块。如果没有找到模块，就会抛出ImportError。
-//    //脚本尝试进行相对导入，但Python不知道相对导入的父包路径。所以需要确保sys.path包含这些父包路径。
-//    PyObject* sys = PyImport_ImportModule("sys");
-//    PyObject* sys_path = PyObject_GetAttrString(sys, "path");
-//    PyList_Append(sys_path, PyUnicode_FromString("/root/.vs/cyber_seproject/6731b597-df0c-4866-ab56-292bdcaceae0/src/scan/scripts"));
-//    PyList_Append(sys_path, PyUnicode_FromString("/root/.vs/cyber_seproject/6731b597-df0c-4866-ab56-292bdcaceae0/src/scan"));
-//    PyList_Append(sys_path, PyUnicode_FromString("/root/.vs/cyber_seproject/6731b597-df0c-4866-ab56-292bdcaceae0/src"));
-//
-//
-//    //用于测试：打印sys.path，看是否正确设置了
-//    PyObject* path_str = PyObject_Str(sys_path);
-//    const char* path_cstr = PyUnicode_AsUTF8(path_str);
-//    std::cout << "sys.path: " << path_cstr << std::endl;
-//    Py_DECREF(path_str);
-//
 //    // Import the POC module
-//    // 以库的形式加载POC插件
-//    std::string scriptPath = removeExtension(scriptPath_extension); //去掉文件名后缀
+//    std::string scriptPath = removeExtension(scriptPath_extension); // 去掉文件名后缀
 //
 //    PyObject* poc_module = PyImport_ImportModule(scriptPath.c_str());
 //    if (!poc_module) {
 //        PyErr_Print();
 //        std::cerr << "Failed to load script: " << scriptPath << std::endl;
-//        Py_Finalize();
 //        return result;
 //    }
 //
@@ -173,7 +151,6 @@ std::vector<ScanHostResult> parseXmlFile(const std::string& xmlFilePath) {
 //        PyErr_Print();
 //        std::cerr << "Cannot find function 'check' in the script" << std::endl;
 //        Py_DECREF(poc_module);
-//        Py_Finalize();
 //        return result;
 //    }
 //
@@ -197,63 +174,84 @@ std::vector<ScanHostResult> parseXmlFile(const std::string& xmlFilePath) {
 //        std::cerr << "Failed to call function 'check'" << std::endl;
 //    }
 //
-//    // Finalize the Python interpreter
-//    Py_Finalize();
-//
 //    return result;
-//
 //}
 
-std::string runPythonScript(const std::string& scriptPath_extension, const std::string& url, const std::string& ip, int port) {
-    std::string result = "";
-
-    // Import the POC module
-    std::string scriptPath = removeExtension(scriptPath_extension); // 去掉文件名后缀
-
-    PyObject* poc_module = PyImport_ImportModule(scriptPath.c_str());
-    if (!poc_module) {
-        PyErr_Print();
-        std::cerr << "Failed to load script: " << scriptPath << std::endl;
-        return result;
-    }
-
-    // Get the check function from the module
-    PyObject* check_func = PyObject_GetAttrString(poc_module, "check");
-    if (!check_func || !PyCallable_Check(check_func)) {
-        PyErr_Print();
-        std::cerr << "Cannot find function 'check' in the script" << std::endl;
-        Py_DECREF(poc_module);
-        return result;
-    }
-
-    // Prepare arguments for the check function
-    PyObject* args = PyTuple_Pack(3, PyUnicode_FromString(url.c_str()), PyUnicode_FromString(ip.c_str()), PyLong_FromLong(port));
-
-    // Call the check function
-    PyObject* py_result = PyObject_CallObject(check_func, args);
-    Py_DECREF(args);
-    Py_DECREF(check_func);
-    Py_DECREF(poc_module);
-
-    if (py_result) {
-        if (py_result != Py_None) {
-            result = PyUnicode_AsUTF8(py_result);
-        }
-        Py_DECREF(py_result);
-    }
-    else {
-        PyErr_Print();
-        std::cerr << "Failed to call function 'check'" << std::endl;
-    }
-
-    return result;
-}
 
 
 
 
+//// 返回完整的回显，和在Linux命令行内的一样
+//std::string runPythonWithOutput(const std::string& scriptPath_extension, const std::string& url, const std::string& ip, int port) {
+//    std::string result = "";
+//
+//    // 重定向stdout和stderr
+//    PyObject* io = PyImport_ImportModule("io");
+//    PyObject* string_io = PyObject_CallMethod(io, "StringIO", NULL);
+//    if (!string_io) {
+//        std::cerr << "Failed to create StringIO." << std::endl;
+//        return result;
+//    }
+//    PyObject* sys = PyImport_ImportModule("sys");
+//    PyObject_SetAttrString(sys, "stdout", string_io);
+//    PyObject_SetAttrString(sys, "stderr", string_io);
+//
+//    // 导入POC模块
+//    std::string scriptPath = removeExtension(scriptPath_extension);
+//    PyObject* poc_module = PyImport_ImportModule(scriptPath.c_str());
+//    if (!poc_module) {
+//        PyErr_Print();
+//        result += "Failed to load script: " + scriptPath + "\n";
+//        return result;
+//    }
+//
+//    // 获取check函数
+//    PyObject* check_func = PyObject_GetAttrString(poc_module, "check");
+//    if (!check_func || !PyCallable_Check(check_func)) {
+//        PyErr_Print();
+//        result += "Cannot find function 'check' in the script\n";
+//        Py_DECREF(poc_module);
+//        return result;
+//    }
+//
+//    // 准备参数并调用check函数
+//    PyObject* args = PyTuple_Pack(3, PyUnicode_FromString(url.c_str()), PyUnicode_FromString(ip.c_str()), PyLong_FromLong(port));
+//    PyObject* py_result = PyObject_CallObject(check_func, args);
+//    Py_DECREF(args);
+//    Py_DECREF(check_func);
+//    Py_DECREF(poc_module);
+//
+//    // 处理check函数的返回值
+//    if (py_result) {
+//        if (py_result != Py_None) {
+//            result += PyUnicode_AsUTF8(py_result);
+//        }
+//        else {
+//            result += "Function 'check' returned None.\n";
+//        }
+//        Py_DECREF(py_result);
+//    }
+//    else {
+//        PyErr_Print();
+//        result += "Failed to call function 'check'\n";
+//    }
+//
+//    // 获取所有的stdout和stderr输出
+//    PyObject* output = PyObject_CallMethod(string_io, "getvalue", NULL);
+//    if (output) {
+//        result += PyUnicode_AsUTF8(output);
+//        Py_DECREF(output);
+//    }
+//    else {
+//        result += "Failed to get output from StringIO.\n";
+//    }
+//
+//    Py_DECREF(string_io);
+//    Py_DECREF(io);
+//
+//    return result;
+//}
 
-// 返回完整的回显，和在Linux命令行内的一样
 std::string runPythonWithOutput(const std::string& scriptPath_extension, const std::string& url, const std::string& ip, int port) {
     std::string result = "";
 
@@ -277,35 +275,61 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
         return result;
     }
 
-    // 获取check函数
-    PyObject* check_func = PyObject_GetAttrString(poc_module, "check");
-    if (!check_func || !PyCallable_Check(check_func)) {
+    // 获取类对象
+    PyObject* poc_class = PyObject_GetAttrString(poc_module, "DemoPOC");
+    if (!poc_class || !PyCallable_Check(poc_class)) {
         PyErr_Print();
-        result += "Cannot find function 'check' in the script\n";
+        result += "Cannot find class 'DemoPOC' in the script\n";
         Py_DECREF(poc_module);
         return result;
     }
 
-    // 准备参数并调用check函数
-    PyObject* args = PyTuple_Pack(3, PyUnicode_FromString(url.c_str()), PyUnicode_FromString(ip.c_str()), PyLong_FromLong(port));
-    PyObject* py_result = PyObject_CallObject(check_func, args);
-    Py_DECREF(args);
-    Py_DECREF(check_func);
+    // 实例化POC对象
+    PyObject* poc_instance = PyObject_CallFunction(poc_class, "ssi", url.c_str(), ip.c_str(), port);
+    if (!poc_instance) {
+        PyErr_Print();
+        result += "Failed to instantiate 'DemoPOC'\n";
+        Py_DECREF(poc_class);
+        Py_DECREF(poc_module);
+        return result;
+    }
+
+    // 调用 _verify 方法
+    PyObject* verify_func = PyObject_GetAttrString(poc_instance, "_verify");
+    if (!verify_func || !PyCallable_Check(verify_func)) {
+        PyErr_Print();
+        result += "Cannot find method '_verify'\n";
+        Py_DECREF(poc_instance);
+        Py_DECREF(poc_class);
+        Py_DECREF(poc_module);
+        return result;
+    }
+
+    // 调用 _verify 方法
+    PyObject* py_result = PyObject_CallObject(verify_func, NULL);
+    Py_DECREF(verify_func);
+    Py_DECREF(poc_instance);
+    Py_DECREF(poc_class);
     Py_DECREF(poc_module);
 
-    // 处理check函数的返回值
+    // 处理 _verify 方法的返回值
     if (py_result) {
-        if (py_result != Py_None) {
-            result += PyUnicode_AsUTF8(py_result);
-        }
-        else {
-            result += "Function 'check' returned None.\n";
+        if (PyDict_Check(py_result)) {
+            PyObject* verify_info = PyDict_GetItemString(py_result, "VerifyInfo");
+            PyObject* error_info = PyDict_GetItemString(py_result, "Error");
+
+            if (verify_info) {
+                result += PyUnicode_AsUTF8(verify_info);
+            }
+            if (error_info) {
+                result += "\n" + std::string(PyUnicode_AsUTF8(error_info));
+            }
         }
         Py_DECREF(py_result);
     }
     else {
         PyErr_Print();
-        result += "Failed to call function 'check'\n";
+        result += "Failed to call method '_verify'\n";
     }
 
     // 获取所有的stdout和stderr输出
@@ -528,7 +552,8 @@ void fetch_and_padding_cves(std::map<std::string, std::vector<CVE>>& cpes, const
                                 }
                                 tmp.CVSS = cvss_str;
                                 if (cve.has_field(U("summary"))) {
-                                    //std::cout << "Summary: " << cve[U("summary")].as_string() << std::endl;
+                                    tmp.summary = cve[U("summary")].as_string();
+                                    std::cout << "Summary: " << cve[U("summary")].as_string() << std::endl;
                                 }
                                 vecCVE.push_back(tmp);
                             }

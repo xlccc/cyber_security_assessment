@@ -33,6 +33,9 @@ public:
 
     //根据CVE搜索对应POC
     std::vector<POC> searchDataByCVE(const std::string& cve_id);
+
+    //搜索是否存在CVE编号的记录
+    bool isExistCVE(const std::string& cve_id);
     
     //依据id搜索POC名称，用于删除对应POC
     std::string searchPOCById(const int& id);
