@@ -54,6 +54,7 @@ void ServerManager::handle_request(http_request request) {
     }
 
     auto first_segment = path[0];
+    auto second_segment = (path.size() > 1) ? path[1] : "";
     //用于HTTP LOG回显，在无回显的POC中得到有效验证信息
     if (first_segment == U("poc_callback")){
         log_poc_callback(request);
@@ -117,6 +118,18 @@ void ServerManager::handle_request(http_request request) {
     }
     else if (first_segment == U("pocExcute") && request.method() == methods::POST) {
         handle_post_poc_excute(request);
+    }
+    // /pocScan
+    else if (first_segment == U("pocScan") && second_segment.empty() && request.method() == methods::POST) {
+        handle_post_poc_scan(request);
+    }
+    // /pocScan/mergeResults
+    else if (first_segment == U("pocScan") && second_segment == U("mergeResults") && request.method() == methods::POST) {
+        handle_merge_vuln_results(request);
+    }
+    // /pocScan/autoSelectPoc
+    else if (first_segment == U("pocScan") && second_segment == U("autoSelectPoc") && request.method() == methods::POST) {
+        handle_auto_select_poc(request);
     }
     else {
         request.reply(status_codes::NotFound, U("Path not found"));
@@ -211,19 +224,8 @@ void ServerManager::handle_get_cve_scan(http_request request) {
 
 void ServerManager::handle_get_all_data(http_request request) {
     poc_list = dbManager.getAllData();
-    json::value all_data = json::value::array();
-    for (size_t i = 0; i < poc_list.size(); i++) {
-        json::value data;
-        data[U("id")] = json::value::number(poc_list[i].id);
-        data[U("cve_id")] = json::value::string(utility::conversions::to_string_t(poc_list[i].cve_id));
-        data[U("vul_name")] = json::value::string(utility::conversions::to_string_t(poc_list[i].vul_name));
-        data[U("type")] = json::value::string(utility::conversions::to_string_t(poc_list[i].type));
-        data[U("description")] = json::value::string(utility::conversions::to_string_t(poc_list[i].description));
-        data[U("script_type")] = json::value::string(utility::conversions::to_string_t(poc_list[i].script_type));
-        data[U("script")] = json::value::string(utility::conversions::to_string_t(poc_list[i].script));
-        data[U("timestamp")] = json::value::string(utility::conversions::to_string_t(poc_list[i].timestamp));
-        all_data[i] = data;
-    }
+    json::value all_data = poc_list_to_json(poc_list);
+
     http_response response(status_codes::OK);
     response.headers().add(U("Content-Type"), U("application/json; charset=utf-8"));
     response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
@@ -239,10 +241,11 @@ void ServerManager::handle_search_data(http_request request) {
     for (size_t i = 0; i < poc_data.size(); i++) {
         json::value data;
         data[U("id")] = json::value::number(poc_data[i].id);
-        data[U("cve_id")] = json::value::string(utility::conversions::to_string_t(poc_data[i].cve_id));
+        data[U("cve_id")] = json::value::string(utility::conversions::to_string_t(poc_data[i].vuln_id));
         data[U("vul_name")] = json::value::string(utility::conversions::to_string_t(poc_data[i].vul_name));
         data[U("type")] = json::value::string(utility::conversions::to_string_t(poc_data[i].type));
         data[U("description")] = json::value::string(utility::conversions::to_string_t(poc_data[i].description));
+        data[U("affected_infra")] = json::value::string(utility::conversions::to_string_t(poc_list[i].affected_infra));
         data[U("script_type")] = json::value::string(utility::conversions::to_string_t(poc_data[i].script_type));
         data[U("script")] = json::value::string(utility::conversions::to_string_t(poc_data[i].script));
         data[U("timestamp")] = json::value::string(utility::conversions::to_string_t(poc_data[i].timestamp));
@@ -274,7 +277,7 @@ void ServerManager::handle_post_insert_data(http_request request) {
         save_request_to_temp_file(request);
 
         // 解析表单字段
-        std::string cve_id, vul_name, type, description, script_type, mode, edit_filename, filename, poc_content;
+        std::string cve_id, vul_name, type, description, affected_infra, script_type, mode, edit_filename, filename, poc_content;
         std::ifstream temp_file(TEMP_FILENAME, std::ios::binary);
         std::string body((std::istreambuf_iterator<char>(temp_file)), std::istreambuf_iterator<char>());
         temp_file.close();
@@ -307,6 +310,7 @@ void ServerManager::handle_post_insert_data(http_request request) {
                         else if (name == "vul_name") vul_name = decoded_data;
                         else if (name == "type") type = decoded_data;
                         else if (name == "description") description = decoded_data;
+                        else if (name == "affected_infra") affected_infra = decoded_data;
                         else if (name == "script_type") script_type = decoded_data;
                         else if (name == "mode") mode = decoded_data;
                         else if (name == "edit_filename") edit_filename = decoded_data;
@@ -378,7 +382,7 @@ void ServerManager::handle_post_insert_data(http_request request) {
         }
 
         // 插入数据到数据库
-        bool success = dbManager.insertData(cve_id, vul_name, type, description, script_type, filename);
+        bool success = dbManager.insertData(cve_id, vul_name, type, description, affected_infra, script_type, filename);
         if (success) {
             poc_list = dbManager.getAllData();
             response_data[U("message")] = json::value::string(U("添加成功！"));
@@ -583,10 +587,11 @@ void ServerManager::handle_put_update_data_by_id(http_request request)
                         std::string name = headers.substr(name_pos + 6);
                         name = name.substr(0, name.find("\"", 1)); // Extract name between quotes
                         if (name == "id") poc.id = atoi(decoded_data.c_str());
-                        else if (name == "cve_id") poc.cve_id = decoded_data;
+                        else if (name == "cve_id") poc.vuln_id = decoded_data;
                         else if (name == "vul_name") poc.vul_name = decoded_data;
                         else if (name == "type") poc.type = decoded_data;
                         else if (name == "description") poc.description = decoded_data;
+                        else if (name == "affected_infra") poc.affected_infra = decoded_data;
                         else if (name == "script_type") poc.script_type = decoded_data;
                         else if (name == "mode") mode = decoded_data;  // 获取操作模式
                         else if (name == "edit_filename") edit_filename = decoded_data; // 获取编辑文件名
@@ -1354,16 +1359,19 @@ void ServerManager::handle_get_classify_protect(http_request request) {
 
 
 
-json::value ServerManager::CVE_to_json(const CVE& cve) {
+json::value ServerManager::Vuln_to_json(const Vuln& vuln) {
     json::value result;
-    result[U("CVE_id")] = json::value::string(cve.CVE_id);
-    result[U("vul_name")] = json::value::string(cve.vul_name);
-    result[U("CVSS")] = json::value::string(cve.CVSS);
-    result[U("summary")] = json::value::string(cve.summary);
-    result[U("pocExist")] = json::value::boolean(cve.pocExist);
-    result[U("vulExist")] = json::value::string(cve.vulExist);
+    result[U("Vuln_id")] = json::value::string(vuln.Vuln_id);  // 使用 Vuln_id
+    result[U("vul_name")] = json::value::string(vuln.vul_name);
+    result[U("script")] = json::value::string(vuln.script);    // 新增插件名称字段
+    result[U("CVSS")] = json::value::string(vuln.CVSS);
+    result[U("summary")] = json::value::string(vuln.summary);
+    result[U("pocExist")] = json::value::boolean(vuln.pocExist);
+    result[U("ifCheck")] = json::value::boolean(vuln.ifCheck); // 添加 ifCheck 字段
+    result[U("vulExist")] = json::value::string(vuln.vulExist);
     return result;
 }
+
 
 json::value ServerManager::ScanResult_to_json(const ScanResult& scan_result) {
     json::value result;
@@ -1371,57 +1379,111 @@ json::value ServerManager::ScanResult_to_json(const ScanResult& scan_result) {
     result[U("protocol")] = json::value::string(scan_result.protocol);
     result[U("status")] = json::value::string(scan_result.status);
     result[U("service_name")] = json::value::string(scan_result.service_name);
+    result[U("product")] = json::value::string(scan_result.product);
     result[U("version")] = json::value::string(scan_result.version);
 
+    // 处理端口的 CPE 信息及对应的漏洞
     json::value cpes_json = json::value::object();
     for (const auto& cpe : scan_result.cpes) {
         json::value cves_json = json::value::array();
         int index = 0;
         for (const auto& cve : cpe.second) {
-            cves_json[index++] = CVE_to_json(cve);
+            cves_json[index++] = Vuln_to_json(cve);
         }
         cpes_json[cpe.first] = cves_json;
     }
     result[U("cpes")] = cpes_json;
+
+    // 处理端口漏洞扫描结果（vuln_result）
+    json::value vuln_result_json = json::value::array();
+    int index_vuln = 0;
+    for (const auto& vuln : scan_result.vuln_result) {
+        vuln_result_json[index_vuln++] = Vuln_to_json(vuln);
+    }
+    result[U("vuln_result")] = vuln_result_json;
+
+    // 添加是否合并的标识
+    result[U("is_merged")] = json::value::boolean(scan_result.is_merged);
+
     return result;
 }
+
 
 json::value ServerManager::ScanHostResult_to_json(const ScanHostResult& scan_host_result) {
     json::value result;
     result[U("url")] = json::value::string(scan_host_result.url);
     result[U("ip")] = json::value::string(scan_host_result.ip);
-    result[U("scan_time")] = json::value::string(scan_host_result.scan_time);//新添
-    //std::cout << result.serialize() << std::endl;
+    result[U("scan_time")] = json::value::string(scan_host_result.scan_time);
 
+    // 新增：添加 os_list 字段（操作系统类别）
+    json::value os_list_json = json::value::array();
+    int index_os_list = 0;
+    for (const auto& os : scan_host_result.os_list) {
+        os_list_json[index_os_list++] = json::value::string(os);
+    }
+    result[U("os_list")] = os_list_json;
 
+    // 处理操作系统的详细匹配信息
     json::value os_matches_json = json::value::array();
-    int index_os = 0;
+    int index_os_matches = 0;
     for (const auto& os_match : scan_host_result.os_matches) {
-        os_matches_json[index_os++] = json::value::string(os_match);
+        os_matches_json[index_os_matches++] = json::value::string(os_match);
     }
     result[U("os_matches")] = os_matches_json;
 
-
+    // 处理操作系统的 CPE 信息和其对应的漏洞
     json::value cpes_json = json::value::object();
     for (const auto& cpe : scan_host_result.cpes) {
         json::value cves_json = json::value::array();
-        int index = 0;
+        int index_cve = 0;
         for (const auto& cve : cpe.second) {
-            cves_json[index++] = CVE_to_json(cve);
+            cves_json[index_cve++] = Vuln_to_json(cve);
         }
         cpes_json[cpe.first] = cves_json;
     }
     result[U("cpes")] = cpes_json;
 
+    // 处理端口扫描结果
     json::value ports_json = json::value::array();
-    int index = 0;
+    int index_port = 0;
     for (const auto& port : scan_host_result.ports) {
-        ports_json[index++] = ScanResult_to_json(port);
+        ports_json[index_port++] = ScanResult_to_json(port);
     }
     result[U("ports")] = ports_json;
 
+    // 新增：处理操作系统层的漏洞扫描结果
+    json::value os_vuln_result_json = json::value::array();
+    int index_os_vuln = 0;
+    for (const auto& vuln : scan_host_result.vuln_result) {
+        os_vuln_result_json[index_os_vuln++] = Vuln_to_json (vuln);
+    }
+    result[U("os_vuln_result")] = os_vuln_result_json;
+
+    // 添加是否合并的标识字段
+    result[U("is_merged")] = json::value::boolean(scan_host_result.is_merged);
+
     return result;
 }
+
+//POC列表转json
+json::value ServerManager::poc_list_to_json(const std::vector<POC>& poc_list) {
+    json::value all_data = json::value::array();
+    for (size_t i = 0; i < poc_list.size(); i++) {
+        json::value data;
+        data[U("id")] = json::value::number(poc_list[i].id);
+        data[U("vuln_id")] = json::value::string(utility::conversions::to_string_t(poc_list[i].vuln_id));
+        data[U("vul_name")] = json::value::string(utility::conversions::to_string_t(poc_list[i].vul_name));
+        data[U("type")] = json::value::string(utility::conversions::to_string_t(poc_list[i].type));
+        data[U("description")] = json::value::string(utility::conversions::to_string_t(poc_list[i].description));
+        data[U("affected_infra")] = json::value::string(utility::conversions::to_string_t(poc_list[i].affected_infra));
+        data[U("script_type")] = json::value::string(utility::conversions::to_string_t(poc_list[i].script_type));
+        data[U("script")] = json::value::string(utility::conversions::to_string_t(poc_list[i].script));
+        data[U("timestamp")] = json::value::string(utility::conversions::to_string_t(poc_list[i].timestamp));
+        all_data[i] = data;
+    }
+    return all_data;
+}
+
 
 //检验文件是否存在，并获取文件名
 bool ServerManager::check_and_get_filename(const std::string& body, const std::string& content_type, std::string& filename, std::string& data, std::string& error_message) {
@@ -1504,27 +1566,35 @@ void ServerManager::handle_get_poc_content(http_request request) {
     try {
         // 解析请求URL中的参数
         auto query = uri::split_query(request.request_uri().query());
-        if (query.find(U("id")) == query.end()) {
-            request.reply(status_codes::BadRequest, U("Missing 'id' parameter"));
+        if (query.find(U("id")) == query.end() && query.find(U("vuln_id")) == query.end()) {
+            request.reply(status_codes::BadRequest, U("Missing 'id' or 'vuln_id' parameter"));
             return;
         }
 
-        int poc_id = std::stoi(query[U("id")]);
+        std::string poc_filename;
 
-        // 查询POC记录获取文件名
-        std::string poc_filename = dbManager.searchPOCById(poc_id);
+        // 如果有 'id' 参数，根据 id 查询
+        if (query.find(U("id")) != query.end()) {
+            int poc_id = std::stoi(query[U("id")]);
+            poc_filename = dbManager.searchPOCById(poc_id);
+        }
+        // 如果没有 'id' 而有 'vuln_id' 参数，根据 vuln_id 查询
+        else if (query.find(U("vuln_id")) != query.end()) {
+            std::string vuln_id = query[U("vuln_id")];
+            poc_filename = dbManager.searchPOCById(vuln_id);
+        }
+
         if (poc_filename.empty()) {
             request.reply(status_codes::OK, U("{\"content\": \"\"}"));
             return;
         }
 
-        //验证路径是否为文件
+        // 验证路径是否为文件
         if (is_directory(poc_filename)) {
-            std::cerr << "The path is a directory, not a file（no POC file）: " << poc_filename << std::endl;
+            std::cerr << "The path is a directory, not a file (no POC file): " << poc_filename << std::endl;
             request.reply(status_codes::InternalError, U("{\"error\": \"缺少POC文件\"}"));
             return;
         }
-
 
         // 读取文件内容
         std::ifstream file(poc_filename, std::ios::binary);
@@ -1559,6 +1629,7 @@ void ServerManager::handle_get_poc_content(http_request request) {
         request.reply(response);
     }
 }
+
 
 //POC搜索
 void ServerManager::handle_post_poc_search(http_request request) {
@@ -1630,7 +1701,7 @@ void ServerManager::handle_post_poc_verify(http_request request) {
 void ServerManager::setIfCheckByIds(ScanHostResult& hostResult, const std::vector<std::string>& cve_ids, bool value) {
     for (auto& cpe : hostResult.cpes) {
         for (auto& cve : cpe.second) {
-            if (std::find(cve_ids.begin(), cve_ids.end(), cve.CVE_id) != cve_ids.end()) {
+            if (std::find(cve_ids.begin(), cve_ids.end(), cve.Vuln_id) != cve_ids.end()) {
                 cve.ifCheck = value;
             }
         }
@@ -1639,7 +1710,7 @@ void ServerManager::setIfCheckByIds(ScanHostResult& hostResult, const std::vecto
     for (auto& port : hostResult.ports) {
         for (auto& cpe : port.cpes) {
             for (auto& cve : cpe.second) {
-                if (std::find(cve_ids.begin(), cve_ids.end(), cve.CVE_id) != cve_ids.end()) {
+                if (std::find(cve_ids.begin(), cve_ids.end(), cve.Vuln_id) != cve_ids.end()) {
                     cve.ifCheck = value;
                 }
             }
@@ -1665,7 +1736,7 @@ void ServerManager::update_poc_by_cve(http_request request) {
         // 将请求体保存到临时文件
         save_request_to_temp_file(request);
 
-        std::string cve_id, mode, edit_filename, poc_content;
+        std::string cve_id, vul_name , affected_infra,mode, edit_filename, poc_content;
         std::string filename = "";  // 初始化 filename
         std::ifstream temp_file(TEMP_FILENAME, std::ios::binary);
         std::string body((std::istreambuf_iterator<char>(temp_file)), std::istreambuf_iterator<char>());
@@ -1693,6 +1764,8 @@ void ServerManager::update_poc_by_cve(http_request request) {
                         std::string name = headers.substr(name_pos + 6);
                         name = name.substr(0, name.find("\"", 1)); // Extract name between quotes
                         if (name == "cve_id") cve_id = decoded_data;
+                        else if (name == "vul_name") vul_name = decoded_data;
+                        else if (name == "affected_infra")  affected_infra = decoded_data;
                         else if (name == "mode") mode = decoded_data;  // 获取操作模式
                         else if (name == "edit_filename") edit_filename = decoded_data; // 获取编辑文件名
                         else if (name == "poc_content") poc_content = decoded_data;    // 获取编辑后的POC内容
@@ -1707,7 +1780,9 @@ void ServerManager::update_poc_by_cve(http_request request) {
         POC existing_poc;
         if (poc_records.empty()) {
             isExistPOC = false;
-            existing_poc.cve_id = cve_id;
+            existing_poc.vuln_id = cve_id;
+            existing_poc.vul_name = vul_name;
+            existing_poc.affected_infra = affected_infra;
             existing_poc.script_type = "python";
         }
         else
@@ -1816,7 +1891,7 @@ void ServerManager::update_poc_by_cve(http_request request) {
         if (isExistPOC)
             success = dbManager.updateDataById(existing_poc.id, existing_poc);
         else
-            success = dbManager.insertData(existing_poc.cve_id, "", "", "", existing_poc.script_type, existing_poc.script);
+            success = dbManager.insertData(existing_poc.vuln_id, existing_poc.vul_name, "", "", existing_poc.affected_infra, existing_poc.script_type, existing_poc.script);
 
         if (success) {
             response_data[U("message")] = json::value::string(U("操作成功"));
@@ -1863,7 +1938,7 @@ void ServerManager::update_poc_by_cve(http_request request) {
 //        std::string body((std::istreambuf_iterator<char>(temp_file)), std::istreambuf_iterator<char>());
 //        temp_file.close();
 //
-//        auto boundary_pos = content_type.find("boundary=");
+//        auto boundary_pos = content_type.==("boundary=");
 //        if (boundary_pos != std::string::npos) {
 //            std::string boundary = "--" + content_type.substr(boundary_pos + 9);
 //            size_t pos = 0, next_pos;
@@ -2028,6 +2103,253 @@ void ServerManager::log_poc_callback(const http_request& request) {
 
     // 响应成功回显
     request.reply(status_codes::OK, U("[!]POC callback received and logged"));
+}
+
+// 处理插件化扫描请求
+void ServerManager::handle_post_poc_scan(http_request request) {
+    request.extract_json().then([=](json::value json_data) {
+        try {
+            // 提取 IP 地址
+            if (!json_data.has_field(U("ip"))) {
+                throw std::runtime_error("Invalid request: Missing 'ip' field.");
+            }
+            std::string ip = json_data[U("ip")].as_string();
+
+            // 提取 PoC 信息列表
+            std::vector<POC> poc_list;
+            if (json_data.has_array_field(U("poc_list"))) {
+                auto json_array = json_data[U("poc_list")].as_array();
+                for (auto& poc_json : json_array) {
+                    POC poc;
+                    poc.id = poc_json[U("id")].as_integer();
+                    poc.vuln_id = poc_json[U("vuln_id")].as_string();
+                    poc.vul_name = poc_json[U("vul_name")].as_string();
+                    poc.type = poc_json[U("type")].as_string();
+                    poc.description = poc_json[U("description")].as_string();
+                    poc.affected_infra = poc_json[U("affected_infra")].as_string();
+                    poc.script_type = poc_json[U("script_type")].as_string();
+                    poc.script = poc_json[U("script")].as_string();
+                    poc.timestamp = poc_json[U("timestamp")].as_string();
+                    poc_list.push_back(poc);
+                }
+            }
+            else {
+                throw std::runtime_error("Invalid request: Missing 'poc_list' field.");
+            }
+
+            // 定义变量以存储扫描结果
+            ScanHostResult scan_host_result;
+
+            // 检查是否有历史扫描数据
+            if (historicalData.data.find(ip) != historicalData.data.end()) {
+                scan_host_result = historicalData.data[ip];
+                std::cout << "使用历史扫描数据。" << std::endl;
+            }
+            else {
+                // 执行端口扫描
+                bool allPorts = json_data.has_field(U("all_ports")) ? json_data[U("all_ports")].as_bool() : false;
+                std::string outputPath = performPortScan(ip, allPorts);
+
+                // 解析 XML 文件获取扫描结果
+                auto scan_host_results = parseXmlFile(outputPath);
+
+                // 记录扫描时间并更新到历史数据
+                auto timestamp = getCurrentTimestamp(2);
+                for (auto& result : scan_host_results) {
+                    result.scan_time = timestamp;
+                }
+                scan_host_result = scan_host_results[0];
+                historicalData.data[ip] = scan_host_result;
+                std::cout << "Nmap 扫描完成，更新历史数据。" << std::endl;
+            }
+
+            // 选择是否进行基础设施匹配
+            bool match_infra = json_data.has_field(U("match_infra")) ? json_data[U("match_infra")].as_bool() : true;
+
+            // 创建 PoC 任务，基于 match_infra 来选择使用哪个 create_poc_task
+            std::map<std::string, std::vector<POCTask>> poc_tasks_by_port;
+            if (match_infra) {
+                poc_tasks_by_port = create_poc_task(poc_list, scan_host_result, true);  // 带基础设施匹配
+            }
+            else {
+                poc_tasks_by_port = create_poc_task(poc_list, scan_host_result);  // 不进行基础设施匹配
+            }
+
+            // 执行 PoC 任务并更新结果
+            execute_poc_tasks(poc_tasks_by_port, scan_host_result);
+
+            // 将新的扫描结果保存为历史数据
+            historicalData.data[ip] = scan_host_result;
+
+            // 将结果转换为 JSON 格式并返回
+            json::value result_json = ScanHostResult_to_json(scan_host_result);
+            request.reply(status_codes::OK, result_json);
+        }
+        catch (const std::exception& e) {
+            // 记录日志
+            std::cerr << "Error: " << e.what() << std::endl;
+
+            // 返回错误响应
+            json::value error_response;
+            error_response[U("error")] = json::value::string("Error processing PoC scan request.");
+            error_response[U("details")] = json::value::string(e.what());
+            request.reply(status_codes::BadRequest, error_response);
+        }
+        }).wait();
+}
+
+
+
+
+//合并两种漏洞扫描方法的结果
+void ServerManager::handle_merge_vuln_results(http_request request) {
+    request.extract_json().then([=](json::value json_data) {
+        try {
+            // 获取传递过来的 IP 地址
+            if (!json_data.has_field(U("ip"))) {
+                throw std::runtime_error("Invalid request: Missing 'ip' field.");
+            }
+            std::string ip = json_data[U("ip")].as_string();
+
+            // 在历史数据中找到对应 IP 的扫描结果
+            if (historicalData.data.find(ip) == historicalData.data.end()) {
+                throw std::runtime_error("Scan result for the IP not found.");
+            }
+
+            ScanHostResult& scan_host_result = historicalData.data[ip];
+
+            // 执行合并操作
+            merge_vuln_results(scan_host_result);
+
+            //更新到历史数据
+            historicalData.data[ip] = scan_host_result;
+
+            // 返回合并后的结果
+            json::value result_json = ScanHostResult_to_json(scan_host_result);
+            request.reply(status_codes::OK, result_json);
+        }
+        catch (const std::exception& e) {
+            json::value error_response;
+            error_response[U("error")] = json::value::string("Error merging results.");
+            error_response[U("details")] = json::value::string(e.what());
+            request.reply(status_codes::BadRequest, error_response);
+        }
+        }).wait();
+}
+
+
+// 自动选择POC
+void ServerManager::handle_auto_select_poc(http_request request) {
+    std::cout << "[DEBUG] Handling auto-select POC request." << std::endl;
+
+    request.extract_json().then([=](json::value json_data) {
+        try {
+            std::cout << "[DEBUG] Extracting JSON data from request." << std::endl;
+
+            // 提取 IP 地址
+            if (!json_data.has_field(U("ip"))) {
+                throw std::runtime_error("Invalid request: Missing 'ip' field.");
+            }
+            std::string ip = json_data[U("ip")].as_string();
+            std::cout << "[DEBUG] Extracted IP: " << ip << std::endl;
+
+            // 获取所有PoC 列表
+            std::vector<POC> poc_list = dbManager.getAllData();  // 假设从数据库中提取所有可用的 POC
+            std::cout << "[DEBUG] Retrieved " << poc_list.size() << " POCs from the database." << std::endl;
+
+            // 定义变量以存储扫描结果
+            ScanHostResult scan_host_result;
+
+            // 从历史数据中获取主机的扫描结果（或者执行新扫描）
+            if (historicalData.data.find(ip) != historicalData.data.end()) {
+                scan_host_result = historicalData.data[ip];
+                std::cout << "[DEBUG] Using historical scan data for IP: " << ip << std::endl;
+            }
+            else {
+                std::cout << "[DEBUG] No scan data available for the specified IP" << ip << std::endl;
+                // 执行端口扫描
+                bool allPorts = json_data.has_field(U("all_ports")) ? json_data[U("all_ports")].as_bool() : false;
+                std::string outputPath = performPortScan(ip, allPorts);
+
+                // 解析 XML 文件获取扫描结果
+                auto scan_host_results = parseXmlFile(outputPath);
+
+                // 记录扫描时间并更新到历史数据
+                auto timestamp = getCurrentTimestamp(2);
+                for (auto& result : scan_host_results) {
+                    result.scan_time = timestamp;
+                }
+                scan_host_result = scan_host_results[0];
+                historicalData.data[ip] = scan_host_result;
+                std::cout << "Nmap 扫描完成，更新历史数据。" << std::endl;
+            }
+
+
+            // 自动选择匹配的 POC
+            std::vector<POC> selected_pocs;
+
+            for (const auto& poc : poc_list) {
+                if (poc.script.empty()) {
+                    std::cout << "[DEBUG] Skipping POC with ID " << poc.id << " due to missing script." << std::endl;
+                    continue;  // 如果 PoC 没有脚本，跳过
+                }
+
+                std::string infra_lower = poc.affected_infra;
+                std::transform(infra_lower.begin(), infra_lower.end(), infra_lower.begin(), ::tolower);
+                std::cout << "[DEBUG] Checking POC ID " << poc.id << " with affected infrastructure: " << infra_lower << std::endl;
+
+                bool matched = false;
+
+                // 匹配操作系统
+                for (const auto& os : scan_host_result.os_list) {
+                    std::string os_lower = os;
+                    std::transform(os_lower.begin(), os_lower.end(), os_lower.begin(), ::tolower);
+
+                    if (os_lower.find(infra_lower) != std::string::npos) {
+                        std::cout << "[DEBUG] Matched OS: " << os << " with POC ID " << poc.id << std::endl;
+                        selected_pocs.push_back(poc);
+                        matched = true;
+                        break;  // 如果已经匹配到，则跳出操作系统匹配循环
+                    }
+                }
+
+                // 匹配协议或服务
+                if (!matched) {
+                    for (const auto& port : scan_host_result.ports) {
+                        std::string service_lower = port.service_name;
+                        std::string product_lower = port.product;
+                        std::transform(service_lower.begin(), service_lower.end(), service_lower.begin(), ::tolower);
+                        std::transform(product_lower.begin(), product_lower.end(), product_lower.begin(), ::tolower);
+
+                        if (service_lower.find(infra_lower) != std::string::npos || product_lower.find(infra_lower) != std::string::npos) {
+                            std::cout << "[DEBUG] Matched service/product: " << port.service_name << "/" << port.product
+                                << " with POC ID " << poc.id << std::endl;
+                            selected_pocs.push_back(poc);
+                            break;  // 如果匹配到服务或协议，跳出端口匹配循环
+                        }
+                    }
+                }
+            }
+
+            std::cout << "[DEBUG] Total matched POCs: " << selected_pocs.size() << std::endl;
+
+            // 将匹配的 PoC 列表返回给前端
+            json::value result_json = poc_list_to_json(selected_pocs);
+            request.reply(status_codes::OK, result_json);
+
+        }
+        catch (const std::exception& e) {
+            // 错误处理
+            std::cerr << "[ERROR] " << e.what() << std::endl;
+
+            json::value error_response;
+            error_response[U("error")] = json::value::string("Error in auto-selecting PoC.");
+            error_response[U("details")] = json::value::string(e.what());
+            request.reply(status_codes::BadRequest, error_response);
+        }
+        }).wait();
+
+    std::cout << "[DEBUG] Completed handling auto-select POC request." << std::endl;
 }
 
 

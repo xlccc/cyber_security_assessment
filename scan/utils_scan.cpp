@@ -7,38 +7,38 @@
 std::vector<ScanHostResult> parseXmlFile(const std::string& xmlFilePath) {
     std::vector<ScanHostResult> scanHostResults;
 
-    // 尝试打开XML文件
+    // Open the XML file
     std::ifstream file(xmlFilePath);
     if (!file) {
         std::cerr << "Failed to open XML file: " << xmlFilePath << std::endl;
-        return scanHostResults; // 返回空的结果
+        return scanHostResults; // Return empty result
     }
 
-    // 将XML文件内容读取到字符串中
+    // Read the content of the XML file into a string
     std::string xmlContent((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 
-    // 创建RapidXML解析器
+    // Create a RapidXML parser
     rapidxml::xml_document<> xmlDoc;
     try {
         xmlDoc.parse<0>(&xmlContent[0]);
     }
     catch (rapidxml::parse_error& e) {
         std::cerr << "Failed to parse XML file: " << e.what() << std::endl;
-        return scanHostResults; // 返回空的结果
+        return scanHostResults; // Return empty result
     }
 
-    // 获取根节点 "nmaprun"
+    // Get the root node "nmaprun"
     rapidxml::xml_node<>* rootNode = xmlDoc.first_node("nmaprun");
     if (!rootNode) {
         std::cerr << "No 'nmaprun' node found in XML file." << std::endl;
-        return scanHostResults; // 返回空的结果
+        return scanHostResults; // Return empty result
     }
 
-    // 遍历每个主机节点 "host"
+    // Iterate over each host node
     for (rapidxml::xml_node<>* hostNode = rootNode->first_node("host"); hostNode; hostNode = hostNode->next_sibling("host")) {
         ScanHostResult hostResult;
 
-        // 提取IP地址
+        // Extract the IP address
         rapidxml::xml_node<>* addressNode = hostNode->first_node("address");
         if (addressNode) {
             rapidxml::xml_attribute<>* ipAttr = addressNode->first_attribute("addr");
@@ -47,48 +47,50 @@ std::vector<ScanHostResult> parseXmlFile(const std::string& xmlFilePath) {
             }
         }
 
-
-        // 提取操作系统的CPE信息，并初始化为空的CVE数组
+        // Extract OS family names and detailed matches from "osclass" and "osmatch"
         rapidxml::xml_node<>* osNode = hostNode->first_node("os");
         if (osNode) {
             for (rapidxml::xml_node<>* osMatchNode = osNode->first_node("osmatch"); osMatchNode; osMatchNode = osMatchNode->next_sibling("osmatch")) {
-                
-                //提取操作系统版本
+
+                // Extract detailed OS match information
                 rapidxml::xml_attribute<>* osMatchAttr = osMatchNode->first_attribute("name");
-                if (osMatchAttr)
-                {
+                if (osMatchAttr) {
                     hostResult.os_matches.push_back(osMatchAttr->value());
                 }
 
+                // Extract general OS family information
                 for (rapidxml::xml_node<>* osClassNode = osMatchNode->first_node("osclass"); osClassNode; osClassNode = osClassNode->next_sibling("osclass")) {
+                    rapidxml::xml_attribute<>* osFamilyAttr = osClassNode->first_attribute("osfamily");
+                    if (osFamilyAttr) {
+                        hostResult.os_list.insert(osFamilyAttr->value());
+                    }
                     for (rapidxml::xml_node<>* cpeNode = osClassNode->first_node("cpe"); cpeNode; cpeNode = cpeNode->next_sibling("cpe")) {
                         std::string cpe = cpeNode->value();
-                        hostResult.cpes[cpe] = std::vector<CVE>(); // 初始化为空的CVE数组
+                        hostResult.cpes[cpe] = std::vector<Vuln>(); // Initialize empty CVE vector
                     }
                 }
             }
         }
 
-        // 提取端口扫描信息
+        // Extract port scan information
         rapidxml::xml_node<>* portsNode = hostNode->first_node("ports");
         if (portsNode) {
-            // 遍历每个端口节点 "port"
             for (rapidxml::xml_node<>* portNode = portsNode->first_node("port"); portNode; portNode = portNode->next_sibling("port")) {
                 ScanResult scanResult;
 
-                // 提取端口号
+                // Extract port number
                 rapidxml::xml_attribute<>* portIdAttr = portNode->first_attribute("portid");
                 if (portIdAttr) {
                     scanResult.portId = portIdAttr->value();
                 }
 
-                // 提取协议类型
+                // Extract protocol type
                 rapidxml::xml_attribute<>* protocolAttr = portNode->first_attribute("protocol");
                 if (protocolAttr) {
                     scanResult.protocol = protocolAttr->value();
                 }
 
-                // 提取端口状态
+                // Extract port state
                 rapidxml::xml_node<>* stateNode = portNode->first_node("state");
                 if (stateNode) {
                     rapidxml::xml_attribute<>* stateAttr = stateNode->first_attribute("state");
@@ -97,38 +99,44 @@ std::vector<ScanHostResult> parseXmlFile(const std::string& xmlFilePath) {
                     }
                 }
 
-                // 提取服务信息
+                // Extract service information
                 rapidxml::xml_node<>* serviceNode = portNode->first_node("service");
                 if (serviceNode) {
-                    // 提取服务名称
+                    // Extract service name
                     rapidxml::xml_attribute<>* nameAttr = serviceNode->first_attribute("name");
                     if (nameAttr) {
                         scanResult.service_name = nameAttr->value();
                     }
-                    // 提取服务版本
+                    // Extract product name
+                    rapidxml::xml_attribute<>* productAttr = serviceNode->first_attribute("product");
+                    if (productAttr) {
+                        scanResult.product = productAttr->value();
+                    }
+                    // Extract version
                     rapidxml::xml_attribute<>* versionAttr = serviceNode->first_attribute("version");
                     if (versionAttr) {
                         scanResult.version = versionAttr->value();
                     }
 
-                    // 提取CPE信息，并初始化为空的CVE数组
+                    // Extract CPE information and initialize CVE vector
                     for (rapidxml::xml_node<>* cpeNode = serviceNode->first_node("cpe"); cpeNode; cpeNode = cpeNode->next_sibling("cpe")) {
                         std::string cpe = cpeNode->value();
-                        scanResult.cpes[cpe] = std::vector<CVE>(); // 初始化为空的CVE数组
+                        scanResult.cpes[cpe] = std::vector<Vuln>(); // Initialize empty CVE vector
                     }
                 }
 
-                // 将端口扫描结果添加到主机结果的端口列表中
+                // Add the port scan result to the host result
                 hostResult.ports.push_back(scanResult);
             }
         }
 
-        // 将主机扫描结果添加到结果列表中
+        // Add the host scan result to the result list
         scanHostResults.push_back(hostResult);
     }
 
-    return scanHostResults; // 返回解析结果
+    return scanHostResults; // Return the parsed results
 }
+
 
 
 //
@@ -255,6 +263,7 @@ std::vector<ScanHostResult> parseXmlFile(const std::string& xmlFilePath) {
 std::string runPythonWithOutput(const std::string& scriptPath_extension, const std::string& url, const std::string& ip, int port) {
     std::string result = "";
 
+    std::cout << "正在执行：" << scriptPath_extension << std::endl;
     // 重定向stdout和stderr
     PyObject* io = PyImport_ImportModule("io");
     PyObject* string_io = PyObject_CallMethod(io, "StringIO", NULL);
@@ -268,12 +277,21 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
 
     // 导入POC模块
     std::string scriptPath = removeExtension(scriptPath_extension);
+    std::cout << "去除后缀：" << scriptPath << std::endl;
+
     PyObject* poc_module = PyImport_ImportModule(scriptPath.c_str());
     if (!poc_module) {
-        PyErr_Print();
+        PyObject* ptype, * pvalue, * ptraceback;
+        PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+        PyErr_NormalizeException(&ptype, &pvalue, &ptraceback);
+        PyObject* pStrErrorMessage = PyObject_Str(pvalue);
+        std::cerr << "Error message: " << PyUnicode_AsUTF8(pStrErrorMessage) << std::endl;
+        Py_DECREF(pStrErrorMessage);
         result += "Failed to load script: " + scriptPath + "\n";
         return result;
     }
+
+    std::cout << "导入成功" << std::endl;
 
     // 获取类对象
     PyObject* poc_class = PyObject_GetAttrString(poc_module, "DemoPOC");
@@ -345,6 +363,8 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
     Py_DECREF(string_io);
     Py_DECREF(io);
 
+    std::cout << "运行结果：" << std::endl << result << std::endl;
+
     return result;
 }
 
@@ -358,7 +378,7 @@ std::string findScriptByCveId(std::vector<ScanHostResult>& scan_host_result, con
         // 遍历主机的CPES
         for (const auto& cpe : hostResult.cpes) {
             for (const auto& cve : cpe.second) {
-                if (cve.CVE_id == cve_id) {
+                if (cve.Vuln_id == cve_id) {
                     return cve.script; // 找到匹配的CVE，返回script
                 }
             }
@@ -368,7 +388,7 @@ std::string findScriptByCveId(std::vector<ScanHostResult>& scan_host_result, con
         for (const auto& port : hostResult.ports) {
             for (const auto& cpe : port.cpes) {
                 for (const auto& cve : cpe.second) {
-                    if (cve.CVE_id == cve_id) {
+                    if (cve.Vuln_id == cve_id) {
                         return cve.script; // 找到匹配的CVE，返回script
                     }
                 }
@@ -389,7 +409,7 @@ std::string findPortIdByCveId(std::vector<ScanHostResult>& scan_host_result, con
             for (const auto& cpeEntry : portResult.cpes) {
                 // 遍历CPE条目中的CVE列表
                 for (const auto& cve : cpeEntry.second) {
-                    if (cve.CVE_id == cve_id) {
+                    if (cve.Vuln_id == cve_id) {
                         return portResult.portId; // 找到匹配的CVE_id，返回对应的portId
                     }
                 }
@@ -401,7 +421,7 @@ std::string findPortIdByCveId(std::vector<ScanHostResult>& scan_host_result, con
 }
 
 // 判断 CPE 是否一致，返回不一致的 CPE
-std::vector<std::string> compareCPEs(const std::map<std::string, std::vector<CVE>>& newCPEs, const std::map<std::string, std::vector<CVE>>& oldCPEs) {
+std::vector<std::string> compareCPEs(const std::map<std::string, std::vector<Vuln>>& newCPEs, const std::map<std::string, std::vector<Vuln>>& oldCPEs) {
     std::vector<std::string> changedCPEs;
 
     // 使用 C++14 兼容的方式遍历
@@ -506,7 +526,7 @@ void compareAndUpdateResults(const ScanHostResult& oldResult, ScanHostResult& ne
 
 
 // CVE 查询函数
-void fetch_and_padding_cves(std::map<std::string, std::vector<CVE>>& cpes, const std::vector<std::string>& cpes_to_query, int limit) {
+void fetch_and_padding_cves(std::map<std::string, std::vector<Vuln>>& cpes, const std::vector<std::string>& cpes_to_query, int limit) {
     std::string base_url = "http://192.168.136.128:5000/api/cvefor";
 
     for (const auto& cpe_id : cpes_to_query) {
@@ -532,8 +552,8 @@ void fetch_and_padding_cves(std::map<std::string, std::vector<CVE>>& cpes, const
                         if (!jsonObject.is_null()) {
                             auto cve_array = jsonObject.as_array();
                             for (auto& cve : cve_array) {
-                                CVE tmp;
-                                tmp.CVE_id = cve[U("id")].as_string();
+                                Vuln tmp;
+                                tmp.Vuln_id = cve[U("id")].as_string();
                                 std::string cvss_str = "N/A";  // 默认值为 "N/A"
                                 if (cve.has_field(U("cvss"))) {
                                     auto cvss_value = cve[U("cvss")];
@@ -565,3 +585,247 @@ void fetch_and_padding_cves(std::map<std::string, std::vector<CVE>>& cpes, const
         }
     }
 }
+
+//创建POC任务
+std::map<std::string, std::vector<POCTask>> create_poc_task(const std::vector<POC>& poc_list, const ScanHostResult& scan_host_result, bool match_infra) {
+    std::map<std::string, std::set<POCTask>> temp_tasks_by_port;
+    std::map<std::string, std::vector<POCTask>> poc_tasks_by_port;
+
+    for (const auto& poc : poc_list) {
+        // 如果 script 字段为空，则跳过该 POC
+        if (poc.script.empty()) {
+            continue;
+        }
+
+        std::string infra_lower = poc.affected_infra;
+        std::transform(infra_lower.begin(), infra_lower.end(), infra_lower.begin(), ::tolower);
+
+        // 操作系统匹配
+        for (const auto& os : scan_host_result.os_list) {
+            std::string os_lower = os;
+            std::transform(os_lower.begin(), os_lower.end(), os_lower.begin(), ::tolower);
+
+            if (os_lower.find(infra_lower) != std::string::npos) {
+                POCTask task;
+                task.url = scan_host_result.url;
+                task.ip = scan_host_result.ip;
+                task.port = ""; // 空字符串表示操作系统任务
+
+                Vuln vuln;
+                vuln.Vuln_id = poc.vuln_id;
+                vuln.vul_name = poc.vul_name;
+                vuln.script = poc.script;
+                vuln.summary = poc.description;
+                task.vuln = vuln;
+
+                temp_tasks_by_port[task.port].insert(task);
+                break;
+            }
+        }
+
+        // 协议或应用匹配
+        for (const auto& port : scan_host_result.ports) {
+            std::string service_lower = port.service_name;
+            std::string product_lower = port.product;
+            std::transform(service_lower.begin(), service_lower.end(), service_lower.begin(), ::tolower);
+            std::transform(product_lower.begin(), product_lower.end(), product_lower.begin(), ::tolower);
+
+            if (service_lower.find(infra_lower) != std::string::npos || product_lower.find(infra_lower) != std::string::npos) {
+                POCTask task;
+                task.url = scan_host_result.url;
+                task.ip = scan_host_result.ip;
+                task.port = port.portId;
+
+                Vuln vuln;
+                vuln.Vuln_id = poc.vuln_id;
+                vuln.vul_name = poc.vul_name;
+                vuln.script = poc.script;
+                vuln.summary = poc.description;
+                task.vuln = vuln;
+
+                temp_tasks_by_port[task.port].insert(task);
+            }
+        }
+    }
+
+    // 将去重后的任务转存到 std::vector 中
+    for (auto it = temp_tasks_by_port.begin(); it != temp_tasks_by_port.end(); ++it) {
+        const std::string& port = it->first;
+        const std::set<POCTask>& task_set = it->second;
+        poc_tasks_by_port[port] = std::vector<POCTask>(task_set.begin(), task_set.end());
+    }
+
+    return poc_tasks_by_port;
+}
+
+//创建POC任务
+//POC扫描所有开放端口，不进行基础设施匹配的版本（使用两个参数）
+std::map<std::string, std::vector<POCTask>> create_poc_task(const std::vector<POC>& poc_list, const ScanHostResult& scan_host_result) {
+    std::map<std::string, std::set<POCTask>> temp_tasks_by_port;
+    std::map<std::string, std::vector<POCTask>> poc_tasks_by_port;
+
+    for (const auto& poc : poc_list) {
+        // 如果 script 字段为空，则跳过该 POC
+        if (poc.script.empty()) {
+            continue;
+        }
+
+        // 针对每个端口生成任务（不进行基础设施匹配）
+        for (const auto& port : scan_host_result.ports) {
+            POCTask task;
+            task.url = scan_host_result.url;
+            task.ip = scan_host_result.ip;
+            task.port = port.portId;
+
+            Vuln vuln;
+            vuln.Vuln_id = poc.vuln_id;
+            vuln.vul_name = poc.vul_name;
+            vuln.script = poc.script;
+            vuln.summary = poc.description;
+            task.vuln = vuln;
+
+            temp_tasks_by_port[task.port].insert(task);
+        }
+
+        // 如果没有端口，针对操作系统生成任务
+        if (scan_host_result.ports.empty()) {
+            POCTask task;
+            task.url = scan_host_result.url;
+            task.ip = scan_host_result.ip;
+            task.port = "";  // 空字符串表示操作系统任务
+
+            Vuln vuln;
+            vuln.Vuln_id = poc.vuln_id;
+            vuln.vul_name = poc.vul_name;
+            vuln.script = poc.script;
+            vuln.summary = poc.description;
+            task.vuln = vuln;
+
+            temp_tasks_by_port[task.port].insert(task);
+        }
+    }
+
+    // 将去重后的任务转存到 std::vector 中
+    for (auto it = temp_tasks_by_port.begin(); it != temp_tasks_by_port.end(); ++it) {
+        const std::string& port = it->first;
+        const std::set<POCTask>& task_set = it->second;
+        poc_tasks_by_port[port] = std::vector<POCTask>(task_set.begin(), task_set.end());
+    }
+
+    return poc_tasks_by_port;
+}
+
+void execute_poc_tasks(std::map<std::string, std::vector<POCTask>>& poc_tasks_by_port, ScanHostResult& scan_host_result) {
+    for (auto it = poc_tasks_by_port.begin(); it != poc_tasks_by_port.end(); ++it) {
+        const std::string& key = it->first;
+        std::vector<POCTask>& tasks = it->second;
+
+        for (auto& task : tasks) {
+            //std::cout << "运行脚本：" << task.vuln.script << std::endl;
+
+            task.vuln.script =  task.vuln.script;
+            //std::cout << "脚本路径：" << task.vuln.script << std::endl;
+            std::string result = runPythonWithOutput(task.vuln.script, task.url, task.ip, key.empty() ? 0 : std::stoi(key));
+
+            if (result.find("[!]") != std::string::npos) {
+                task.vuln.vulExist = "存在";
+            }
+            else if (result.find("[SAFE]") != std::string::npos) {
+                task.vuln.vulExist = "不存在";
+            }
+            else {
+                task.vuln.vulExist = "未验证"; 
+            }
+
+            if (key.empty()) {
+                scan_host_result.vuln_result.insert(task.vuln);
+            }
+            else {
+                auto port_it = std::find_if(scan_host_result.ports.begin(), scan_host_result.ports.end(),
+                    [&key](const ScanResult& port) { return port.portId == key; });
+                if (port_it != scan_host_result.ports.end()) {
+                    port_it->vuln_result.insert(task.vuln);
+                }
+            }
+        }
+    }
+}
+//合并 漏洞库匹配、插件化扫描两种方式的扫描结果
+void merge_vuln_results(ScanHostResult& host_result) {
+    std::cout << "开始合并操作系统漏洞..." << std::endl;
+
+    // 合并操作系统漏洞
+    std::set<Vuln> merged_os_vulns;
+
+    // 插入插件化扫描的漏洞，忽略“未验证”的漏洞
+    for (const auto& poc_vuln : host_result.vuln_result) {
+        std::cout << "检查插件化扫描漏洞: " << poc_vuln.vul_name
+            << " (ID: " << poc_vuln.Vuln_id << "), 状态: " << poc_vuln.vulExist << std::endl;
+
+        if (poc_vuln.vulExist != "未验证") {
+            merged_os_vulns.insert(poc_vuln);  // 插入插件化扫描的漏洞
+            std::cout << "已添加插件化扫描漏洞: " << poc_vuln.vul_name << std::endl;
+        }
+        else {
+            std::cout << "跳过未验证的漏洞: " << poc_vuln.vul_name << std::endl;
+        }
+    }
+
+    // 插入漏洞库匹配中的漏洞（如果插件化扫描中没有）
+    for (const auto& cpe_entry : host_result.cpes) {
+        for (const auto& cpe_vuln : cpe_entry.second) {
+            if (merged_os_vulns.find(cpe_vuln) == merged_os_vulns.end()) {
+                merged_os_vulns.insert(cpe_vuln);  // 插入漏洞库匹配中的漏洞
+                std::cout << "已添加漏洞库匹配中的漏洞: " << cpe_vuln.vul_name
+                    << " (ID: " << cpe_vuln.Vuln_id << ")" << std::endl;
+            }
+            else {
+                std::cout << "漏洞库匹配中的漏洞已存在，跳过: " << cpe_vuln.vul_name << std::endl;
+            }
+        }
+    }
+
+    // 更新操作系统漏洞结果
+    host_result.vuln_result = merged_os_vulns;
+    std::cout << "操作系统漏洞合并完成，漏洞总数: " << host_result.vuln_result.size() << std::endl;
+
+    // 合并端口漏洞
+    for (auto& port : host_result.ports) {
+        std::cout << "开始合并端口: " << port.portId << " 的漏洞..." << std::endl;
+        std::set<Vuln> merged_port_vulns;
+
+        // 插入插件化扫描中的漏洞，忽略“未验证”的漏洞
+        for (const auto& poc_vuln : port.vuln_result) {
+            std::cout << "检查端口插件化扫描漏洞: " << poc_vuln.vul_name
+                << " (ID: " << poc_vuln.Vuln_id << "), 状态: " << poc_vuln.vulExist << std::endl;
+
+            if (poc_vuln.vulExist != "未验证") {
+                merged_port_vulns.insert(poc_vuln);
+                std::cout << "已添加端口插件化扫描漏洞: " << poc_vuln.vul_name << std::endl;
+            }
+            else {
+                std::cout << "跳过未验证的端口漏洞: " << poc_vuln.vul_name << std::endl;
+            }
+        }
+
+        // 插入漏洞库匹配中的漏洞（如果插件化扫描中没有）
+        for (const auto& cpe_entry : port.cpes) {
+            for (const auto& cpe_vuln : cpe_entry.second) {
+                if (merged_port_vulns.find(cpe_vuln) == merged_port_vulns.end()) {
+                    merged_port_vulns.insert(cpe_vuln);
+                    std::cout << "已添加端口漏洞库匹配中的漏洞: " << cpe_vuln.vul_name
+                        << " (ID: " << cpe_vuln.Vuln_id << ")" << std::endl;
+                }
+                else {
+                    std::cout << "端口漏洞库匹配中的漏洞已存在，跳过: " << cpe_vuln.vul_name << std::endl;
+                }
+            }
+        }
+
+        // 更新端口漏洞结果
+        port.vuln_result = merged_port_vulns;
+        std::cout << "端口 " << port.portId << " 的漏洞合并完成，漏洞总数: " << port.vuln_result.size() << std::endl;
+    }
+    std::cout << "所有漏洞合并完成！" << std::endl;
+}
+
