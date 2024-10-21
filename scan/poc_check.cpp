@@ -6,7 +6,7 @@ void searchPOCs(ScanHostResult& hostResult, DatabaseManager& dbManager) {
     // 搜索操作系统相关的POC
     for (auto& cpe : hostResult.cpes) {
         for (auto& cve : cpe.second) {
-            auto pocRecords = dbManager.searchDataByCVE(cve.CVE_id);
+            auto pocRecords = dbManager.searchDataByCVE(cve.Vuln_id);
             if (!pocRecords.empty()) {
                 cve.vul_name = pocRecords[0].vul_name;
 
@@ -23,7 +23,7 @@ void searchPOCs(ScanHostResult& hostResult, DatabaseManager& dbManager) {
     for (auto& port : hostResult.ports) {
         for (auto& cpe : port.cpes) {
             for (auto& cve : cpe.second) {
-                auto pocRecords = dbManager.searchDataByCVE(cve.CVE_id);
+                auto pocRecords = dbManager.searchDataByCVE(cve.Vuln_id);
                 if (!pocRecords.empty()) {
                     cve.vul_name = pocRecords[0].vul_name;
                     
@@ -55,8 +55,12 @@ void verifyPOCs(std::vector<ScanHostResult>& scanHostResults) {
                     if (result.find("[!]") != std::string::npos) {
                         cve.vulExist = "存在";
                     }
-                    else {
+                    else if (result.find("[SAFE]") != std::string::npos) {
                         cve.vulExist = "不存在";
+                    }
+                    else
+                    {
+                        cve.vulExist = "未验证";
                     }
                 }
             }

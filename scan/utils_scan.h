@@ -10,6 +10,10 @@
 #include <cpprest/http_client.h>//用于处理 HTTP 请求的库。
 #include <cpprest/json.h>//用于处理 JSON 数据的库。
 #include <cpprest/uri_builder.h>//用于构建 URI 的库
+#include <unordered_set>
+#include"scan_struct.h"
+#include"database/poc.h"
+using namespace std;
 
 
 //解析nmap端口扫描结果的xml文件
@@ -27,10 +31,23 @@ std::string findScriptByCveId(std::vector<ScanHostResult>& scan_host_result, con
 std::string findPortIdByCveId(std::vector<ScanHostResult>& scan_host_result, const std::string& cve_id);
 
 // 判断 CPE 是否一致，返回不一致的 CPE
-std::vector<std::string> compareCPEs(const std::map<std::string, std::vector<CVE>>& newCPEs, const std::map<std::string, std::vector<CVE>>& oldCPEs);
+std::vector<std::string> compareCPEs(const std::map<std::string, std::vector<Vuln>>& newCPEs, const std::map<std::string, std::vector<Vuln>>& oldCPEs);
 
 // 比对并更新结果，根据端口信息和 CPE 信息来决定查询策略
 void compareAndUpdateResults(const ScanHostResult& oldResult, ScanHostResult& newResult, int limit = 0);
 
 // CVE 查询函数
-void fetch_and_padding_cves(std::map<std::string, std::vector<CVE>>& cpes, const std::vector<std::string>& cpes_to_query, int limit = 20);
+void fetch_and_padding_cves(std::map<std::string, std::vector<Vuln>>& cpes, const std::vector<std::string>& cpes_to_query, int limit = 20);
+
+//创建POC任务
+std::map<std::string, std::vector<POCTask>> create_poc_task(const std::vector<POC>& poc_list, const ScanHostResult& scan_host_result);
+
+//创建POC任务
+//POC扫描所有开放端口，不进行基础设施匹配的版本（使用两个参数）
+std::map<std::string, std::vector<POCTask>> create_poc_task(const std::vector<POC>& poc_list, const ScanHostResult& scan_host_result, bool match_infra);
+
+//执行POC任务
+void execute_poc_tasks(std::map<std::string, std::vector<POCTask>>& poc_tasks_by_port, ScanHostResult& scan_host_result);
+
+//合并 漏洞库匹配、插件化扫描两种方式的扫描结果
+void merge_vuln_results(ScanHostResult& scan_host_result);

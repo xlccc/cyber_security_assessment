@@ -37,14 +37,17 @@ bool DatabaseManager::createTable() {
     std::string sql = R"(
     CREATE TABLE IF NOT EXISTS POC (
         ID INTEGER PRIMARY KEY AUTOINCREMENT, -- 主键ID，自动增长的整数
-        CVE_id TEXT NOT NULL,                 -- CVE编号，可能会有重复
-        Vul_name TEXT,                        -- 漏洞名称（补充）
+        Vuln_id TEXT UNIQUE,                  -- CVE编号或其他编号，可能会有重复
+        Vul_name TEXT NOT NULL,               -- 漏洞名称
         Type TEXT,                            -- 漏洞类型，描述漏洞的类别
         Description TEXT,                     -- 漏洞描述，详细说明漏洞的细节
+        Affected_infra TEXT NOT NULL          -- 受影响的基础设施（操作系统或软件或协议、非空）(新增）
         Script_type TEXT NOT NULL DEFAULT 'python' CHECK( Script_type IN ('python', 'c/c++', 'yaml') ),     
                                               -- POC类型，只可在这三种类型中选
         Script TEXT,                          -- POC脚本代码，存储Python脚本的文本
         Timestamp TEXT NOT NULL               -- 添加时间，格式为"YYYY-MM-DD HH:MM:SS" 
+        UNIQUE (vuln_id),                        -- 单独将 vuln_id 设为唯一
+        UNIQUE (vuln_id, vul_name)               -- 继续保持 vuln_id 和 vul_name 的组合唯一
     );
     )";
     char* errMsg = nullptr;
@@ -61,9 +64,9 @@ bool DatabaseManager::createTable() {
 }
 
 //添加POC数据
-bool DatabaseManager::insertData(const std::string& cve_id, const std::string& vul_name, const std::string& type, const std::string& description, const std::string& script_type, const std::string& script) {
+bool DatabaseManager::insertData(const std::string& vuln_id, const std::string& vul_name, const std::string& type, const std::string& description, const std::string affected_infra , const std::string& script_type, const std::string& script) {
     std::string timestamp = getCurrentTimestamp();
-    std::string sql = "INSERT INTO POC (CVE_id, Vul_name, Type, Description, Script_type, Script, Timestamp) VALUES (?, ?, ?, ?, ?, ?, ?);";
+    std::string sql = "INSERT INTO POC (Vuln_id, Vul_name, Type, Description, Affected_infra , Script_type, Script, Timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
     //表示一个编译好的SQL语句
     sqlite3_stmt* stmt;
     //编译SQL语句,-1表示读取到第一个终止符停止。
@@ -72,13 +75,14 @@ bool DatabaseManager::insertData(const std::string& cve_id, const std::string& v
         return false;
     }
     //将值绑定到参数
-    sqlite3_bind_text(stmt, 1, cve_id.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 1, vuln_id.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 2, vul_name.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 3, type.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 4, description.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 5, script_type.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 6, script.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 7, timestamp.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 5, affected_infra.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 6, script_type.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 7, script.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 8, timestamp.c_str(), -1, SQLITE_TRANSIENT);
     //执行SQL语句
     int rc = sqlite3_step(stmt);
     //sqlite3_finalize() 函数来删除准备好的语句。
@@ -128,7 +132,7 @@ bool DatabaseManager::updateDataById(int id, const POC& poc) {
 
     //更新操作
     std::string timestamp = getCurrentTimestamp();
-    std::string sql = "UPDATE POC SET CVE_id = ?, Vul_name = ?, Type = ?, Description = ?, Script_type = ?, Script = ?, Timestamp = ? WHERE ID = ?;";
+    std::string sql = "UPDATE POC SET Vuln_id = ?, Vul_name = ?, Type = ?, Description = ?, Affected_infra = ?, Script_type = ?, Script = ?, Timestamp = ? WHERE ID = ?;";
 
     sqlite3_stmt* stmt;
     if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
@@ -136,14 +140,15 @@ bool DatabaseManager::updateDataById(int id, const POC& poc) {
         return false;
     }
     //将值绑定到参数
-    sqlite3_bind_text(stmt, 1, poc.cve_id.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 1, poc.vuln_id.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 2, poc.vul_name.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 3, poc.type.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 4, poc.description.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 5, poc.script_type.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 6, poc.script.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 7, timestamp.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_int(stmt, 8, id);
+    sqlite3_bind_text(stmt, 5, poc.affected_infra.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 6, poc.script_type.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 7, poc.script.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 8, timestamp.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(stmt, 9, id);
 
     //执行SQL语句
     rc = sqlite3_step(stmt);
@@ -166,10 +171,11 @@ std::vector<POC> DatabaseManager::searchData(const std::string& keyword) {
     //std::string pattern = "%" + convertToUTF8(keyword, "GBK") + "%";
     std::string pattern = "%" + keyword + "%";
     std::string sql = "SELECT * FROM POC WHERE "
-        "CVE_id LIKE '" + pattern + "' OR "
+        "Vuln_id LIKE '" + pattern + "' OR "
         "Vul_name LIKE '" + pattern + "' OR "
         "Type LIKE '" + pattern + "' OR "
         "Description LIKE '" + pattern + "' OR "
+        "Affected_infra LIKE '" + pattern + "' OR "
         "Script_type LIKE '" + pattern + "' OR "
         "Timestamp LIKE '" + pattern + "';";
 
@@ -185,12 +191,12 @@ std::vector<POC> DatabaseManager::searchData(const std::string& keyword) {
 }
 
 
-//按CVE编号搜索POC数据，若没有，返回无对应POC
+//按CVE编号或其他编号搜索POC数据，若没有，返回无对应POC
 //根据返回的vector数组的empty()来判断是否存在POC
-std::vector<POC> DatabaseManager::searchDataByCVE(const std::string& cve_id) {
+std::vector<POC> DatabaseManager::searchDataByCVE(const std::string& vuln_id) {
     std::vector<POC> records;
     // SQL语句搜索数据
-    std::string sql = "SELECT * FROM POC WHERE CVE_id='" + cve_id + "';";
+    std::string sql = "SELECT * FROM POC WHERE vuln_id='" + vuln_id + "';";
     char* errMsg = nullptr;
     ;
     // 执行SQL语句，并处理结果
@@ -203,11 +209,11 @@ std::vector<POC> DatabaseManager::searchDataByCVE(const std::string& cve_id) {
 }
 
 //根据CVE搜索对应POC
-bool DatabaseManager::isExistCVE(const std::string& cve_id)
+bool DatabaseManager::isExistCVE(const std::string& vuln_id)
 {
     std::vector<POC> records;
     // SQL语句搜索数据
-    std::string sql = "SELECT * FROM POC WHERE CVE_id='" + cve_id + "';";
+    std::string sql = "SELECT * FROM POC WHERE Vuln_id='" + vuln_id + "';";
     char* errMsg = nullptr;
     ;
     // 执行SQL语句，并处理结果
@@ -227,6 +233,26 @@ std::string DatabaseManager::searchPOCById(const int & id) {
     std::string POC_filename = "";
     // SQL语句搜索数据
     std::string sql = "SELECT * FROM POC WHERE ID='" + std::to_string(id) + "';";
+    char* errMsg = nullptr;
+
+    // 执行SQL语句，并处理结果
+    int rc = sqlite3_exec(db, sql.c_str(), callback, &records, &errMsg);
+    if (rc != SQLITE_OK) {
+        std::cerr << "SQL error: " << errMsg << std::endl;
+        sqlite3_free(errMsg);
+    }
+    if (records.empty())
+        return POC_filename;
+    POC_filename = records[0].script;
+    POC_filename = "../../../src/scan/scripts/" + POC_filename;
+    return POC_filename;
+}
+//依据vuln_id搜索POC路径
+std::string DatabaseManager::searchPOCById(const std::string& vuln_id) {
+    std::vector<POC> records;
+    std::string POC_filename = "";
+    // SQL语句搜索数据
+    std::string sql = "SELECT * FROM POC WHERE vuln_id='" + vuln_id + "';";
     char* errMsg = nullptr;
 
     // 执行SQL语句，并处理结果
@@ -277,8 +303,8 @@ int DatabaseManager::callback(void* data, int argc, char** argv, char** azColNam
         if (column == "ID") {
             poc.id = std::stoi(argv[i]);       //获取数据库中的id
         }
-        else if (column == "CVE_id") {
-            poc.cve_id = argv[i] ? argv[i] : "";
+        else if (column == "Vuln_id") {
+            poc.vuln_id = argv[i] ? argv[i] : "";
         }
         else if (column == "Vul_name") {
             poc.vul_name = argv[i] ? argv[i] : "";
@@ -288,6 +314,9 @@ int DatabaseManager::callback(void* data, int argc, char** argv, char** azColNam
         }
         else if (column == "Description") {
             poc.description = argv[i] ? argv[i] : "";
+        }
+        else if (column == "Affected_infra") {
+            poc.affected_infra = argv[i] ? argv[i] : "";
         }
         else if (column == "Script_type") {
             poc.script_type = argv[i] ? argv[i] : "";
