@@ -23,7 +23,7 @@ public:
     // 创建表
     bool createTable();
     // 插入数据
-    bool insertData(const std::string& cve_id, const std::string& vul_name, const std::string& type, const std::string& description, const std::string& script_type, const std::string& script);
+    bool insertData(const std::string& vuln_id, const std::string& vul_name, const std::string& type, const std::string& description, const std::string affected_infra, const std::string& script_type, const std::string& script);
     // 删除数据
     bool deleteDataById(int id);
     // 更新数据
@@ -32,13 +32,15 @@ public:
     std::vector<POC> searchData(const std::string& keyword);
 
     //根据CVE搜索对应POC
-    std::vector<POC> searchDataByCVE(const std::string& cve_id);
+    std::vector<POC> searchDataByCVE(const std::string& vuln_id);
 
     //搜索是否存在CVE编号的记录
-    bool isExistCVE(const std::string& cve_id);
+    bool isExistCVE(const std::string& vuln_id);
     
     //依据id搜索POC名称，用于删除对应POC
     std::string searchPOCById(const int& id);
+    //依据id搜索POC名称，用于删除对应POC
+    std::string searchPOCById(const std::string& vuln_id);
 
     //依据id搜索POC数据
     bool searchDataById(const int& id, POC& poc);

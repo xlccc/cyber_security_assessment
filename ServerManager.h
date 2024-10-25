@@ -72,9 +72,11 @@ private:
     void handle_post_testWeak(http_request request);
     void handle_post_classify_protect(http_request request);
     void handle_get_classify_protect(http_request request);
-    json::value CVE_to_json(const CVE& cve);
+    json::value Vuln_to_json(const Vuln& vuln);
     json::value ScanResult_to_json(const ScanResult& scan_result);
     json::value ScanHostResult_to_json(const ScanHostResult& scan_host_result);
+    //POC列表转json（新增）
+    json::value poc_list_to_json(const std::vector<POC>& poc_list);
 
     //检验文件是否存在，并获取文件名
     bool check_and_get_filename(const std::string& body, const std::string& content_type, std::string& filename, std::string& data, std::string& error_message);
@@ -98,7 +100,13 @@ private:
     // 记录 /poc_callback 路径的请求（待修改）
     void log_poc_callback(const http_request& request);
 
-
+    //插件化扫描
+    void handle_post_poc_scan(http_request request);
+    //合并两种漏洞扫描方法的结果
+    void handle_merge_vuln_results(http_request request);
+    //自动选择POC
+    void handle_auto_select_poc(http_request request);
+    
 
     DatabaseManager dbManager;
     std::vector<POC> poc_list;
