@@ -17,10 +17,6 @@ set(VCPKG_DIR "/vcpkg")
 include_directories(${VCPKG_DIR}/installed/x64-linux/include)
 link_directories(${VCPKG_DIR}/installed/x64-linux/lib)
 
-#添加vcpkg相关路径，以便 CMake 能够找到安装库的配置文件
-#set(CMAKE_PREFIX_PATH "${VCPKG_DIR}/installed/x64-linux/share" CACHE PATH "Path to vcpkg installed libraries")
-
-
 # 查找并加载必要的库
 find_package(cpprestsdk CONFIG REQUIRED)
 find_package(libssh CONFIG REQUIRED)
@@ -28,6 +24,8 @@ find_package(ICU REQUIRED COMPONENTS uc i18n io data)
 find_package(SQLite3 REQUIRED)
 find_package(uchardet CONFIG REQUIRED)
 
+# 添加 MySQL Connector/C++
+find_package(unofficial-mysql-connector-cpp CONFIG REQUIRED)
 
 # 手动设置Python路径
 set(Python_EXECUTABLE "/usr/bin/python3.8")
@@ -57,13 +55,11 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/utils
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/scan
-    ${cpprest_INCLUDE_DIRS}
-    ${LIBSSH_INCLUDE_DIRS}
+    ${cpprestsdk_INCLUDE_DIRS}
+    ${libssh_INCLUDE_DIRS}
     ${ICU_INCLUDE_DIRS}
     ${SQLite3_INCLUDE_DIRS}
-    ${pybind11_INCLUDE_DIRS}
     ${Python_INCLUDE_DIRS}
-    ${CMAKE_SOURCE_DIR}/include/pybind11/include #pybind11的头文件路径
 )
 
 # 设置源文件和头文件
@@ -80,7 +76,8 @@ set(SOURCES
     scan/utils_scan.cpp
     ServerManager.cpp
     scan/poc_check.cpp
- "database/db_config.cpp")
+    database/db_config.cpp
+)
 
 set(HEADERS
     Command_Excute.h
@@ -98,7 +95,8 @@ set(HEADERS
     scan/utils_scan.h
     ServerManager.h
     scan/poc_check.h
- "scan/config.h")
+    scan/config.h
+)
 
 # 添加可执行文件
 add_executable(MyCppProject ${SOURCES} ${HEADERS})
@@ -114,7 +112,9 @@ target_link_libraries(MyCppProject PRIVATE
     ${SQLite3_LIBRARIES}
     ${Python_LIBRARIES}
     uchardet::libuchardet
+    unofficial::mysql-connector-cpp::connector  # 修正了此行
+    resolv  # 确保添加这一行
 )
 
- #支持 Unicode 文件名和路径
+# 支持 Unicode 文件名和路径
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -finput-charset=UTF-8 -fexec-charset=UTF-8")
