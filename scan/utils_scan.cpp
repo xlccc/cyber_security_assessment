@@ -526,7 +526,7 @@ void compareAndUpdateResults(const ScanHostResult& oldResult, ScanHostResult& ne
 
 
 // CVE 查询函数
-void fetch_and_padding_cves(std::map<std::string, std::vector<CVE>>& cpes, const std::vector<std::string>& cpes_to_query, int limit) {
+void fetch_and_padding_cves(std::map<std::string, std::vector<Vuln>>& cpes, const std::vector<std::string>& cpes_to_query, int limit) {
     std::string base_url = "http://192.168.29.129:5000/api/cvefor";
 
     for (const auto& cpe_id : cpes_to_query) {
