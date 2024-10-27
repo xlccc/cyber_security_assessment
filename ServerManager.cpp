@@ -999,7 +999,7 @@ void ServerManager::handle_post_get_Nmap(http_request request)
 
         // 解析XML文件以获取扫描结果（多个主机）
         scan_host_result = parseXmlFile(outputPath);
-
+            
         // 获取当前时间并记录到每个扫描结果中
         auto start = std::chrono::high_resolution_clock::now();
 
@@ -1625,6 +1625,7 @@ void ServerManager::handle_get_poc_content(http_request request) {
         }
 
         std::string poc_filename;
+        json::value response_data;
 
         // 如果有 'id' 参数，根据 id 查询
         if (query.find(U("id")) != query.end()) {
@@ -1635,6 +1636,12 @@ void ServerManager::handle_get_poc_content(http_request request) {
         else if (query.find(U("vuln_id")) != query.end()) {
             std::string vuln_id = query[U("vuln_id")];
             poc_filename = dbManager.searchPOCById(vuln_id);
+
+            // 使用 vuln_id 查询 POC 并提取 affected_infra 字段
+            auto poc_data = dbManager.searchDataByCVE(vuln_id);
+            if (!poc_data.empty()) {
+                response_data[U("affected_infra")] = json::value::string(utility::conversions::to_string_t(poc_data[0].affected_infra));
+            }
         }
 
         if (poc_filename.empty()) {
@@ -1659,8 +1666,7 @@ void ServerManager::handle_get_poc_content(http_request request) {
         std::string file_content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
         file.close();
 
-        // 返回文件内容
-        json::value response_data;
+        // 设置文件内容并返回响应
         response_data[U("content")] = json::value::string(utility::conversions::to_string_t(file_content));
 
         http_response response(status_codes::OK);
@@ -1682,6 +1688,8 @@ void ServerManager::handle_get_poc_content(http_request request) {
         request.reply(response);
     }
 }
+
+
 
 
 //POC搜索
@@ -2187,27 +2195,28 @@ void ServerManager::handle_post_poc_scan(http_request request) {
             }
             std::string ip = json_data[U("ip")].as_string();
 
+            std::vector<POC> poc_list = dbManager.getAllData();
             // 提取 PoC 信息列表
-            std::vector<POC> poc_list;
-            if (json_data.has_array_field(U("poc_list"))) {
-                auto json_array = json_data[U("poc_list")].as_array();
-                for (auto& poc_json : json_array) {
-                    POC poc;
-                    poc.id = poc_json[U("id")].as_integer();
-                    poc.vuln_id = poc_json[U("vuln_id")].as_string();
-                    poc.vul_name = poc_json[U("vul_name")].as_string();
-                    poc.type = poc_json[U("type")].as_string();
-                    poc.description = poc_json[U("description")].as_string();
-                    poc.affected_infra = poc_json[U("affected_infra")].as_string();
-                    poc.script_type = poc_json[U("script_type")].as_string();
-                    poc.script = poc_json[U("script")].as_string();
-                    poc.timestamp = poc_json[U("timestamp")].as_string();
-                    poc_list.push_back(poc);
-                }
-            }
-            else {
-                throw std::runtime_error("Invalid request: Missing 'poc_list' field.");
-            }
+            //std::vector<POC> poc_list;
+            //if (json_data.has_array_field(U("poc_list"))) {
+            //    auto json_array = json_data[U("poc_list")].as_array();
+            //    for (auto& poc_json : json_array) {
+            //        POC poc;
+            //        poc.id = poc_json[U("id")].as_integer();
+            //        poc.vuln_id = poc_json[U("vuln_id")].as_string();
+            //        poc.vul_name = poc_json[U("vul_name")].as_string();
+            //        poc.type = poc_json[U("type")].as_string();
+            //        poc.description = poc_json[U("description")].as_string();
+            //        poc.affected_infra = poc_json[U("affected_infra")].as_string();
+            //        poc.script_type = poc_json[U("script_type")].as_string();
+            //        poc.script = poc_json[U("script")].as_string();
+            //        poc.timestamp = poc_json[U("timestamp")].as_string();
+            //        poc_list.push_back(poc);
+            //    }
+            //}
+            //else {
+            //    throw std::runtime_error("Invalid request: Missing 'poc_list' field.");
+            //}
 
             // 定义变量以存储扫描结果
             ScanHostResult scan_host_result;
