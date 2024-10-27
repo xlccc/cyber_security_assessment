@@ -13,6 +13,10 @@
 #include <unordered_set>
 #include"scan_struct.h"
 #include"database/poc.h"
+#include <future>
+#include <thread>
+#include <algorithm>
+#include "utils/config.h"
 using namespace std;
 
 
