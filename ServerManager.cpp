@@ -6,7 +6,7 @@ using namespace web::http::experimental::listener;
 using namespace concurrency::streams;
 
 ServerManager::ServerManager() : dbManager(DB_PATH) {
-    utility::string_t address = U("http://10.9.130.136:8081/");
+    utility::string_t address = U("http://10.9.130.193:8081/");
     uri_builder uri(address);
     auto addr = uri.to_uri().to_string();
     listener = std::make_unique<http_listener>(addr);
@@ -298,8 +298,8 @@ void ServerManager::handle_post_insert_data(http_request request) {
                 std::string headers = part.substr(0, header_end_pos);
                 std::string part_data = part.substr(header_end_pos + 4, part.length() - header_end_pos - 6); // Exclude trailing CRLF
 
-                std::cout << headers << std::endl;
-                std::cout << part_data << std::endl;
+                //std::cout << headers << std::endl;
+                //std::cout << part_data << std::endl;
 
                 std::string decoded_data = autoConvertToUTF8(part_data);
 
@@ -333,34 +333,48 @@ void ServerManager::handle_post_insert_data(http_request request) {
 
         // 编辑逻辑
         if (mode == "edit") {
-            if (!edit_filename.empty()) {
-                std::string full_file_path = POC_DIRECTORY + edit_filename;
+            try {
+                if (!edit_filename.empty()) {
+                    std::string full_file_path = POC_DIRECTORY + edit_filename;
+                    std::cerr << "Attempting to edit file at path: " << full_file_path << std::endl; // 调试信息
 
-                // 检查文件是否已经存在
-                std::ifstream infile(full_file_path);
-                if (infile.good() && edit_filename != "") {
-                    http_response response;
-                    response_data[U("message")] = json::value::string(U("添加失败！文件名已存在，请修改！"));
-                    response.set_status_code(status_codes::BadRequest);
-                    response.set_body(response_data);
-                    request.reply(response);
-                    return;
-                }
+                    // 检查文件是否已经存在
+                    std::ifstream infile(full_file_path);
+                    if (infile.good() && edit_filename != "") {
+                        std::cerr << "File already exists: " << full_file_path << std::endl; // 调试信息
+                        response_data[U("message")] = json::value::string(U("添加失败！文件名已存在，请修改！"));
+                        response.set_status_code(status_codes::BadRequest);
+                        response.set_body(response_data);
+                        request.reply(response);
+                        return;
+                    }
 
-                //写入文件
-                std::ofstream outfile(full_file_path);
-                if (outfile.is_open()) {
-                    outfile << poc_content;
-                    outfile.close();
-                    filename = edit_filename;
+                    // 写入文件内容
+                    std::ofstream outfile(full_file_path);
+                    if (outfile.is_open()) {
+                        std::cerr << "Writing content to file: " << edit_filename << std::endl; // 调试信息
+                        outfile << poc_content;
+                        outfile.close();
+                        filename = edit_filename;
+                        std::cerr << "File written and closed successfully: " << edit_filename << std::endl; // 调试信息
+                    }
+                    else {
+                        std::cerr << "Failed to open file for writing: " << full_file_path << std::endl; // 调试信息
+                        response_data[U("message")] = json::value::string(U("无法保存编辑后的文件内容。"));
+                        response.set_status_code(status_codes::InternalError);
+                        response.set_body(response_data);
+                        request.reply(response);  // 提前回复
+                        return;
+                    }
                 }
-                else {
-                    response_data[U("message")] = json::value::string(U("无法保存编辑后的文件内容。"));
-                    response.set_status_code(status_codes::InternalError);
-                    response.set_body(response_data);
-                    request.reply(response);  // 提前回复
-                    return;
-                }
+            }
+            catch (const std::exception& e) {
+                std::cerr << "Exception during file edit: " << e.what() << std::endl;
+                response_data[U("message")] = json::value::string(U("编辑过程中发生错误：") + utility::conversions::to_string_t(e.what()));
+                response.set_status_code(status_codes::InternalError);
+                response.set_body(response_data);
+                request.reply(response);
+                return;
             }
         }
 
@@ -1533,21 +1547,55 @@ bool ServerManager::check_and_get_filename(const std::string& body, const std::s
     return false;  // 文件不存在
 }
 
-//上传文件
-void ServerManager::upload_file(const std::string& filename, const std::string& data) {
-    // 构建文件路径
-    auto path = U("../../../src/scan/scripts/") + utility::conversions::to_string_t(filename);
+////上传文件
+//void ServerManager::upload_file(const std::string& filename, const std::string& data) {
+//    // 构建文件路径
+//    auto path = U("../../../src/scan/scripts/") + utility::conversions::to_string_t(filename);
+//
+//    // 打开输出流并写入数据
+//    concurrency::streams::fstream::open_ostream(path).then([=](concurrency::streams::ostream outFile) mutable {
+//        auto fileStream = std::make_shared<concurrency::streams::ostream>(outFile);
+//        std::vector<uint8_t> file_data(data.begin(), data.end());  // 将string数据转换为字节数组
+//        auto buf = concurrency::streams::container_buffer<std::vector<uint8_t>>(std::move(file_data));
+//        fileStream->write(buf, buf.size()).then([=](size_t) {
+//            fileStream->close().get();  // 关闭文件流
+//            }).wait();
+//        }).wait();
+//}
 
-    // 打开输出流并写入数据
-    concurrency::streams::fstream::open_ostream(path).then([=](concurrency::streams::ostream outFile) mutable {
-        auto fileStream = std::make_shared<concurrency::streams::ostream>(outFile);
-        std::vector<uint8_t> file_data(data.begin(), data.end());  // 将string数据转换为字节数组
-        auto buf = concurrency::streams::container_buffer<std::vector<uint8_t>>(std::move(file_data));
-        fileStream->write(buf, buf.size()).then([=](size_t) {
-            fileStream->close().get();  // 关闭文件流
+
+void ServerManager::upload_file(const std::string& filename, const std::string& data) {
+    try {
+        // Construct file path
+        auto path = U("../../../src/scan/scripts/") + utility::conversions::to_string_t(filename);
+
+        // Open output stream and write data
+        concurrency::streams::fstream::open_ostream(path).then([=](concurrency::streams::ostream outFile) mutable {
+            if (!outFile.is_open()) {
+                throw std::runtime_error("Failed to open output stream for file: " + filename);
+            }
+
+            auto fileStream = std::make_shared<concurrency::streams::ostream>(outFile);
+            std::vector<uint8_t> file_data(data.begin(), data.end());  // Convert string data to byte array
+            auto buf = concurrency::streams::container_buffer<std::vector<uint8_t>>(std::move(file_data));
+
+            fileStream->write(buf, buf.size()).then([=](size_t) {
+                try {
+                    fileStream->close().get();  // Close file stream
+                }
+                catch (const std::exception& e) {
+                    std::cerr << "Exception while closing the file stream: " << e.what() << std::endl;
+                }
+                }).wait();
+
             }).wait();
-        }).wait();
+
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Exception during file upload: " << e.what() << std::endl;
+    }
 }
+
 
 
 //POC上传文件的工具函数
@@ -1797,60 +1845,79 @@ void ServerManager::update_poc_by_cve(http_request request) {
 
         // 编辑逻辑
         if (mode == "edit") {
-            // 检查 edit_filename 是否为空
-            if (edit_filename.empty()) {
-                response_data[U("message")] = json::value::string(U("编辑失败！编辑的文件名不能为空。"));
-                response.set_status_code(status_codes::BadRequest);
+            try {
+                // 检查 edit_filename 是否为空
+                if (edit_filename.empty()) {
+                    response_data[U("message")] = json::value::string(U("编辑失败！编辑的文件名不能为空。"));
+                    response.set_status_code(status_codes::BadRequest);
+                    response.set_body(response_data);
+                    request.reply(response);
+                    return;
+                }
+
+                std::string full_file_path = POC_DIRECTORY + edit_filename;
+                std::cerr << "Editing POC file at path: " << full_file_path << std::endl; // 调试信息
+
+                // 检查文件是否已存在
+                if (edit_filename != existing_poc.script) {
+                    std::ifstream infile(full_file_path);
+                    if (infile.good()) {
+                        response_data[U("message")] = json::value::string(U("更新失败！文件名已存在，请修改！"));
+                        response.set_status_code(status_codes::BadRequest);
+                        response.set_body(response_data);
+                        request.reply(response);
+                        return;
+                    }
+                }
+
+                // 写入新的文件内容
+                std::ofstream outfile(full_file_path);
+                if (outfile.is_open()) {
+                    std::cerr << "Writing new content to file: " << edit_filename << std::endl; // 调试信息
+                    outfile << poc_content;  // 写入编辑的POC内容
+                    outfile.close();
+                    filename = edit_filename;
+                    std::cerr << "File written and closed successfully: " << edit_filename << std::endl; // 调试信息
+                }
+                else {
+                    std::cerr << "Failed to open file for writing: " << full_file_path << std::endl; // 调试信息
+                    response_data[U("message")] = json::value::string(U("无法保存编辑后的文件内容。"));
+                    response.set_status_code(status_codes::InternalError);
+                    response.set_body(response_data);
+                    request.reply(response);
+                    return;
+                }
+
+                // 删除原POC文件
+                if (!existing_poc.script.empty() && edit_filename != existing_poc.script) {
+                    std::string full_path = POC_DIRECTORY + existing_poc.script;
+                    if (std::remove(full_path.c_str()) != 0) {
+                        perror("Error deleting file");  // 输出删除文件失败的详细错误信息
+                        std::cerr << "Error deleting file: " << full_path << std::endl;
+
+                        response_data[U("message")] = json::value::string(U("更新失败！删除原POC文件失败，请联系管理员！"));
+                        response.set_status_code(status_codes::BadRequest);
+                        response.set_body(response_data);
+                        request.reply(response);
+                        return;
+                    }
+                    std::cerr << "Deleted old POC file: " << full_path << std::endl; // 调试信息
+                }
+
+                // 更新数据库的文件名
+                existing_poc.script = filename;
+
+            }
+            catch (const std::exception& e) {
+                std::cerr << "Exception during POC file edit: " << e.what() << std::endl;
+                response_data[U("message")] = json::value::string(U("编辑过程中发生错误：") + utility::conversions::to_string_t(e.what()));
+                response.set_status_code(status_codes::InternalError);
                 response.set_body(response_data);
                 request.reply(response);
                 return;
             }
-
-            std::string full_file_path = POC_DIRECTORY + edit_filename;
-
-            // 如果要更新的文件名与数据库中的不一致，检查文件是否已存在
-            if (edit_filename != existing_poc.script) {
-                std::ifstream infile(full_file_path);
-                if (infile.good()) {
-                    response_data[U("message")] = json::value::string(U("更新失败！文件名已存在，请修改！"));
-                    response.set_status_code(status_codes::BadRequest);
-                    response.set_body(response_data);
-                    request.reply(response);
-                    return;
-                }
-            }
-
-            //写入新的文件内容
-            std::ofstream outfile(full_file_path);
-            if (outfile.is_open()) {
-                outfile << poc_content;  // 写入编辑的POC内容
-                outfile.close();
-                filename = edit_filename;
-            }
-            else {
-                response_data[U("message")] = json::value::string(U("无法保存编辑后的文件内容。"));
-                response.set_status_code(status_codes::InternalError);
-                response.set_body(response_data);
-                request.reply(response);  // 提前回复
-                return;
-            }
-
-            // 删除原POC文件
-            if (!existing_poc.script.empty() && edit_filename != existing_poc.script) {
-                std::string full_path = POC_DIRECTORY + existing_poc.script;
-                if (std::remove(full_path.c_str()) != 0) {
-                    std::cerr << "Error deleting file: " << full_path << std::endl;
-                    response_data[U("message")] = json::value::string(U("更新失败！删除原POC文件失败，请联系管理员！"));
-                    response.set_status_code(status_codes::BadRequest);
-                    response.set_body(response_data);
-                    request.reply(response);
-                    return;
-                }
-            }
-
-            // 更新数据库的文件名
-            existing_poc.script = filename;
         }
+
 
         // 上传逻辑 - 只在 mode 为 "upload" 的情况下才执行
         if (mode == "upload") {
