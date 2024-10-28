@@ -264,7 +264,7 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
     std::string result = "";
 
     std::cout << "正在执行：" << scriptPath_extension << std::endl;
-    // 重定向stdout和stderr
+    // 重定向stdout和stderr 
     PyObject* io = PyImport_ImportModule("io");
     PyObject* string_io = PyObject_CallMethod(io, "StringIO", NULL);
     if (!string_io) {
