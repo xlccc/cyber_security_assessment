@@ -2123,9 +2123,26 @@ void ServerManager::handle_post_poc_scan(http_request request) {
             }
             std::string ip = json_data[U("ip")].as_string();
 
-            std::vector<POC> poc_list = dbManager.getAllData();
-            // 提取 PoC 信息列表
-            //std::vector<POC> poc_list;
+            //测试所用
+            //std::vector<POC> poc_list = dbManager.getAllData();
+            
+
+             //获取要执行的POC的id
+            std::vector<int> ids;
+            if (json_data.has_array_field(U("ids"))) {
+                auto id_array = json_data[U("ids")].as_array();
+                for (const auto& id_value : id_array) {
+                    ids.push_back(id_value.as_integer());
+                }
+            }
+            else {
+                throw std::runtime_error("Invalid request: Missing 'ids' field.");
+            }
+
+            // 从数据库中获取指定 ID 的 POC 记录
+            std::vector<POC> poc_list = dbManager.searchDataByIds(ids);
+
+            //之前的版本
             //if (json_data.has_array_field(U("poc_list"))) {
             //    auto json_array = json_data[U("poc_list")].as_array();
             //    for (auto& poc_json : json_array) {

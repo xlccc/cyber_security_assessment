@@ -262,53 +262,63 @@ std::vector<ScanHostResult> parseXmlFile(const std::string& xmlFilePath) {
 
 std::string runPythonWithOutput(const std::string& scriptPath_extension, const std::string& url, const std::string& ip, int port) {
     std::string result = "";
-
     std::cout << "正在执行：" << scriptPath_extension << std::endl;
-    // 重定向stdout和stderr
-    PyObject* io = PyImport_ImportModule("io");
-    PyObject* string_io = PyObject_CallMethod(io, "StringIO", NULL);
+
+    // 去除文件扩展名
+    std::string scriptPath = removeExtension(scriptPath_extension);
+    std::cout << "去除后缀：" << scriptPath << std::endl;
+
+    // 重定向 stdout 和 stderr
+    PyObject* string_io = PyObject_CallMethod(global_io, "StringIO", NULL);
     if (!string_io) {
-        std::cerr << "Failed to create StringIO." << std::endl;
+        std::cerr << "无法创建 StringIO。" << std::endl;
         return result;
     }
     PyObject* sys = PyImport_ImportModule("sys");
     PyObject_SetAttrString(sys, "stdout", string_io);
     PyObject_SetAttrString(sys, "stderr", string_io);
+    Py_DECREF(sys); // 使用完毕后释放 sys
 
-    // 导入POC模块
-    std::string scriptPath = removeExtension(scriptPath_extension);
-    std::cout << "去除后缀：" << scriptPath << std::endl;
-
+    // 导入 POC 模块
     PyObject* poc_module = PyImport_ImportModule(scriptPath.c_str());
     if (!poc_module) {
-        PyObject* ptype, * pvalue, * ptraceback;
-        PyErr_Fetch(&ptype, &pvalue, &ptraceback);
-        PyErr_NormalizeException(&ptype, &pvalue, &ptraceback);
-        PyObject* pStrErrorMessage = PyObject_Str(pvalue);
-        std::cerr << "Error message: " << PyUnicode_AsUTF8(pStrErrorMessage) << std::endl;
-        Py_DECREF(pStrErrorMessage);
-        result += "Failed to load script: " + scriptPath + "\n";
+        PyErr_Print();
+        result += "无法加载脚本：" + scriptPath + "\n";
+        Py_DECREF(string_io);
         return result;
     }
 
-    std::cout << "导入成功" << std::endl;
+    // 重新加载模块
+    PyObject* reload_func = PyObject_GetAttrString(global_importlib, "reload");
+    if (reload_func && PyCallable_Check(reload_func)) {
+        PyObject* reloaded_module = PyObject_CallFunctionObjArgs(reload_func, poc_module, NULL);
+        if (!reloaded_module) {
+            PyErr_Print();
+            result += "无法重新加载模块：" + scriptPath + "\n";
+        }
+        Py_XDECREF(reloaded_module);
+    }
+    Py_XDECREF(reload_func);
+    std::cout << "模块成功加载或刷新" << std::endl;
 
-    // 获取类对象
+    // 获取类对象 DemoPOC
     PyObject* poc_class = PyObject_GetAttrString(poc_module, "DemoPOC");
     if (!poc_class || !PyCallable_Check(poc_class)) {
         PyErr_Print();
-        result += "Cannot find class 'DemoPOC' in the script\n";
+        result += "找不到类 'DemoPOC'\n";
         Py_DECREF(poc_module);
+        Py_DECREF(string_io);
         return result;
     }
 
-    // 实例化POC对象
+    // 实例化 DemoPOC 对象
     PyObject* poc_instance = PyObject_CallFunction(poc_class, "ssi", url.c_str(), ip.c_str(), port);
     if (!poc_instance) {
         PyErr_Print();
-        result += "Failed to instantiate 'DemoPOC'\n";
+        result += "无法实例化 'DemoPOC'\n";
         Py_DECREF(poc_class);
         Py_DECREF(poc_module);
+        Py_DECREF(string_io);
         return result;
     }
 
@@ -316,14 +326,15 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
     PyObject* verify_func = PyObject_GetAttrString(poc_instance, "_verify");
     if (!verify_func || !PyCallable_Check(verify_func)) {
         PyErr_Print();
-        result += "Cannot find method '_verify'\n";
+        result += "找不到 '_verify' 方法\n";
         Py_DECREF(poc_instance);
         Py_DECREF(poc_class);
         Py_DECREF(poc_module);
+        Py_DECREF(string_io);
         return result;
     }
 
-    // 调用 _verify 方法
+    // 执行 _verify 方法
     PyObject* py_result = PyObject_CallObject(verify_func, NULL);
     Py_DECREF(verify_func);
     Py_DECREF(poc_instance);
@@ -347,22 +358,20 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
     }
     else {
         PyErr_Print();
-        result += "Failed to call method '_verify'\n";
+        result += "调用 '_verify' 方法失败\n";
     }
 
-    // 获取所有的stdout和stderr输出
+    // 获取所有的 stdout 和 stderr 输出
     PyObject* output = PyObject_CallMethod(string_io, "getvalue", NULL);
     if (output) {
         result += PyUnicode_AsUTF8(output);
         Py_DECREF(output);
     }
     else {
-        result += "Failed to get output from StringIO.\n";
+        result += "无法从 StringIO 获取输出。\n";
     }
 
-    Py_DECREF(string_io);
-    Py_DECREF(io);
-
+    Py_DECREF(string_io); // 释放 string_io
     std::cout << "运行结果：" << std::endl << result << std::endl;
 
     return result;
@@ -794,116 +803,44 @@ std::map<std::string, std::vector<POCTask>> create_poc_task(const std::vector<PO
     return poc_tasks_by_port;
 }
 
-//void execute_poc_tasks(std::map<std::string, std::vector<POCTask>>& poc_tasks_by_port, ScanHostResult& scan_host_result) {
-//
-//    // 记录开始时间
-//    auto start = std::chrono::high_resolution_clock::now();
-//
-//    for (auto it = poc_tasks_by_port.begin(); it != poc_tasks_by_port.end(); ++it) {
-//        const std::string& key = it->first;
-//        std::vector<POCTask>& tasks = it->second;
-//
-//        for (auto& task : tasks) {
-//            //std::cout << "运行脚本：" << task.vuln.script << std::endl;
-//
-//            task.vuln.script =  task.vuln.script;
-//            //std::cout << "脚本路径：" << task.vuln.script << std::endl;
-//            std::string result = runPythonWithOutput(task.vuln.script, task.url, task.ip, key.empty() ? 0 : std::stoi(key));
-//
-//            if (result.find("[!]") != std::string::npos) {
-//                task.vuln.vulExist = "存在";
-//            }
-//            else if (result.find("[SAFE]") != std::string::npos) {
-//                task.vuln.vulExist = "不存在";
-//            }
-//            else {
-//                task.vuln.vulExist = "未验证"; 
-//            }
-//
-//            if (key.empty()) {
-//                scan_host_result.vuln_result.insert(task.vuln);
-//            }
-//            else {
-//                auto port_it = std::find_if(scan_host_result.ports.begin(), scan_host_result.ports.end(),
-//                    [&key](const ScanResult& port) { return port.portId == key; });
-//                if (port_it != scan_host_result.ports.end()) {
-//                    port_it->vuln_result.insert(task.vuln);
-//                }
-//            }
-//        }
-//    }
-//    // 记录结束时间
-//    auto end = std::chrono::high_resolution_clock::now();
-//
-//    // 计算时间差并输出到控制台
-//    std::chrono::duration<double> elapsed = end - start;
-//    std::cout << "POC tasks executed in " << elapsed.count() << " seconds." << std::endl;
-//}
-// 
 void execute_poc_tasks(std::map<std::string, std::vector<POCTask>>& poc_tasks_by_port, ScanHostResult& scan_host_result) {
+
     // 记录开始时间
     auto start = std::chrono::high_resolution_clock::now();
-
-    // 使用线程池执行POC任务
-    std::vector<std::future<void>> futures;
-    std::mutex result_mutex;  // 用于保护 scan_host_result 的并发访问
 
     for (auto it = poc_tasks_by_port.begin(); it != poc_tasks_by_port.end(); ++it) {
         const std::string& key = it->first;
         std::vector<POCTask>& tasks = it->second;
 
-        // 使用线程池执行每个任务
-        futures.emplace_back(std::async(std::launch::async, [&tasks, &scan_host_result, &key, &result_mutex]() {
-            for (auto& task : tasks) {
-                std::string result;
-                try {
-                    result = runPythonWithOutput(task.vuln.script, task.url, task.ip, key.empty() ? 0 : std::stoi(key));
-                }
-                catch (const std::exception& e) {
-                    std::cerr << "POC execution error: " << e.what() << std::endl;
-                    result = "[ERROR]";
-                }
+        for (auto& task : tasks) {
+            //std::cout << "运行脚本：" << task.vuln.script << std::endl;
 
-                // 更新漏洞存在状态
-                if (result.find("[!]") != std::string::npos) {
-                    task.vuln.vulExist = "存在";
-                }
-                else if (result.find("[SAFE]") != std::string::npos) {
-                    task.vuln.vulExist = "不存在";
-                }
-                else {
-                    task.vuln.vulExist = "未验证";
-                }
+            task.vuln.script =  task.vuln.script;
+            //std::cout << "脚本路径：" << task.vuln.script << std::endl;
+            std::string result = runPythonWithOutput(task.vuln.script, task.url, task.ip, key.empty() ? 0 : std::stoi(key));
 
-                // 使用锁保护对 scan_host_result 的并发修改
-                std::lock_guard<std::mutex> lock(result_mutex);
+            if (result.find("[!]") != std::string::npos) {
+                task.vuln.vulExist = "存在";
+            }
+            else if (result.find("[SAFE]") != std::string::npos) {
+                task.vuln.vulExist = "不存在";
+            }
+            else {
+                task.vuln.vulExist = "未验证"; 
+            }
 
-                if (key.empty()) {
-                    scan_host_result.vuln_result.insert(task.vuln);  // 针对操作系统的漏洞插入
-                }
-                else {
-                    auto port_it = std::find_if(scan_host_result.ports.begin(), scan_host_result.ports.end(),
-                        [&key](const ScanResult& port) { return port.portId == key; });
-                    if (port_it != scan_host_result.ports.end()) {
-                        port_it->vuln_result.insert(task.vuln);  // 针对端口的漏洞插入
-                    }
+            if (key.empty()) {
+                scan_host_result.vuln_result.insert(task.vuln);
+            }
+            else {
+                auto port_it = std::find_if(scan_host_result.ports.begin(), scan_host_result.ports.end(),
+                    [&key](const ScanResult& port) { return port.portId == key; });
+                if (port_it != scan_host_result.ports.end()) {
+                    port_it->vuln_result.insert(task.vuln);
                 }
             }
-            }));
-    }
-
-    // 设置超时并等待所有线程完成
-    for (auto& future : futures) {
-        try {
-            if (future.valid()) {
-                future.wait_for(std::chrono::seconds(task_timeout_seconds));
-            }
-        }
-        catch (const std::future_error& e) {
-            std::cerr << "Error waiting for task completion: " << e.what() << std::endl;
         }
     }
-
     // 记录结束时间
     auto end = std::chrono::high_resolution_clock::now();
 
@@ -911,6 +848,78 @@ void execute_poc_tasks(std::map<std::string, std::vector<POCTask>>& poc_tasks_by
     std::chrono::duration<double> elapsed = end - start;
     std::cout << "POC tasks executed in " << elapsed.count() << " seconds." << std::endl;
 }
+// 
+//void execute_poc_tasks(std::map<std::string, std::vector<POCTask>>& poc_tasks_by_port, ScanHostResult& scan_host_result) {
+//    // 记录开始时间
+//    auto start = std::chrono::high_resolution_clock::now();
+//
+//    // 使用线程池执行POC任务
+//    std::vector<std::future<void>> futures;
+//    std::mutex result_mutex;  // 用于保护 scan_host_result 的并发访问
+//
+//    for (auto it = poc_tasks_by_port.begin(); it != poc_tasks_by_port.end(); ++it) {
+//        const std::string& key = it->first;
+//        std::vector<POCTask>& tasks = it->second;
+//
+//        // 使用线程池执行每个任务
+//        futures.emplace_back(std::async(std::launch::async, [&tasks, &scan_host_result, &key, &result_mutex]() {
+//            for (auto& task : tasks) {
+//                std::string result;
+//                try {
+//                    result = runPythonWithOutput(task.vuln.script, task.url, task.ip, key.empty() ? 0 : std::stoi(key));
+//                }
+//                catch (const std::exception& e) {
+//                    std::cerr << "POC execution error: " << e.what() << std::endl;
+//                    result = "[ERROR]";
+//                }
+//
+//                // 更新漏洞存在状态
+//                if (result.find("[!]") != std::string::npos) {
+//                    task.vuln.vulExist = "存在";
+//                }
+//                else if (result.find("[SAFE]") != std::string::npos) {
+//                    task.vuln.vulExist = "不存在";
+//                }
+//                else {
+//                    task.vuln.vulExist = "未验证";
+//                }
+//
+//                // 使用锁保护对 scan_host_result 的并发修改
+//                std::lock_guard<std::mutex> lock(result_mutex);
+//
+//                if (key.empty()) {
+//                    scan_host_result.vuln_result.insert(task.vuln);  // 针对操作系统的漏洞插入
+//                }
+//                else {
+//                    auto port_it = std::find_if(scan_host_result.ports.begin(), scan_host_result.ports.end(),
+//                        [&key](const ScanResult& port) { return port.portId == key; });
+//                    if (port_it != scan_host_result.ports.end()) {
+//                        port_it->vuln_result.insert(task.vuln);  // 针对端口的漏洞插入
+//                    }
+//                }
+//            }
+//            }));
+//    }
+//
+//    // 设置超时并等待所有线程完成
+//    for (auto& future : futures) {
+//        try {
+//            if (future.valid()) {
+//                future.wait_for(std::chrono::seconds(task_timeout_seconds));
+//            }
+//        }
+//        catch (const std::future_error& e) {
+//            std::cerr << "Error waiting for task completion: " << e.what() << std::endl;
+//        }
+//    }
+//
+//    // 记录结束时间
+//    auto end = std::chrono::high_resolution_clock::now();
+//
+//    // 计算时间差并输出到控制台
+//    std::chrono::duration<double> elapsed = end - start;
+//    std::cout << "POC tasks executed in " << elapsed.count() << " seconds." << std::endl;
+//}
 
 //合并 漏洞库匹配、插件化扫描两种方式的扫描结果
 void merge_vuln_results(ScanHostResult& host_result) {
