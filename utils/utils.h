@@ -16,6 +16,10 @@
 #include <iconv.h>
 #include<sys/stat.h>
 
+
+extern PyObject* global_importlib; // 仅声明，不定义
+extern PyObject* global_io;         // 仅声明，不定义
+
 //获取当前时间
 std::string getCurrentTimestamp(int choice = 1);
 //GBK转UTF-8编码
@@ -44,6 +48,7 @@ std::string removeExtension(const std::string& filename);
 
 //// 初始化Python解释器
 void initializePython();
+
 
 //// 终止Python解释器
 void finalizePython();

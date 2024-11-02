@@ -1,6 +1,8 @@
 ﻿#include"utils.h"
 #include <iostream>
 
+PyObject* global_importlib = nullptr; // 定义
+PyObject* global_io = nullptr;        // 定义
 //获取当前时间，字符串表示
 //choice = 1时，用于文件名附加时间
 //choice = 2时，用于漏洞扫描时间
@@ -157,6 +159,9 @@ void initializePython()
 {
     // 初始化Python解释器
     Py_Initialize();
+    global_importlib = PyImport_ImportModule("importlib");
+    global_io = PyImport_ImportModule("io");
+
 
     // 设置sys.path
     PyObject* sys = PyImport_ImportModule("sys");
@@ -170,7 +175,10 @@ void initializePython()
 void finalizePython()
 {
     // 终止Python解释器
+    Py_XDECREF(global_importlib);
+    Py_XDECREF(global_io);
     Py_Finalize();
+
 }
 //检查密码复杂度
 bool isValidPassword(const std::string& password)

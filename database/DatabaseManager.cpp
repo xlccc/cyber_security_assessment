@@ -191,6 +191,36 @@ std::vector<POC> DatabaseManager::searchData(const std::string& keyword) {
     return records;
 }
 
+//按id搜索POC数据，若没有，返回无对应POC
+std::vector<POC> DatabaseManager::searchDataByIds(const std::vector<int>& ids) {
+    std::vector<POC> records;
+
+    // 如果传入的 ids 向量为空，直接返回空结果
+    if (ids.empty()) {
+        return records;
+    }
+
+    // 构建 SQL 语句
+    std::string sql = "SELECT * FROM POC WHERE ID IN (";
+    for (size_t i = 0; i < ids.size(); ++i) {
+        sql += std::to_string(ids[i]);
+        if (i < ids.size() - 1) {
+            sql += ", ";
+        }
+    }
+    sql += ");";
+
+    char* errMsg = nullptr;
+    // 执行SQL语句并处理结果
+    int rc = sqlite3_exec(db, sql.c_str(), callback, &records, &errMsg);
+    if (rc != SQLITE_OK) {
+        std::cerr << "SQL error: " << errMsg << std::endl;
+        sqlite3_free(errMsg);
+    }
+
+    return records;
+}
+
 
 //按CVE编号或其他编号搜索POC数据，若没有，返回无对应POC
 //根据返回的vector数组的empty()来判断是否存在POC
