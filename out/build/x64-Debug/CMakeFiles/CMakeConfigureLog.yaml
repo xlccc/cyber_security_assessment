@@ -4,38 +4,30 @@ events:
   -
     kind: "message-v1"
     backtrace:
-      - "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.29/Modules/CMakeDetermineSystem.cmake:205 (message)"
+      - "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.28/Modules/CMakeDetermineSystem.cmake:233 (message)"
       - "CMakeLists.txt:3 (project)"
     message: |
       The system is: Windows - 10.0.22631 - AMD64
   -
     kind: "message-v1"
     backtrace:
-      - "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.29/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
-      - "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.29/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
-      - "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.29/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.28/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.28/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.28/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
       - "CMakeLists.txt:3 (project)"
     message: |
       Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
-      Compiler: C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/14.41.34120/bin/Hostx64/x64/cl.exe 
+      Compiler: D:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.39.33519/bin/Hostx64/x64/cl.exe 
       Build flags: 
       Id flags:  
       
       The output was:
       0
-<<<<<<< HEAD
       用于 x64 的 Microsoft (R) C/C++ 优化编译器 19.39.33523 版
       版权所有(C) Microsoft Corporation。保留所有权利。
       
       CMakeCCompilerId.c
       Microsoft (R) Incremental Linker Version 14.39.33523.0
-=======
-      用于 x64 的 Microsoft (R) C/C++ 优化编译器 19.41.34120 版
-      版权所有(C) Microsoft Corporation。保留所有权利。
-      
-      CMakeCCompilerId.c
-      Microsoft (R) Incremental Linker Version 14.41.34120.0
->>>>>>> a26f0ae10125fe8082721fc2893a7771cec19f5b
       Copyright (C) Microsoft Corporation.  All rights reserved.
       
       /out:CMakeCCompilerId.exe 
@@ -47,57 +39,41 @@ events:
       Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CMakeCCompilerId.obj"
       
       The C compiler identification is MSVC, found in:
-<<<<<<< HEAD
         D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/3.28.0-msvc1/CompilerIdC/CMakeCCompilerId.exe
-=======
-        C:/Users/s/source/repos/cyber_security_assessment/out/build/x64-Debug/CMakeFiles/3.29.5-msvc4/CompilerIdC/CMakeCCompilerId.exe
->>>>>>> a26f0ae10125fe8082721fc2893a7771cec19f5b
       
   -
     kind: "message-v1"
     backtrace:
-      - "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.29/Modules/CMakeDetermineCompilerId.cmake:1216 (message)"
-      - "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.29/Modules/CMakeDetermineCompilerId.cmake:250 (CMAKE_DETERMINE_MSVC_SHOWINCLUDES_PREFIX)"
-      - "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.29/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.28/Modules/CMakeDetermineCompilerId.cmake:1182 (message)"
+      - "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.28/Modules/CMakeDetermineCompilerId.cmake:247 (CMAKE_DETERMINE_MSVC_SHOWINCLUDES_PREFIX)"
+      - "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.28/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
       - "CMakeLists.txt:3 (project)"
     message: |
       Detecting C compiler /showIncludes prefix:
         main.c
-<<<<<<< HEAD
         注意: 包含文件:  D:\\cyberProject\\cyber_seproject2\\out\\build\\x64-Debug\\CMakeFiles\\ShowIncludes\\foo.h
-=======
-        注意: 包含文件:  C:\\Users\\s\\source\\repos\\cyber_security_assessment\\out\\build\\x64-Debug\\CMakeFiles\\ShowIncludes\\foo.h
->>>>>>> a26f0ae10125fe8082721fc2893a7771cec19f5b
         
       Found prefix "注意: 包含文件:  "
   -
     kind: "message-v1"
     backtrace:
-      - "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.29/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
-      - "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.29/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
-      - "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.29/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.28/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.28/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.28/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
       - "CMakeLists.txt:3 (project)"
     message: |
       Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
-      Compiler: C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/14.41.34120/bin/Hostx64/x64/cl.exe 
+      Compiler: D:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.39.33519/bin/Hostx64/x64/cl.exe 
       Build flags: 
       Id flags:  
       
       The output was:
       0
-<<<<<<< HEAD
       用于 x64 的 Microsoft (R) C/C++ 优化编译器 19.39.33523 版
       版权所有(C) Microsoft Corporation。保留所有权利。
       
       CMakeCXXCompilerId.cpp
       Microsoft (R) Incremental Linker Version 14.39.33523.0
-=======
-      用于 x64 的 Microsoft (R) C/C++ 优化编译器 19.41.34120 版
-      版权所有(C) Microsoft Corporation。保留所有权利。
-      
-      CMakeCXXCompilerId.cpp
-      Microsoft (R) Incremental Linker Version 14.41.34120.0
->>>>>>> a26f0ae10125fe8082721fc2893a7771cec19f5b
       Copyright (C) Microsoft Corporation.  All rights reserved.
       
       /out:CMakeCXXCompilerId.exe 
@@ -109,152 +85,82 @@ events:
       Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CMakeCXXCompilerId.obj"
       
       The CXX compiler identification is MSVC, found in:
-<<<<<<< HEAD
         D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/3.28.0-msvc1/CompilerIdCXX/CMakeCXXCompilerId.exe
-=======
-        C:/Users/s/source/repos/cyber_security_assessment/out/build/x64-Debug/CMakeFiles/3.29.5-msvc4/CompilerIdCXX/CMakeCXXCompilerId.exe
->>>>>>> a26f0ae10125fe8082721fc2893a7771cec19f5b
       
   -
     kind: "message-v1"
     backtrace:
-      - "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.29/Modules/CMakeDetermineCompilerId.cmake:1216 (message)"
-      - "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.29/Modules/CMakeDetermineCompilerId.cmake:250 (CMAKE_DETERMINE_MSVC_SHOWINCLUDES_PREFIX)"
-      - "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.29/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.28/Modules/CMakeDetermineCompilerId.cmake:1182 (message)"
+      - "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.28/Modules/CMakeDetermineCompilerId.cmake:247 (CMAKE_DETERMINE_MSVC_SHOWINCLUDES_PREFIX)"
+      - "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.28/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
       - "CMakeLists.txt:3 (project)"
     message: |
       Detecting CXX compiler /showIncludes prefix:
         main.c
-<<<<<<< HEAD
         注意: 包含文件:  D:\\cyberProject\\cyber_seproject2\\out\\build\\x64-Debug\\CMakeFiles\\ShowIncludes\\foo.h
-=======
-        注意: 包含文件:  C:\\Users\\s\\source\\repos\\cyber_security_assessment\\out\\build\\x64-Debug\\CMakeFiles\\ShowIncludes\\foo.h
->>>>>>> a26f0ae10125fe8082721fc2893a7771cec19f5b
         
       Found prefix "注意: 包含文件:  "
   -
     kind: "try_compile-v1"
     backtrace:
-      - "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.29/Modules/CMakeDetermineCompilerABI.cmake:67 (try_compile)"
-      - "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.29/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.28/Modules/CMakeDetermineCompilerABI.cmake:57 (try_compile)"
+      - "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.28/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
       - "CMakeLists.txt:3 (project)"
     checks:
       - "Detecting C compiler ABI info"
     directories:
-<<<<<<< HEAD
-      source: "D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-921blu"
-      binary: "D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-921blu"
-=======
-      source: "C:/Users/s/source/repos/cyber_security_assessment/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-vn7r9g"
-      binary: "C:/Users/s/source/repos/cyber_security_assessment/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-vn7r9g"
->>>>>>> a26f0ae10125fe8082721fc2893a7771cec19f5b
+      source: "D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-4f88wr"
+      binary: "D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-4f88wr"
     cmakeVariables:
       CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS /W3"
       CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
       CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
-<<<<<<< HEAD
       VCPKG_APPLOCAL_DEPS: "ON"
       VCPKG_TARGET_TRIPLET: "x64-windows"
       Z_VCPKG_ROOT_DIR: "D:/vcpkg"
-=======
->>>>>>> a26f0ae10125fe8082721fc2893a7771cec19f5b
     buildResult:
       variable: "CMAKE_C_ABI_COMPILED"
       cached: true
       stdout: |
-<<<<<<< HEAD
-        Change Dir: 'D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-921blu'
+        Change Dir: 'D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-4f88wr'
         
-        Run Build Command(s): "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_306a2
-        [1/2] D:\\PROGRA~2\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1439~1.335\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS /W3  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_306a2.dir\\CMakeCCompilerABI.c.obj /FdCMakeFiles\\cmTC_306a2.dir\\ /FS -c "D:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\share\\cmake-3.28\\Modules\\CMakeCCompilerABI.c"
-        [2/2] C:\\Windows\\system32\\cmd.exe /C "cd . && "D:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_306a2.dir --rc=D:\\WINDOW~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=D:\\WINDOW~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- D:\\PROGRA~2\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1439~1.335\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_306a2.dir\\CMakeCCompilerABI.c.obj  /out:cmTC_306a2.exe /implib:cmTC_306a2.lib /pdb:cmTC_306a2.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && C:\\Windows\\system32\\cmd.exe /C "cd /D D:\\cyberProject\\cyber_seproject2\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-921blu && C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -noprofile -executionpolicy Bypass -file D:/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-921blu/cmTC_306a2.exe -installedDir D:/vcpkg/installed/x64-windows/debug/bin -OutVariable out""
-=======
-        Change Dir: 'C:/Users/s/source/repos/cyber_security_assessment/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-vn7r9g'
-        
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_6cb54
-        [1/2] C:\\PROGRA~1\\MIB055~1\\2022\\ENTERP~1\\VC\\Tools\\MSVC\\1441~1.341\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS /W3  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_6cb54.dir\\CMakeCCompilerABI.c.obj /FdCMakeFiles\\cmTC_6cb54.dir\\ /FS -c "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\share\\cmake-3.29\\Modules\\CMakeCCompilerABI.c"
-        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_6cb54.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MIB055~1\\2022\\ENTERP~1\\VC\\Tools\\MSVC\\1441~1.341\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_6cb54.dir\\CMakeCCompilerABI.c.obj  /out:cmTC_6cb54.exe /implib:cmTC_6cb54.lib /pdb:cmTC_6cb54.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
->>>>>>> a26f0ae10125fe8082721fc2893a7771cec19f5b
+        Run Build Command(s): "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_bd4c4
+        [1/2] D:\\PROGRA~2\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1439~1.335\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS /W3  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_bd4c4.dir\\CMakeCCompilerABI.c.obj /FdCMakeFiles\\cmTC_bd4c4.dir\\ /FS -c "D:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\share\\cmake-3.28\\Modules\\CMakeCCompilerABI.c"
+        [2/2] C:\\Windows\\system32\\cmd.exe /C "cd . && "D:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_bd4c4.dir --rc=D:\\WINDOW~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=D:\\WINDOW~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- D:\\PROGRA~2\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1439~1.335\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_bd4c4.dir\\CMakeCCompilerABI.c.obj  /out:cmTC_bd4c4.exe /implib:cmTC_bd4c4.lib /pdb:cmTC_bd4c4.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && C:\\Windows\\system32\\cmd.exe /C "cd /D D:\\cyberProject\\cyber_seproject2\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-4f88wr && C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -noprofile -executionpolicy Bypass -file D:/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-4f88wr/cmTC_bd4c4.exe -installedDir D:/vcpkg/installed/x64-windows/debug/bin -OutVariable out""
         
       exitCode: 0
   -
-    kind: "message-v1"
-    backtrace:
-      - "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.29/Modules/CMakeDetermineCompilerABI.cmake:173 (message)"
-      - "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.29/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
-      - "CMakeLists.txt:3 (project)"
-    message: |
-      Parsed C implicit link information:
-        link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|link\\.exe|lld-link(\\.exe)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
-        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?|link\\.exe|lld-link(\\.exe)?))("|,| |$)]
-        linker tool for 'C': C:/PROGRA~1/MIB055~1/2022/ENTERP~1/VC/Tools/MSVC/1441~1.341/bin/Hostx64/x64/link.exe
-        implicit libs: []
-        implicit objs: []
-        implicit dirs: []
-        implicit fwks: []
-      
-      
-  -
-    kind: "message-v1"
-    backtrace:
-      - "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.29/Modules/Internal/CMakeDetermineLinkerId.cmake:40 (message)"
-      - "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.29/Modules/CMakeDetermineCompilerABI.cmake:210 (cmake_determine_linker_id)"
-      - "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.29/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
-      - "CMakeLists.txt:3 (project)"
-    message: |
-      Running the C compiler's linker: "C:/PROGRA~1/MIB055~1/2022/ENTERP~1/VC/Tools/MSVC/1441~1.341/bin/Hostx64/x64/link.exe" "-v"
-      Microsoft (R) Incremental Linker Version 14.41.34120.0
-      Copyright (C) Microsoft Corporation.  All rights reserved.
-  -
     kind: "try_compile-v1"
     backtrace:
-      - "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.29/Modules/CMakeDetermineCompilerABI.cmake:67 (try_compile)"
-      - "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.29/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.28/Modules/CMakeDetermineCompilerABI.cmake:57 (try_compile)"
+      - "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.28/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
       - "CMakeLists.txt:3 (project)"
     checks:
       - "Detecting CXX compiler ABI info"
     directories:
-<<<<<<< HEAD
-      source: "D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-8vy27r"
-      binary: "D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-8vy27r"
-=======
-      source: "C:/Users/s/source/repos/cyber_security_assessment/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-gja6gj"
-      binary: "C:/Users/s/source/repos/cyber_security_assessment/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-gja6gj"
->>>>>>> a26f0ae10125fe8082721fc2893a7771cec19f5b
+      source: "D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-4vfwhk"
+      binary: "D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-4vfwhk"
     cmakeVariables:
       CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc"
       CMAKE_CXX_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
-      CMAKE_CXX_SCAN_FOR_MODULES: "OFF"
       CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
-<<<<<<< HEAD
       VCPKG_APPLOCAL_DEPS: "ON"
       VCPKG_TARGET_TRIPLET: "x64-windows"
       Z_VCPKG_ROOT_DIR: "D:/vcpkg"
-=======
->>>>>>> a26f0ae10125fe8082721fc2893a7771cec19f5b
     buildResult:
       variable: "CMAKE_CXX_ABI_COMPILED"
       cached: true
       stdout: |
-<<<<<<< HEAD
-        Change Dir: 'D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-8vy27r'
+        Change Dir: 'D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-4vfwhk'
         
-        Run Build Command(s): "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_eb277
-        [1/2] D:\\PROGRA~2\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1439~1.335\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP   /DWIN32 /D_WINDOWS /W3 /GR /EHsc  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_eb277.dir\\CMakeCXXCompilerABI.cpp.obj /FdCMakeFiles\\cmTC_eb277.dir\\ /FS -c "D:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\share\\cmake-3.28\\Modules\\CMakeCXXCompilerABI.cpp"
-        [2/2] C:\\Windows\\system32\\cmd.exe /C "cd . && "D:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_eb277.dir --rc=D:\\WINDOW~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=D:\\WINDOW~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- D:\\PROGRA~2\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1439~1.335\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_eb277.dir\\CMakeCXXCompilerABI.cpp.obj  /out:cmTC_eb277.exe /implib:cmTC_eb277.lib /pdb:cmTC_eb277.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && C:\\Windows\\system32\\cmd.exe /C "cd /D D:\\cyberProject\\cyber_seproject2\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-8vy27r && C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -noprofile -executionpolicy Bypass -file D:/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-8vy27r/cmTC_eb277.exe -installedDir D:/vcpkg/installed/x64-windows/debug/bin -OutVariable out""
-=======
-        Change Dir: 'C:/Users/s/source/repos/cyber_security_assessment/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-gja6gj'
-        
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_4df8d
-        [1/2] C:\\PROGRA~1\\MIB055~1\\2022\\ENTERP~1\\VC\\Tools\\MSVC\\1441~1.341\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP   /DWIN32 /D_WINDOWS /W3 /GR /EHsc  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_4df8d.dir\\CMakeCXXCompilerABI.cpp.obj /FdCMakeFiles\\cmTC_4df8d.dir\\ /FS -c "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\share\\cmake-3.29\\Modules\\CMakeCXXCompilerABI.cpp"
-        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_4df8d.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MIB055~1\\2022\\ENTERP~1\\VC\\Tools\\MSVC\\1441~1.341\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_4df8d.dir\\CMakeCXXCompilerABI.cpp.obj  /out:cmTC_4df8d.exe /implib:cmTC_4df8d.lib /pdb:cmTC_4df8d.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
->>>>>>> a26f0ae10125fe8082721fc2893a7771cec19f5b
+        Run Build Command(s): "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_dfdc2
+        [1/2] D:\\PROGRA~2\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1439~1.335\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP   /DWIN32 /D_WINDOWS /W3 /GR /EHsc  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_dfdc2.dir\\CMakeCXXCompilerABI.cpp.obj /FdCMakeFiles\\cmTC_dfdc2.dir\\ /FS -c "D:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\share\\cmake-3.28\\Modules\\CMakeCXXCompilerABI.cpp"
+        [2/2] C:\\Windows\\system32\\cmd.exe /C "cd . && "D:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_dfdc2.dir --rc=D:\\WINDOW~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=D:\\WINDOW~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- D:\\PROGRA~2\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1439~1.335\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_dfdc2.dir\\CMakeCXXCompilerABI.cpp.obj  /out:cmTC_dfdc2.exe /implib:cmTC_dfdc2.lib /pdb:cmTC_dfdc2.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && C:\\Windows\\system32\\cmd.exe /C "cd /D D:\\cyberProject\\cyber_seproject2\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-4vfwhk && C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -noprofile -executionpolicy Bypass -file D:/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-4vfwhk/cmTC_dfdc2.exe -installedDir D:/vcpkg/installed/x64-windows/debug/bin -OutVariable out""
         
       exitCode: 0
   -
-    kind: "message-v1"
+    kind: "try_compile-v1"
     backtrace:
-<<<<<<< HEAD
       - "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.28/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
       - "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.28/Modules/CheckCSourceCompiles.cmake:52 (cmake_check_source_compiles)"
       - "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.28/Modules/FindThreads.cmake:97 (CHECK_C_SOURCE_COMPILES)"
@@ -263,12 +169,12 @@ events:
       - "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.28/Modules/CMakeFindDependencyMacro.cmake:76 (find_package)"
       - "D:/vcpkg/installed/x64-windows/share/libssh/libssh-config.cmake:3 (find_dependency)"
       - "D:/vcpkg/scripts/buildsystems/vcpkg.cmake:859 (_find_package)"
-      - "CMakeLists.txt:23 (find_package)"
+      - "CMakeLists.txt:22 (find_package)"
     checks:
       - "Performing Test CMAKE_HAVE_LIBC_PTHREAD"
     directories:
-      source: "D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-eohwit"
-      binary: "D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-eohwit"
+      source: "D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-ksog71"
+      binary: "D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-ksog71"
     cmakeVariables:
       CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS /W3"
       CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
@@ -280,36 +186,19 @@ events:
       variable: "CMAKE_HAVE_LIBC_PTHREAD"
       cached: true
       stdout: |
-        Change Dir: 'D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-eohwit'
+        Change Dir: 'D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-ksog71'
         
-        Run Build Command(s): "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_055b5
-        [1/2] D:\\PROGRA~2\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1439~1.335\\bin\\Hostx64\\x64\\cl.exe  /nologo -DCMAKE_HAVE_LIBC_PTHREAD  /DWIN32 /D_WINDOWS /W3  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_055b5.dir\\src.c.obj /FdCMakeFiles\\cmTC_055b5.dir\\ /FS -c D:\\cyberProject\\cyber_seproject2\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-eohwit\\src.c
-        FAILED: CMakeFiles/cmTC_055b5.dir/src.c.obj 
-        D:\\PROGRA~2\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1439~1.335\\bin\\Hostx64\\x64\\cl.exe  /nologo -DCMAKE_HAVE_LIBC_PTHREAD  /DWIN32 /D_WINDOWS /W3  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_055b5.dir\\src.c.obj /FdCMakeFiles\\cmTC_055b5.dir\\ /FS -c D:\\cyberProject\\cyber_seproject2\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-eohwit\\src.c
-        D:\\cyberProject\\cyber_seproject2\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-eohwit\\src.c(1): fatal error C1083: 无法打开包括文件: “pthread.h”: No such file or directory
+        Run Build Command(s): "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_21a73
+        [1/2] D:\\PROGRA~2\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1439~1.335\\bin\\Hostx64\\x64\\cl.exe  /nologo -DCMAKE_HAVE_LIBC_PTHREAD  /DWIN32 /D_WINDOWS /W3  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_21a73.dir\\src.c.obj /FdCMakeFiles\\cmTC_21a73.dir\\ /FS -c D:\\cyberProject\\cyber_seproject2\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-ksog71\\src.c
+        FAILED: CMakeFiles/cmTC_21a73.dir/src.c.obj 
+        D:\\PROGRA~2\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1439~1.335\\bin\\Hostx64\\x64\\cl.exe  /nologo -DCMAKE_HAVE_LIBC_PTHREAD  /DWIN32 /D_WINDOWS /W3  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_21a73.dir\\src.c.obj /FdCMakeFiles\\cmTC_21a73.dir\\ /FS -c D:\\cyberProject\\cyber_seproject2\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-ksog71\\src.c
+        D:\\cyberProject\\cyber_seproject2\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-ksog71\\src.c(1): fatal error C1083: 无法打开包括文件: “pthread.h”: No such file or directory
         ninja: build stopped: subcommand failed.
         
       exitCode: 1
-=======
-      - "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.29/Modules/CMakeDetermineCompilerABI.cmake:173 (message)"
-      - "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.29/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
-      - "CMakeLists.txt:3 (project)"
-    message: |
-      Parsed CXX implicit link information:
-        link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|link\\.exe|lld-link(\\.exe)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
-        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?|link\\.exe|lld-link(\\.exe)?))("|,| |$)]
-        linker tool for 'CXX': C:/PROGRA~1/MIB055~1/2022/ENTERP~1/VC/Tools/MSVC/1441~1.341/bin/Hostx64/x64/link.exe
-        implicit libs: []
-        implicit objs: []
-        implicit dirs: []
-        implicit fwks: []
-      
-      
->>>>>>> a26f0ae10125fe8082721fc2893a7771cec19f5b
   -
-    kind: "message-v1"
+    kind: "try_compile-v1"
     backtrace:
-<<<<<<< HEAD
       - "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.28/Modules/CheckLibraryExists.cmake:69 (try_compile)"
       - "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.28/Modules/FindThreads.cmake:112 (CHECK_LIBRARY_EXISTS)"
       - "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.28/Modules/FindThreads.cmake:175 (_threads_check_lib)"
@@ -317,12 +206,12 @@ events:
       - "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.28/Modules/CMakeFindDependencyMacro.cmake:76 (find_package)"
       - "D:/vcpkg/installed/x64-windows/share/libssh/libssh-config.cmake:3 (find_dependency)"
       - "D:/vcpkg/scripts/buildsystems/vcpkg.cmake:859 (_find_package)"
-      - "CMakeLists.txt:23 (find_package)"
+      - "CMakeLists.txt:22 (find_package)"
     checks:
       - "Looking for pthread_create in pthreads"
     directories:
-      source: "D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-6tdk2q"
-      binary: "D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-6tdk2q"
+      source: "D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-bwyccx"
+      binary: "D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-bwyccx"
     cmakeVariables:
       CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS /W3"
       CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
@@ -334,14 +223,14 @@ events:
       variable: "CMAKE_HAVE_PTHREADS_CREATE"
       cached: true
       stdout: |
-        Change Dir: 'D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-6tdk2q'
+        Change Dir: 'D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-bwyccx'
         
-        Run Build Command(s): "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_f7b22
-        [1/2] D:\\PROGRA~2\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1439~1.335\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS /W3 -DCHECK_FUNCTION_EXISTS=pthread_create /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_f7b22.dir\\CheckFunctionExists.c.obj /FdCMakeFiles\\cmTC_f7b22.dir\\ /FS -c D:\\cyberProject\\cyber_seproject2\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-6tdk2q\\CheckFunctionExists.c
-        [2/2] C:\\Windows\\system32\\cmd.exe /C "cd . && "D:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_f7b22.dir --rc=D:\\WINDOW~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=D:\\WINDOW~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- D:\\PROGRA~2\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1439~1.335\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_f7b22.dir\\CheckFunctionExists.c.obj  /out:cmTC_f7b22.exe /implib:cmTC_f7b22.lib /pdb:cmTC_f7b22.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  pthreads.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && C:\\Windows\\system32\\cmd.exe /C "cd /D D:\\cyberProject\\cyber_seproject2\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-6tdk2q && C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -noprofile -executionpolicy Bypass -file D:/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-6tdk2q/cmTC_f7b22.exe -installedDir D:/vcpkg/installed/x64-windows/debug/bin -OutVariable out""
-        FAILED: cmTC_f7b22.exe 
-        C:\\Windows\\system32\\cmd.exe /C "cd . && "D:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_f7b22.dir --rc=D:\\WINDOW~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=D:\\WINDOW~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- D:\\PROGRA~2\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1439~1.335\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_f7b22.dir\\CheckFunctionExists.c.obj  /out:cmTC_f7b22.exe /implib:cmTC_f7b22.lib /pdb:cmTC_f7b22.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  pthreads.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && C:\\Windows\\system32\\cmd.exe /C "cd /D D:\\cyberProject\\cyber_seproject2\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-6tdk2q && C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -noprofile -executionpolicy Bypass -file D:/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-6tdk2q/cmTC_f7b22.exe -installedDir D:/vcpkg/installed/x64-windows/debug/bin -OutVariable out""
-        LINK Pass 1: command "D:\\PROGRA~2\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1439~1.335\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_f7b22.dir\\CheckFunctionExists.c.obj /out:cmTC_f7b22.exe /implib:cmTC_f7b22.lib /pdb:cmTC_f7b22.pdb /version:0.0 /machine:x64 /debug /INCREMENTAL /subsystem:console pthreads.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTFILE:CMakeFiles\\cmTC_f7b22.dir/intermediate.manifest CMakeFiles\\cmTC_f7b22.dir/manifest.res" failed (exit code 1104) with the following output:
+        Run Build Command(s): "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_fbb1e
+        [1/2] D:\\PROGRA~2\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1439~1.335\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS /W3 -DCHECK_FUNCTION_EXISTS=pthread_create /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_fbb1e.dir\\CheckFunctionExists.c.obj /FdCMakeFiles\\cmTC_fbb1e.dir\\ /FS -c D:\\cyberProject\\cyber_seproject2\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-bwyccx\\CheckFunctionExists.c
+        [2/2] C:\\Windows\\system32\\cmd.exe /C "cd . && "D:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_fbb1e.dir --rc=D:\\WINDOW~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=D:\\WINDOW~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- D:\\PROGRA~2\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1439~1.335\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_fbb1e.dir\\CheckFunctionExists.c.obj  /out:cmTC_fbb1e.exe /implib:cmTC_fbb1e.lib /pdb:cmTC_fbb1e.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  pthreads.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && C:\\Windows\\system32\\cmd.exe /C "cd /D D:\\cyberProject\\cyber_seproject2\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-bwyccx && C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -noprofile -executionpolicy Bypass -file D:/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-bwyccx/cmTC_fbb1e.exe -installedDir D:/vcpkg/installed/x64-windows/debug/bin -OutVariable out""
+        FAILED: cmTC_fbb1e.exe 
+        C:\\Windows\\system32\\cmd.exe /C "cd . && "D:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_fbb1e.dir --rc=D:\\WINDOW~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=D:\\WINDOW~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- D:\\PROGRA~2\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1439~1.335\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_fbb1e.dir\\CheckFunctionExists.c.obj  /out:cmTC_fbb1e.exe /implib:cmTC_fbb1e.lib /pdb:cmTC_fbb1e.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  pthreads.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && C:\\Windows\\system32\\cmd.exe /C "cd /D D:\\cyberProject\\cyber_seproject2\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-bwyccx && C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -noprofile -executionpolicy Bypass -file D:/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-bwyccx/cmTC_fbb1e.exe -installedDir D:/vcpkg/installed/x64-windows/debug/bin -OutVariable out""
+        LINK Pass 1: command "D:\\PROGRA~2\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1439~1.335\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_fbb1e.dir\\CheckFunctionExists.c.obj /out:cmTC_fbb1e.exe /implib:cmTC_fbb1e.lib /pdb:cmTC_fbb1e.pdb /version:0.0 /machine:x64 /debug /INCREMENTAL /subsystem:console pthreads.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTFILE:CMakeFiles\\cmTC_fbb1e.dir/intermediate.manifest CMakeFiles\\cmTC_fbb1e.dir/manifest.res" failed (exit code 1104) with the following output:
         LINK : fatal error LNK1104: 无法打开文件“pthreads.lib”\x0d
         ninja: build stopped: subcommand failed.
         
@@ -356,12 +245,12 @@ events:
       - "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.28/Modules/CMakeFindDependencyMacro.cmake:76 (find_package)"
       - "D:/vcpkg/installed/x64-windows/share/libssh/libssh-config.cmake:3 (find_dependency)"
       - "D:/vcpkg/scripts/buildsystems/vcpkg.cmake:859 (_find_package)"
-      - "CMakeLists.txt:23 (find_package)"
+      - "CMakeLists.txt:22 (find_package)"
     checks:
       - "Looking for pthread_create in pthread"
     directories:
-      source: "D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-u0d1r0"
-      binary: "D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-u0d1r0"
+      source: "D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-9t7fr7"
+      binary: "D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-9t7fr7"
     cmakeVariables:
       CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS /W3"
       CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
@@ -373,26 +262,16 @@ events:
       variable: "CMAKE_HAVE_PTHREAD_CREATE"
       cached: true
       stdout: |
-        Change Dir: 'D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-u0d1r0'
+        Change Dir: 'D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-9t7fr7'
         
-        Run Build Command(s): "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_d9ce0
-        [1/2] D:\\PROGRA~2\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1439~1.335\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS /W3 -DCHECK_FUNCTION_EXISTS=pthread_create /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_d9ce0.dir\\CheckFunctionExists.c.obj /FdCMakeFiles\\cmTC_d9ce0.dir\\ /FS -c D:\\cyberProject\\cyber_seproject2\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-u0d1r0\\CheckFunctionExists.c
-        [2/2] C:\\Windows\\system32\\cmd.exe /C "cd . && "D:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_d9ce0.dir --rc=D:\\WINDOW~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=D:\\WINDOW~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- D:\\PROGRA~2\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1439~1.335\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_d9ce0.dir\\CheckFunctionExists.c.obj  /out:cmTC_d9ce0.exe /implib:cmTC_d9ce0.lib /pdb:cmTC_d9ce0.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  pthread.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && C:\\Windows\\system32\\cmd.exe /C "cd /D D:\\cyberProject\\cyber_seproject2\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-u0d1r0 && C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -noprofile -executionpolicy Bypass -file D:/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-u0d1r0/cmTC_d9ce0.exe -installedDir D:/vcpkg/installed/x64-windows/debug/bin -OutVariable out""
-        FAILED: cmTC_d9ce0.exe 
-        C:\\Windows\\system32\\cmd.exe /C "cd . && "D:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_d9ce0.dir --rc=D:\\WINDOW~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=D:\\WINDOW~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- D:\\PROGRA~2\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1439~1.335\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_d9ce0.dir\\CheckFunctionExists.c.obj  /out:cmTC_d9ce0.exe /implib:cmTC_d9ce0.lib /pdb:cmTC_d9ce0.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  pthread.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && C:\\Windows\\system32\\cmd.exe /C "cd /D D:\\cyberProject\\cyber_seproject2\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-u0d1r0 && C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -noprofile -executionpolicy Bypass -file D:/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-u0d1r0/cmTC_d9ce0.exe -installedDir D:/vcpkg/installed/x64-windows/debug/bin -OutVariable out""
-        LINK Pass 1: command "D:\\PROGRA~2\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1439~1.335\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_d9ce0.dir\\CheckFunctionExists.c.obj /out:cmTC_d9ce0.exe /implib:cmTC_d9ce0.lib /pdb:cmTC_d9ce0.pdb /version:0.0 /machine:x64 /debug /INCREMENTAL /subsystem:console pthread.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTFILE:CMakeFiles\\cmTC_d9ce0.dir/intermediate.manifest CMakeFiles\\cmTC_d9ce0.dir/manifest.res" failed (exit code 1104) with the following output:
+        Run Build Command(s): "D:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_c1450
+        [1/2] D:\\PROGRA~2\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1439~1.335\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS /W3 -DCHECK_FUNCTION_EXISTS=pthread_create /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_c1450.dir\\CheckFunctionExists.c.obj /FdCMakeFiles\\cmTC_c1450.dir\\ /FS -c D:\\cyberProject\\cyber_seproject2\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-9t7fr7\\CheckFunctionExists.c
+        [2/2] C:\\Windows\\system32\\cmd.exe /C "cd . && "D:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_c1450.dir --rc=D:\\WINDOW~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=D:\\WINDOW~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- D:\\PROGRA~2\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1439~1.335\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_c1450.dir\\CheckFunctionExists.c.obj  /out:cmTC_c1450.exe /implib:cmTC_c1450.lib /pdb:cmTC_c1450.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  pthread.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && C:\\Windows\\system32\\cmd.exe /C "cd /D D:\\cyberProject\\cyber_seproject2\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-9t7fr7 && C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -noprofile -executionpolicy Bypass -file D:/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-9t7fr7/cmTC_c1450.exe -installedDir D:/vcpkg/installed/x64-windows/debug/bin -OutVariable out""
+        FAILED: cmTC_c1450.exe 
+        C:\\Windows\\system32\\cmd.exe /C "cd . && "D:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_c1450.dir --rc=D:\\WINDOW~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=D:\\WINDOW~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- D:\\PROGRA~2\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1439~1.335\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_c1450.dir\\CheckFunctionExists.c.obj  /out:cmTC_c1450.exe /implib:cmTC_c1450.lib /pdb:cmTC_c1450.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  pthread.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && C:\\Windows\\system32\\cmd.exe /C "cd /D D:\\cyberProject\\cyber_seproject2\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-9t7fr7 && C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -noprofile -executionpolicy Bypass -file D:/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary D:/cyberProject/cyber_seproject2/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-9t7fr7/cmTC_c1450.exe -installedDir D:/vcpkg/installed/x64-windows/debug/bin -OutVariable out""
+        LINK Pass 1: command "D:\\PROGRA~2\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1439~1.335\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_c1450.dir\\CheckFunctionExists.c.obj /out:cmTC_c1450.exe /implib:cmTC_c1450.lib /pdb:cmTC_c1450.pdb /version:0.0 /machine:x64 /debug /INCREMENTAL /subsystem:console pthread.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTFILE:CMakeFiles\\cmTC_c1450.dir/intermediate.manifest CMakeFiles\\cmTC_c1450.dir/manifest.res" failed (exit code 1104) with the following output:
         LINK : fatal error LNK1104: 无法打开文件“pthread.lib”\x0d
         ninja: build stopped: subcommand failed.
         
       exitCode: 1
-=======
-      - "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.29/Modules/Internal/CMakeDetermineLinkerId.cmake:40 (message)"
-      - "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.29/Modules/CMakeDetermineCompilerABI.cmake:210 (cmake_determine_linker_id)"
-      - "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.29/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
-      - "CMakeLists.txt:3 (project)"
-    message: |
-      Running the CXX compiler's linker: "C:/PROGRA~1/MIB055~1/2022/ENTERP~1/VC/Tools/MSVC/1441~1.341/bin/Hostx64/x64/link.exe" "-v"
-      Microsoft (R) Incremental Linker Version 14.41.34120.0
-      Copyright (C) Microsoft Corporation.  All rights reserved.
->>>>>>> a26f0ae10125fe8082721fc2893a7771cec19f5b
 ...
