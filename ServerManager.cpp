@@ -56,7 +56,7 @@ void ServerManager::handle_request(http_request request) {
     auto first_segment = path[0];
     auto second_segment = (path.size() > 1) ? path[1] : "";
     //用于HTTP LOG回显，在无回显的POC中得到有效验证信息
-    if (first_segment == _XPLATSTR("poc_callback")){
+    if (first_segment == _XPLATSTR("poc_callback")) {
         log_poc_callback(request);
     }
     //返回基线检测的结果
@@ -299,8 +299,8 @@ void ServerManager::handle_post_insert_data(http_request request) {
                 std::string headers = part.substr(0, header_end_pos);
                 std::string part_data = part.substr(header_end_pos + 4, part.length() - header_end_pos - 6); // Exclude trailing CRLF
 
-                //std::cout << headers << std::endl;
-                //std::cout << part_data << std::endl;
+                std::cout << headers << std::endl;
+                std::cout << part_data << std::endl;
 
                 std::string decoded_data = autoConvertToUTF8(part_data);
 
@@ -334,10 +334,8 @@ void ServerManager::handle_post_insert_data(http_request request) {
 
         // 编辑逻辑
         if (mode == "edit") {
-            try {
-                if (!edit_filename.empty()) {
-                    std::string full_file_path = POC_DIRECTORY + edit_filename;
-                    std::cerr << "Attempting to edit file at path: " << full_file_path << std::endl; // 调试信息
+            if (!edit_filename.empty()) {
+                std::string full_file_path = POC_DIRECTORY + edit_filename;
 
                 // 检查文件是否已经存在
                 std::ifstream infile(full_file_path);
@@ -942,7 +940,7 @@ void ServerManager::handle_delete_data_by_id(http_request request) {
                         }
                     }
                 }
-            }  
+            }
 
         }
 
@@ -988,7 +986,7 @@ void ServerManager::handle_post_get_Nmap(http_request request)
 
         // 解析XML文件以获取扫描结果（多个主机）
         scan_host_result = parseXmlFile(outputPath);
-            
+
         // 获取当前时间并记录到每个扫描结果中
         auto start = std::chrono::high_resolution_clock::now();
 
@@ -1037,7 +1035,7 @@ void ServerManager::handle_post_get_Nmap(http_request request)
         // 将新的扫描结果保存为历史数据
         historicalData.data[ip] = scan_host_result[0];  // 目前只支持单个主机，取第一个
 
-       
+
 
         // 定义插入语句
         std::string sql =
@@ -1073,7 +1071,7 @@ void ServerManager::handle_post_get_Nmap(http_request request)
 }
 
 
-void ServerManager::handle_post_hydra(http_request request){
+void ServerManager::handle_post_hydra(http_request request) {
     request.extract_json().then([this, &request](json::value body) {
         try {
             if (!body.has_field(_XPLATSTR("ip")) || !body.has_field(_XPLATSTR("service_name")) || !body.has_field(_XPLATSTR("portId"))) {
@@ -1306,7 +1304,7 @@ void ServerManager::handle_get_classify_protect(http_request request) {
 //        std::string usernameFile = "/hydra/usernames.txt";
 //        std::string passwordFile = "/hydra/passwords.txt";
 //
-//        //˵�����������
+//        //说明有这个服务
 //        if (port_services.find(service_name) != port_services.end()) {
 //            // Construct the hydra command
 //            std::string command = "hydra -L " + usernameFile + " -P " + passwordFile + " -f" + service_name + "://" + ip;
@@ -1347,7 +1345,7 @@ void ServerManager::handle_get_classify_protect(http_request request) {
 //            json::value json_array = json::value::array();
 //            json_array[0] = json_obj;
 //
-//            // ������Ӧ
+//            // 创建响应
 //            http_response response(status_codes::OK);
 //            response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
 //            response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
@@ -1359,12 +1357,12 @@ void ServerManager::handle_get_classify_protect(http_request request) {
 //            request.reply(response);
 //        }
 //        else {
-//            // ���񲻴��ڣ����ش�����Ϣ
+//            // 服务不存在，返回错误信息
 //            json::value error_response = json::value::object();
 //            error_response[_XPLATSTR("error")] = json::value::string(_XPLATSTR("Service not found"));
 //            error_response[_XPLATSTR("service_name")] = json::value::string(service_name);
 //
-//            // ������Ӧ
+//            // 创建响应
 //            http_response response(status_codes::NotFound);
 //            response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
 //            response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
@@ -1475,7 +1473,7 @@ json::value ServerManager::ScanHostResult_to_json(const ScanHostResult& scan_hos
     json::value os_vuln_result_json = json::value::array();
     int index_os_vuln = 0;
     for (const auto& vuln : scan_host_result.vuln_result) {
-        os_vuln_result_json[index_os_vuln++] = Vuln_to_json (vuln);
+        os_vuln_result_json[index_os_vuln++] = Vuln_to_json(vuln);
     }
     result[_XPLATSTR("os_vuln_result")] = os_vuln_result_json;
 
@@ -1578,7 +1576,7 @@ bool ServerManager::check_and_get_filename(const std::string& body, const std::s
 
                     // 解析并返回文件内容
                     data = part.substr(header_end_pos + 4, part.length() - header_end_pos - 6);  // Exclude trailing CRLF
-                    
+
                     // 检查文件是否已经存在
                     std::ifstream infile(path);
                     if (infile.good() && filename != "") {
@@ -1594,54 +1592,21 @@ bool ServerManager::check_and_get_filename(const std::string& body, const std::s
     return false;  // 文件不存在
 }
 
-////上传文件
-//void ServerManager::upload_file(const std::string& filename, const std::string& data) {
-//    // 构建文件路径
-//    auto path = U("../../../src/scan/scripts/") + utility::conversions::to_string_t(filename);
-//
-//    // 打开输出流并写入数据
-//    concurrency::streams::fstream::open_ostream(path).then([=](concurrency::streams::ostream outFile) mutable {
-//        auto fileStream = std::make_shared<concurrency::streams::ostream>(outFile);
-//        std::vector<uint8_t> file_data(data.begin(), data.end());  // 将string数据转换为字节数组
-//        auto buf = concurrency::streams::container_buffer<std::vector<uint8_t>>(std::move(file_data));
-//        fileStream->write(buf, buf.size()).then([=](size_t) {
-//            fileStream->close().get();  // 关闭文件流
-//            }).wait();
-//        }).wait();
-//}
-
-
+//上传文件
 void ServerManager::upload_file(const std::string& filename, const std::string& data) {
     // 构建文件路径
     auto path = _XPLATSTR("../../../src/scan/scripts/") + utility::conversions::to_string_t(filename);
 
-        // Open output stream and write data
-        concurrency::streams::fstream::open_ostream(path).then([=](concurrency::streams::ostream outFile) mutable {
-            if (!outFile.is_open()) {
-                throw std::runtime_error("Failed to open output stream for file: " + filename);
-            }
-
-            auto fileStream = std::make_shared<concurrency::streams::ostream>(outFile);
-            std::vector<uint8_t> file_data(data.begin(), data.end());  // Convert string data to byte array
-            auto buf = concurrency::streams::container_buffer<std::vector<uint8_t>>(std::move(file_data));
-
-            fileStream->write(buf, buf.size()).then([=](size_t) {
-                try {
-                    fileStream->close().get();  // Close file stream
-                }
-                catch (const std::exception& e) {
-                    std::cerr << "Exception while closing the file stream: " << e.what() << std::endl;
-                }
-                }).wait();
-
+    // 打开输出流并写入数据
+    concurrency::streams::fstream::open_ostream(path).then([=](concurrency::streams::ostream outFile) mutable {
+        auto fileStream = std::make_shared<concurrency::streams::ostream>(outFile);
+        std::vector<uint8_t> file_data(data.begin(), data.end());  // 将string数据转换为字节数组
+        auto buf = concurrency::streams::container_buffer<std::vector<uint8_t>>(std::move(file_data));
+        fileStream->write(buf, buf.size()).then([=](size_t) {
+            fileStream->close().get();  // 关闭文件流
             }).wait();
-
-    }
-    catch (const std::exception& e) {
-        std::cerr << "Exception during file upload: " << e.what() << std::endl;
-    }
+        }).wait();
 }
-
 
 
 //POC上传文件的工具函数
@@ -1843,7 +1808,7 @@ void ServerManager::update_poc_by_cve(http_request request) {
         // 将请求体保存到临时文件
         save_request_to_temp_file(request);
 
-        std::string cve_id, vul_name , affected_infra,mode, edit_filename, poc_content;
+        std::string cve_id, vul_name, affected_infra, mode, edit_filename, poc_content;
         std::string filename = "";  // 初始化 filename
         std::ifstream temp_file(TEMP_FILENAME, std::ios::binary);
         std::string body((std::istreambuf_iterator<char>(temp_file)), std::istreambuf_iterator<char>());
@@ -1908,8 +1873,7 @@ void ServerManager::update_poc_by_cve(http_request request) {
                 return;
             }
 
-                std::string full_file_path = POC_DIRECTORY + edit_filename;
-                std::cerr << "Editing POC file at path: " << full_file_path << std::endl; // 调试信息
+            std::string full_file_path = POC_DIRECTORY + edit_filename;
 
             // 如果要更新的文件名与数据库中的不一致，检查文件是否已存在
             if (edit_filename != existing_poc.script) {
@@ -1951,20 +1915,9 @@ void ServerManager::update_poc_by_cve(http_request request) {
                 }
             }
 
-                // 更新数据库的文件名
-                existing_poc.script = filename;
-
-            }
-            catch (const std::exception& e) {
-                std::cerr << "Exception during POC file edit: " << e.what() << std::endl;
-                response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("编辑过程中发生错误：") + utility::conversions::to_string_t(e.what()));
-                response.set_status_code(status_codes::InternalError);
-                response.set_body(response_data);
-                request.reply(response);
-                return;
-            }
+            // 更新数据库的文件名
+            existing_poc.script = filename;
         }
-
 
         // 上传逻辑 - 只在 mode 为 "upload" 的情况下才执行
         if (mode == "upload") {
@@ -2189,7 +2142,7 @@ void ServerManager::handle_post_poc_excute(http_request request)
         std::string ip = scan_host_result[0].ip;
         std::string url = scan_host_result[0].url;
 
-        std::string result = runPythonWithOutput(script, url,ip, std::stoi(portId));
+        std::string result = runPythonWithOutput(script, url, ip, std::stoi(portId));
 
         // 创建响应
         http_response response(status_codes::OK);
@@ -2202,7 +2155,7 @@ void ServerManager::handle_post_poc_excute(http_request request)
         response.set_body(response_data);
         request.reply(response);
 
-    }).wait();
+        }).wait();
 }
 
 // 记录 /poc_callback 路径的请求（待修改）
@@ -2236,7 +2189,7 @@ void ServerManager::handle_post_poc_scan(http_request request) {
 
             //测试所用
             //std::vector<POC> poc_list = dbManager.getAllData();
-            
+
 
              //获取要执行的POC的id
             std::vector<int> ids;
@@ -2486,7 +2439,7 @@ void ServerManager::handle_auto_select_poc(http_request request) {
         }
         }).wait();
 
-    std::cout << "[DEBUG] Completed handling auto-select POC request." << std::endl;
+        std::cout << "[DEBUG] Completed handling auto-select POC request." << std::endl;
 }
 
 void ServerManager::handle_get_all_assets_vuln_data(http_request request)
