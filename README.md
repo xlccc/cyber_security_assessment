@@ -45,6 +45,7 @@ vcpkg install icu
 vcpkg install curl[core,non-http,openssl,ssl]
 vcpkg install pybind11
 vcpkg install uchardet
+vcpkg install mysql-connector-cpp:x64-linux
 ```
 
 其他系统依赖安装：
@@ -55,6 +56,10 @@ sudo apt-get install -y autoconf automake autoconf-archive ninja-build
 ```
 
 说明：如果不使用 vcpkg 管理依赖，可手动安装上述库并确保 CMake 工程能够找到所需头文件和库路径。
+
+#### 4.数据库
+
+将目录下的sql文件在目标服务器先执行。可以利用navicat
 
 ## 现阶段进度
 | 总览 | | | | |
@@ -209,5 +214,4 @@ sudo apt-get install -y autoconf automake autoconf-archive ninja-build
 | 3 | 网络协议分析工具：截获并显示网络数据包，分析网络实时流量，捕捉和查看公共网络协议、专用网络协议和工控网络协议 | He |
 | 4 | 攻击路径分析 | Yang |
 | 5 | 防火墙安全策略冲突 | FU<br/>（需要系统给出识别防火墙规则的方法，比如探针式扫描） |
-
 
