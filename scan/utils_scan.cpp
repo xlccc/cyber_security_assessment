@@ -803,7 +803,7 @@ std::map<std::string, std::vector<POCTask>> create_poc_task(const std::vector<PO
     return poc_tasks_by_port;
 }
 
-void execute_poc_tasks(std::map<std::string, std::vector<POCTask>>& poc_tasks_by_port, ScanHostResult& scan_host_result) {
+void execute_poc_tasks(std::map<std::string, std::vector<POCTask>>& poc_tasks_by_port, ScanHostResult& scan_host_result, ConnectionPool& pool, DatabaseHandler& dbHandler) {
 
     // 记录开始时间
     auto start = std::chrono::high_resolution_clock::now();

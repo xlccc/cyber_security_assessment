@@ -1678,7 +1678,6 @@ void ServerManager::handle_get_poc_content(http_request request) {
         file.close();
 
         // 返回文件内容
-        json::value response_data;
         response_data[_XPLATSTR("content")] = json::value::string(utility::conversions::to_string_t(file_content));
 
         http_response response(status_codes::OK);

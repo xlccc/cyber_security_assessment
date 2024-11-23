@@ -1,9 +1,6 @@
 // DatabaseHandler.cpp
 #include "DatabaseHandler.h"
 using namespace mysqlx;
-
-
-
 // 插入执行函数的实现
 void DatabaseHandler::executeInsert(const std::string& sql, ConnectionPool& pool) {
     try {
