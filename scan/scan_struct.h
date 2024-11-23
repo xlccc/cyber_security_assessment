@@ -88,4 +88,25 @@ struct POCTask {
     }
 };
 
+// 定义漏洞数据结构
+struct VulnerabilityInfo {
+    std::string vuln_id;
+    std::string vuln_name;
+    std::string cvss;
+    std::string summary;
+    std::string vulExist;
+};
+
+struct PortVulnerabilityInfo : VulnerabilityInfo {
+    int port_id;
+};
+
+// IP对应的所有漏洞信息
+struct IpVulnerabilities {
+    std::string ip;
+    std::vector<VulnerabilityInfo> host_vulnerabilities;
+    std::vector<PortVulnerabilityInfo> port_vulnerabilities;
+};
+
+
 #endif

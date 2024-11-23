@@ -77,7 +77,7 @@ set(SOURCES
     ServerManager.cpp
     scan/poc_check.cpp
     database/db_config.cpp
-)
+ "database/DatabaseHandler.cpp")
 
 set(HEADERS
     Command_Excute.h
@@ -96,7 +96,7 @@ set(HEADERS
     ServerManager.h
     scan/poc_check.h
     scan/config.h
-)
+ "database/DatabaseHandler.h" "database/mysql_connection_pool.h")
 
 # 添加可执行文件
 add_executable(MyCppProject ${SOURCES} ${HEADERS})

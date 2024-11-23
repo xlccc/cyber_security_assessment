@@ -1,4 +1,5 @@
 ﻿#pragma once
+#define _TURN_OFF_PLATFORM_STRING  // 禁用cpprest的U宏
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -13,6 +14,8 @@
 #include <unordered_set>
 #include"scan_struct.h"
 #include"database/poc.h"
+#include"DatabaseHandler.h"
+#include"mysql_connection_pool.h"
 using namespace std;
 
 
@@ -47,7 +50,7 @@ std::map<std::string, std::vector<POCTask>> create_poc_task(const std::vector<PO
 std::map<std::string, std::vector<POCTask>> create_poc_task(const std::vector<POC>& poc_list, const ScanHostResult& scan_host_result, bool match_infra);
 
 //执行POC任务
-void execute_poc_tasks(std::map<std::string, std::vector<POCTask>>& poc_tasks_by_port, ScanHostResult& scan_host_result);
+void execute_poc_tasks(std::map<std::string, std::vector<POCTask>>& poc_tasks_by_port, ScanHostResult& scan_host_result,ConnectionPool &pool, DatabaseHandler &dbHandler);
 
 //合并 漏洞库匹配、插件化扫描两种方式的扫描结果
 void merge_vuln_results(ScanHostResult& scan_host_result);

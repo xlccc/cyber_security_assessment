@@ -1,4 +1,4 @@
-
+#define _TURN_OFF_PLATFORM_STRING  // 禁用cpprest的U宏
 //main函数
 #include <mysqlx/xdevapi.h>
 #include"ServerManager.h"
