@@ -1,4 +1,4 @@
-#ifndef MYSQL_CONNECTION_POOL_H
+ï»¿#ifndef MYSQL_CONNECTION_POOL_H
 #define MYSQL_CONNECTION_POOL_H
 
 #include <mysqlx/xdevapi.h>
@@ -10,16 +10,16 @@
 
 class ConnectionPool {
 public:
-    // ¼ò»¯µÄ¹¹Ôìº¯Êı£¬²»ĞèÒª´«ÈëÅäÖÃ
+    // ç®€åŒ–çš„æ„é€ å‡½æ•°ï¼Œä¸éœ€è¦ä¼ å…¥é…ç½®
     ConnectionPool() : currentSize_(0) {
-        // ³õÊ¼»¯Á¬½Ó³Ø
+        // åˆå§‹åŒ–è¿æ¥æ± 
         for (size_t i = 0; i < initial_size_; ++i) {
             addConnection();
         }
     }
 
     ~ConnectionPool() {
-        // ÇåÀíËùÓĞÁ¬½Ó
+        // æ¸…ç†æ‰€æœ‰è¿æ¥
         std::lock_guard<std::mutex> lock(mutex_);
         while (!connections_.empty()) {
             connections_.pop();
@@ -40,12 +40,12 @@ public:
         auto conn = std::move(connections_.front());
         connections_.pop();
 
-        // ÑéÖ¤Á¬½ÓÊÇ·ñÓĞĞ§
+        // éªŒè¯è¿æ¥æ˜¯å¦æœ‰æ•ˆ
         try {
             conn->sql("SELECT 1").execute();
         }
         catch (...) {
-            // Á¬½ÓÎŞĞ§£¬´´½¨ĞÂÁ¬½Ó
+            // è¿æ¥æ— æ•ˆï¼Œåˆ›å»ºæ–°è¿æ¥
             conn = createConnection();
         }
 
@@ -58,17 +58,17 @@ public:
     }
 
 private:
-    // Êı¾İ¿âÁ¬½ÓÅäÖÃ£¬Ğ´ËÀÔÚË½ÓĞ³ÉÔ±ÖĞ
-    const std::string host_ = "10.9.130.61";  // Êı¾İ¿âÖ÷»ú
-    const uint16_t port_ = 33060;          // X ProtocolÄ¬ÈÏ¶Ë¿Ú
-    const std::string user_ = "root";      // Êı¾İ¿âÓÃ»§Ãû
-    const std::string password_ = "ComplexPassword123!"; // Êı¾İ¿âÃÜÂë
-    const std::string schema_ = "test_db";  // Êı¾İ¿âÃû
-    const size_t initial_size_ = 2;        // ³õÊ¼Á¬½ÓÊı
-    const size_t max_size_ = 20;           // ×î´óÁ¬½ÓÊı
-    const std::chrono::seconds connection_timeout_{ 30 }; // Á¬½Ó³¬Ê±Ê±¼ä
+    // æ•°æ®åº“è¿æ¥é…ç½®ï¼Œå†™æ­»åœ¨ç§æœ‰æˆå‘˜ä¸­
+    const std::string host_ = "10.9.130.193";  // æ•°æ®åº“ä¸»æœº
+    const uint16_t port_ = 33060;          // X Protocolé»˜è®¤ç«¯å£
+    const std::string user_ = "root";      // æ•°æ®åº“ç”¨æˆ·å
+    const std::string password_ = "Navicat822!"; // æ•°æ®åº“å¯†ç 
+    const std::string schema_ = "test_db";  // æ•°æ®åº“å
+    const size_t initial_size_ = 2;        // åˆå§‹è¿æ¥æ•°
+    const size_t max_size_ = 20;           // æœ€å¤§è¿æ¥æ•°
+    const std::chrono::seconds connection_timeout_{ 30 }; // è¿æ¥è¶…æ—¶æ—¶é—´
 
-    // ÆäËûË½ÓĞ³ÉÔ±
+    // å…¶ä»–ç§æœ‰æˆå‘˜
     std::queue<std::unique_ptr<mysqlx::Session>> connections_;
     std::mutex mutex_;
     size_t currentSize_;
@@ -98,12 +98,12 @@ private:
 
         std::lock_guard<std::mutex> lock(mutex_);
         try {
-            // ÑéÖ¤Á¬½ÓÊÇ·ñ»¹ÓĞĞ§
+            // éªŒè¯è¿æ¥æ˜¯å¦è¿˜æœ‰æ•ˆ
             conn->sql("SELECT 1").execute();
             connections_.push(std::move(conn));
         }
         catch (...) {
-            // Èç¹ûÁ¬½ÓÎŞĞ§£¬´´½¨ĞÂÁ¬½Ó
+            // å¦‚æœè¿æ¥æ— æ•ˆï¼Œåˆ›å»ºæ–°è¿æ¥
             connections_.push(createConnection());
         }
     }
