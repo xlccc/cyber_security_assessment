@@ -33,13 +33,15 @@ public:
 
     //根据CVE搜索对应POC
     std::vector<POC> searchDataByCVE(const std::string& vuln_id);
+    ////按id搜索POC数据，若没有，返回无对应POC
+    std::vector<POC> searchDataByIds(const std::vector<int>& ids);
 
     //搜索是否存在CVE编号的记录
     bool isExistCVE(const std::string& vuln_id);
     
     //依据id搜索POC名称，用于删除对应POC
     std::string searchPOCById(const int& id);
-    //依据id搜索POC名称，用于删除对应POC
+    //依据vuln_id搜索POC名称，用于删除对应POC
     std::string searchPOCById(const std::string& vuln_id);
 
     //依据id搜索POC数据
