@@ -51,6 +51,7 @@ struct ScanResult {
     std::string status;     //开放状态
     std::string service_name;    //服务或协议名称，通常包含应用层协议或服务类型，如"http", "https"。
     std::string product;    //应用名称，更加准确，如Apache httpd等软件名称（新增）
+    std::string softwareType;   //软件类型（数据库，中间件， web应用）
     std::string version;    //版本
     std::map<std::string, std::vector<Vuln>> cpes; //服务的cpes与潜在CVEs对应信息
     std::set<Vuln> vuln_result; //存放漏洞扫描结果（新增）
@@ -63,8 +64,10 @@ struct ScanHostResult {
     std::string ip;         //ip
     std::set<std::string> os_list;       //目标系统的通用操作系统类别。（新增）
     std::vector<std::string> os_matches;     //操作系统版本
+    std::string os_type; //操作系统类型
     std::map<std::string, std::vector<Vuln>> cpes; //操作系统的cpes与潜在CVEs对应信息
     std::vector<ScanResult> ports;  //端口扫描结果
+    
     std::string scan_time;// 扫描时间
     std::set<Vuln> vuln_result; //存放操作系统的漏洞扫描结果（新增）
     bool is_merged; // 标识是否合并两种漏洞扫描方法的结果 （新增）
@@ -95,6 +98,8 @@ struct VulnerabilityInfo {
     std::string cvss;
     std::string summary;
     std::string vulExist;
+    std::string softwareType;//类型（操作系统,数据库，中间件， web应用)
+    
 };
 
 struct PortVulnerabilityInfo : VulnerabilityInfo {
