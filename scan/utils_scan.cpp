@@ -619,10 +619,10 @@ void fetch_and_padding_cves(std::map<std::string, std::vector<Vuln>>& cpes, cons
 
     for (const auto& cpe_id : cpes_to_query) {
         auto& vecCVE = cpes[cpe_id];
-        web::uri_builder builder(U(base_url));
-        builder.append_path(U(cpe_id));
+        web::uri_builder builder(_XPLATSTR(base_url));
+        builder.append_path(_XPLATSTR(cpe_id));
         if (limit > 0) {
-            builder.append_query(U("limit"), limit);
+            builder.append_query(_XPLATSTR("limit"), limit);
         }
 
         web::http::client::http_client client(builder.to_uri());
@@ -641,10 +641,10 @@ void fetch_and_padding_cves(std::map<std::string, std::vector<Vuln>>& cpes, cons
                             auto cve_array = jsonObject.as_array();
                             for (auto& cve : cve_array) {
                                 Vuln tmp;
-                                tmp.Vuln_id = cve[U("id")].as_string();
+                                tmp.Vuln_id = cve[_XPLATSTR("id")].as_string();
                                 std::string cvss_str = "N/A";  // 默认值为 "N/A"
-                                if (cve.has_field(U("cvss"))) {
-                                    auto cvss_value = cve[U("cvss")];
+                                if (cve.has_field(_XPLATSTR("cvss"))) {
+                                    auto cvss_value = cve[_XPLATSTR("cvss")];
                                     if (cvss_value.is_string()) {
                                         cvss_str = cvss_value.as_string();  // 处理字符串类型的 CVSS
                                     }
@@ -659,9 +659,9 @@ void fetch_and_padding_cves(std::map<std::string, std::vector<Vuln>>& cpes, cons
                                     std::cout << "CVSS field not present for CPE: " << cpe_id << std::endl;
                                 }
                                 tmp.CVSS = cvss_str;
-                                if (cve.has_field(U("summary"))) {
-                                    tmp.summary = cve[U("summary")].as_string();
-                                    std::cout << "Summary: " << cve[U("summary")].as_string() << std::endl;
+                                if (cve.has_field(_XPLATSTR("summary"))) {
+                                    tmp.summary = cve[_XPLATSTR("summary")].as_string();
+                                    std::cout << "Summary: " << cve[_XPLATSTR("summary")].as_string() << std::endl;
                                 }
                                 vecCVE.push_back(tmp);
                             }
@@ -803,7 +803,7 @@ std::map<std::string, std::vector<POCTask>> create_poc_task(const std::vector<PO
     return poc_tasks_by_port;
 }
 
-void execute_poc_tasks(std::map<std::string, std::vector<POCTask>>& poc_tasks_by_port, ScanHostResult& scan_host_result) {
+void execute_poc_tasks(std::map<std::string, std::vector<POCTask>>& poc_tasks_by_port, ScanHostResult& scan_host_result, ConnectionPool& pool, DatabaseHandler& dbHandler) {
 
     // 记录开始时间
     auto start = std::chrono::high_resolution_clock::now();
@@ -828,7 +828,7 @@ void execute_poc_tasks(std::map<std::string, std::vector<POCTask>>& poc_tasks_by
             else {
                 task.vuln.vulExist = "未验证"; 
             }
-
+            dbHandler.alterVulnAfterPocTask(pool, task);
             if (key.empty()) {
                 scan_host_result.vuln_result.insert(task.vuln);
             }

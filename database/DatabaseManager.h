@@ -41,7 +41,7 @@ public:
     
     //依据id搜索POC名称，用于删除对应POC
     std::string searchPOCById(const int& id);
-    //依据id搜索POC名称，用于删除对应POC
+    //依据vuln_id搜索POC名称，用于删除对应POC
     std::string searchPOCById(const std::string& vuln_id);
 
     //依据id搜索POC数据

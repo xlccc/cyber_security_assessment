@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-// 上传POC文件所需要的固定的临时文件名
+// �ϴ�POC�ļ�����Ҫ�Ĺ̶�����ʱ�ļ���
 const std::string TEMP_FILENAME = "/tmp/uploaded_body_temp";
 
 
