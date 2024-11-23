@@ -6,7 +6,7 @@ using namespace web::http::experimental::listener;
 using namespace concurrency::streams;
 
 ServerManager::ServerManager() : dbManager(DB_PATH) {
-    utility::string_t address = U("http://10.9.130.193:8081/");
+    utility::string_t address = _XPLATSTR("http://10.9.130.193:8081/");
     uri_builder uri(address);
     auto addr = uri.to_uri().to_string();
     listener = std::make_unique<http_listener>(addr);
@@ -1957,7 +1957,7 @@ void ServerManager::update_poc_by_cve(http_request request) {
             }
             catch (const std::exception& e) {
                 std::cerr << "Exception during POC file edit: " << e.what() << std::endl;
-                response_data[U("message")] = json::value::string(U("编辑过程中发生错误：") + utility::conversions::to_string_t(e.what()));
+                response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("编辑过程中发生错误：") + utility::conversions::to_string_t(e.what()));
                 response.set_status_code(status_codes::InternalError);
                 response.set_body(response_data);
                 request.reply(response);
