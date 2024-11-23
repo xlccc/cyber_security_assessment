@@ -106,11 +106,13 @@ std::vector<ScanHostResult> parseXmlFile(const std::string& xmlFilePath) {
                     rapidxml::xml_attribute<>* nameAttr = serviceNode->first_attribute("name");
                     if (nameAttr) {
                         scanResult.service_name = nameAttr->value();
+                        scanResult.softwareType = matchServiceType(scanResult.service_name, rules);
                     }
                     // Extract product name
                     rapidxml::xml_attribute<>* productAttr = serviceNode->first_attribute("product");
                     if (productAttr) {
                         scanResult.product = productAttr->value();
+                        scanResult.softwareType = matchServiceType(scanResult.product, rules);
                     }
                     // Extract version
                     rapidxml::xml_attribute<>* versionAttr = serviceNode->first_attribute("version");

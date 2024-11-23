@@ -51,15 +51,17 @@ void DatabaseHandler::executeUpdateOrInsert(const ScanHostResult& scanHostResult
         // 遍历 ScanHostResult 中的 ports 成员，并插入到 open_ports 表
         for (const auto& port : scanHostResult.ports) {
             conn->sql(
-                "INSERT INTO open_ports (shr_id, port, protocol, status, service_name, product, version) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?) "
+                "INSERT INTO open_ports (shr_id, port, protocol, status, service_name, product, version, software_type) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?) "
                 "ON DUPLICATE KEY UPDATE status = VALUES(status), "
-                "service_name = VALUES(service_name), product = VALUES(product), version = VALUES(version)"
+                "service_name = VALUES(service_name), product = VALUES(product), "
+                "version = VALUES(version), software_type = VALUES(software_type)"
             )
                 .bind(
                     shr_id, std::stoi(port.portId), port.protocol, port.status,
                     port.service_name, port.product.empty() ? "" : port.product,
-                    port.version.empty() ? "" : port.version
+                    port.version.empty() ? "" : port.version,
+                    port.softwareType.empty() ? "" : port.softwareType
                 )
                 .execute();
 
@@ -317,6 +319,7 @@ std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPoo
                 v.summary,
                 hvr.vulExist,
                 '主机漏洞' AS vuln_type
+                '操作系统' AS software_type -- 主机漏洞部分写死为“操作系统”
             FROM scan_host_result shr
             JOIN host_vuln_result hvr ON shr.id = hvr.shr_id
             JOIN vuln v ON v.id = hvr.vuln_id
@@ -332,6 +335,7 @@ std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPoo
                 v.summary,
                 pvr.vulExist,
                 '端口漏洞' AS vuln_type
+                op.software_type -- 查询 open_ports 表中的 software_type
             FROM scan_host_result shr
             JOIN open_ports op ON shr.id = op.shr_id
             JOIN port_vuln_result pvr ON op.id = pvr.port_id AND shr.id = pvr.shr_id
@@ -362,7 +366,7 @@ std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPoo
                 vuln.cvss = row[4].get<std::string>();
                 vuln.summary = row[5].get<std::string>();
                 vuln.vulExist = row[6].get<std::string>();
-
+                vuln.softwareType = row[8].get<std::string>(); // 处理software_type
                 ip_vulns_map[ip].host_vulnerabilities.push_back(vuln);
             }
             else {
@@ -373,7 +377,7 @@ std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPoo
                 port_vuln.cvss = row[4].get<std::string>();
                 port_vuln.summary = row[5].get<std::string>();
                 port_vuln.vulExist = row[6].get<std::string>();
-
+                port_vuln.softwareType = row[8].get<std::string>(); // 处理software_type
                 ip_vulns_map[ip].port_vulnerabilities.push_back(port_vuln);
             }
         }
