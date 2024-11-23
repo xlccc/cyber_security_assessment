@@ -1651,7 +1651,7 @@ void ServerManager::handle_get_poc_content(http_request request) {
             // 使用 vuln_id 查询 POC 并提取 affected_infra 字段
             auto poc_data = dbManager.searchDataByCVE(vuln_id);
             if (!poc_data.empty()) {
-                response_data[U("affected_infra")] = json::value::string(utility::conversions::to_string_t(poc_data[0].affected_infra));
+                response_data[_XPLATSTR("affected_infra")] = json::value::string(utility::conversions::to_string_t(poc_data[0].affected_infra));
             }
         }
 
@@ -2194,8 +2194,8 @@ void ServerManager::handle_post_poc_scan(http_request request) {
 
              //获取要执行的POC的id
             std::vector<int> ids;
-            if (json_data.has_array_field(U("ids"))) {
-                auto id_array = json_data[U("ids")].as_array();
+            if (json_data.has_array_field(_XPLATSTR("ids"))) {
+                auto id_array = json_data[_XPLATSTR("ids")].as_array();
                 for (const auto& id_value : id_array) {
                     ids.push_back(id_value.as_integer());
                 }
