@@ -56,6 +56,8 @@ std::string toLower(const std::string& str);
 // 匹配服务类型
 std::string matchServiceType(const std::string& serviceName, const std::unordered_map<std::string, std::vector<std::string>>& rules);
 
+//匹配漏洞类型
+std::string matchVulnType(const std::string& vulnSummary, const std::unordered_map<std::string, std::vector<std::string>>& rules);
 // 终止Python解释器
 void finalizePython();
 
@@ -72,8 +74,10 @@ const std::regex MEDIUM_PATTERN("^(?=.*[0-9])(?=.*[a-zA-Z]).{6,18}$|^(?=.*[0-9])
 const std::regex STRONG_PATTERN("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[^\\w\\s]).{6,18}$");
 // 定义类型与关键字的映射规则（使用哈希表）
 extern std::unordered_map<std::string, std::vector<std::string>> rules;
+extern std::unordered_map<std::string, std::vector<std::string>> vulnTypes;
 PasswordStrength checkPasswordStrength(const std::string& password);
 std::string passwordStrengthToString(PasswordStrength strength);
+
 
 // 判断路径是否为目录
 bool is_directory(const std::string& path);

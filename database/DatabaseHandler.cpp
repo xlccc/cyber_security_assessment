@@ -309,40 +309,42 @@ std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPoo
         auto conn = pool.getConnection();
         // 执行SQL查询
         mysqlx::SqlResult result = conn->sql(R"(
-            -- 主机漏洞
-            SELECT 
-                shr.ip,
-                NULL AS port_id,
-                v.vuln_id,
-                v.vul_name AS vuln_name,
-                v.CVSS AS cvss,
-                v.summary,
-                hvr.vulExist,
-                '主机漏洞' AS vuln_type,
-                '操作系统' AS software_type -- 主机漏洞部分写死为操作系统
-            FROM scan_host_result shr
-            JOIN host_vuln_result hvr ON shr.id = hvr.shr_id
-            JOIN vuln v ON v.id = hvr.vuln_id
-            WHERE hvr.vulExist IN ('存在', '不存在')
-            UNION ALL
-            -- 端口漏洞
-            SELECT 
-                shr.ip,
-                op.port AS port_id,
-                v.vuln_id,
-                v.vul_name AS vuln_name,
-                v.CVSS AS cvss,
-                v.summary,
-                pvr.vulExist,
-                '端口漏洞' AS vuln_type,
-                op.software_type -- 查询 open_ports 表中的 software_type
-            FROM scan_host_result shr
-            JOIN open_ports op ON shr.id = op.shr_id
-            JOIN port_vuln_result pvr ON op.id = pvr.port_id AND shr.id = pvr.shr_id
-            JOIN vuln v ON v.id = pvr.vuln_id
-            WHERE pvr.vulExist IN ('存在', '不存在')
-            ORDER BY ip, port_id;
-        )").execute();
+    -- 主机漏洞
+    SELECT 
+        shr.ip,
+        NULL AS port_id,
+        v.vuln_id,
+        v.vul_name AS vuln_name,
+        v.CVSS AS cvss,
+        v.summary,
+        hvr.vulExist,
+        '主机漏洞' AS vuln_type,
+        '操作系统' AS software_type, -- 主机漏洞部分写死为"操作系统"
+        v.vuln_type AS vulnerability_type -- 新增：从vuln表获取漏洞类型
+    FROM scan_host_result shr
+    JOIN host_vuln_result hvr ON shr.id = hvr.shr_id
+    JOIN vuln v ON v.id = hvr.vuln_id
+    WHERE hvr.vulExist IN ('存在', '不存在')
+    UNION ALL
+    -- 端口漏洞
+    SELECT 
+        shr.ip,
+        op.port AS port_id,
+        v.vuln_id,
+        v.vul_name AS vuln_name,
+        v.CVSS AS cvss,
+        v.summary,
+        pvr.vulExist,
+        '端口漏洞' AS vuln_type,
+        op.software_type, -- 查询 open_ports 表中的 software_type
+        v.vuln_type AS vulnerability_type -- 新增：从vuln表获取漏洞类型
+    FROM scan_host_result shr
+    JOIN open_ports op ON shr.id = op.shr_id
+    JOIN port_vuln_result pvr ON op.id = pvr.port_id AND shr.id = pvr.shr_id
+    JOIN vuln v ON v.id = pvr.vuln_id
+    WHERE pvr.vulExist IN ('存在', '不存在')
+    ORDER BY ip, port_id;
+)").execute();
 
         // 使用map临时存储结果，key为IP
         std::map<std::string, IpVulnerabilities> ip_vulns_map;
@@ -358,7 +360,6 @@ std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPoo
 
             // 创建漏洞信息对象
             std::string vuln_type = row[7].get<std::string>();
-
             if (vuln_type == "主机漏洞") {
                 VulnerabilityInfo vuln;
                 vuln.vuln_id = row[2].get<std::string>();
@@ -366,7 +367,8 @@ std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPoo
                 vuln.cvss = row[4].get<std::string>();
                 vuln.summary = row[5].get<std::string>();
                 vuln.vulExist = row[6].get<std::string>();
-                vuln.softwareType = row[8].get<std::string>(); // 处理software_type
+                vuln.softwareType = row[8].get<std::string>();    // software_type
+                vuln.vulType = row[9].get<std::string>();         // 从vuln表获取的漏洞类型
                 ip_vulns_map[ip].host_vulnerabilities.push_back(vuln);
             }
             else {
@@ -377,7 +379,8 @@ std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPoo
                 port_vuln.cvss = row[4].get<std::string>();
                 port_vuln.summary = row[5].get<std::string>();
                 port_vuln.vulExist = row[6].get<std::string>();
-                port_vuln.softwareType = row[8].get<std::string>(); // 处理software_type
+                port_vuln.softwareType = row[8].get<std::string>(); // software_type
+                port_vuln.vulType = row[9].get<std::string>();      // 从vuln表获取的漏洞类型
                 ip_vulns_map[ip].port_vulnerabilities.push_back(port_vuln);
             }
         }
@@ -420,20 +423,21 @@ void DatabaseHandler::insertVulns(const std::vector<Vuln>& vulns, ConnectionPool
         for (const auto& vuln : vulns) {
             std::cout << "插入或更新漏洞: " << vuln.vul_name << std::endl;
             conn->sql(
-                "INSERT INTO vuln (vuln_id, vul_name, script, CVSS, summary) "
-                "VALUES (?, ?, ?, ?, ?) "
+                "INSERT INTO vuln (vuln_id, vul_name, script, CVSS, summary, vuln_type) "
+                "VALUES (?, ?, ?, ?, ?, ?) "
                 "ON DUPLICATE KEY UPDATE vul_name = VALUES(vul_name), "
-                "script = VALUES(script), CVSS = VALUES(CVSS), summary = VALUES(summary)"
+                "script = VALUES(script), CVSS = VALUES(CVSS), "
+                "summary = VALUES(summary), vuln_type = VALUES(vuln_type)"
             )
                 .bind(
                     vuln.Vuln_id,
                     vuln.vul_name,
                     vuln.script.empty() ? "" : vuln.script,  // 插入 NULL 或脚本名称
                     vuln.CVSS,
-                    vuln.summary.empty() ? "" : vuln.summary  // 插入 NULL 或漏洞描述
+                    vuln.summary.empty() ? "" : vuln.summary,  // 插入 NULL 或漏洞描述
+                    vuln.vulnType.empty() ? "" : vuln.vulnType  // 插入 NULL 或漏洞类型
                 )
                 .execute();
-
         }
 
     }

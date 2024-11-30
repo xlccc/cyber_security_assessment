@@ -663,6 +663,8 @@ void fetch_and_padding_cves(std::map<std::string, std::vector<Vuln>>& cpes, cons
                                 tmp.CVSS = cvss_str;
                                 if (cve.has_field(_XPLATSTR("summary"))) {
                                     tmp.summary = cve[_XPLATSTR("summary")].as_string();
+                                    //插入漏洞类型
+                                    tmp.vulnType = matchVulnType(tmp.summary, vulnTypes);
                                     std::cout << "Summary: " << cve[_XPLATSTR("summary")].as_string() << std::endl;
                                 }
                                 vecCVE.push_back(tmp);
