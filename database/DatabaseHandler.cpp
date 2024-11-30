@@ -339,7 +339,7 @@ std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPoo
         '端口漏洞' AS vuln_type,
         op.software_type, -- 查询 open_ports 表中的 software_type
         v.vuln_type AS vulnerability_type, -- 新增：从vuln表获取漏洞类型
-        op.service_name
+        op.product
     FROM scan_host_result shr
     JOIN open_ports op ON shr.id = op.shr_id
     JOIN port_vuln_result pvr ON op.id = pvr.port_id AND shr.id = pvr.shr_id
