@@ -101,11 +101,13 @@ struct VulnerabilityInfo {
     std::string vulExist;
     std::string softwareType;//类型（操作系统,数据库，中间件， web应用)
     std::string vulType; //漏洞类型
+
     
 };
 
 struct PortVulnerabilityInfo : VulnerabilityInfo {
     int port_id;
+    std::string service_name; //软件资产的服务名称
 };
 
 // IP对应的所有漏洞信息
