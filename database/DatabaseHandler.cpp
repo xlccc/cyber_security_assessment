@@ -1,4 +1,4 @@
-// DatabaseHandler.cpp
+﻿// DatabaseHandler.cpp
 #include "DatabaseHandler.h"
 using namespace mysqlx;
 // 插入执行函数的实现
@@ -318,8 +318,8 @@ std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPoo
                 v.CVSS AS cvss,
                 v.summary,
                 hvr.vulExist,
-                '主机漏洞' AS vuln_type
-                '操作系统' AS software_type -- 主机漏洞部分写死为“操作系统”
+                '主机漏洞' AS vuln_type,
+                '操作系统' AS software_type -- 主机漏洞部分写死为操作系统
             FROM scan_host_result shr
             JOIN host_vuln_result hvr ON shr.id = hvr.shr_id
             JOIN vuln v ON v.id = hvr.vuln_id
@@ -334,7 +334,7 @@ std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPoo
                 v.CVSS AS cvss,
                 v.summary,
                 pvr.vulExist,
-                '端口漏洞' AS vuln_type
+                '端口漏洞' AS vuln_type,
                 op.software_type -- 查询 open_ports 表中的 software_type
             FROM scan_host_result shr
             JOIN open_ports op ON shr.id = op.shr_id
