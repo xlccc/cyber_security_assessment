@@ -1507,6 +1507,7 @@ json::value ServerManager::convertToJson(const std::vector<IpVulnerabilities>& v
             v[_XPLATSTR("vulExist")] = web::json::value::string(utility::conversions::to_string_t(vuln.vulExist));
             v[_XPLATSTR("softwareType")] = web::json::value::string(utility::conversions::to_string_t(vuln.softwareType));
             v[_XPLATSTR("vulType")] = web::json::value::string(utility::conversions::to_string_t(vuln.vulType));
+            
             host_vulns[host_index++] = v;
         }
         ip_obj[_XPLATSTR("host_vulnerabilities")] = host_vulns;
@@ -1524,6 +1525,7 @@ json::value ServerManager::convertToJson(const std::vector<IpVulnerabilities>& v
             v[_XPLATSTR("vulExist")] = web::json::value::string(utility::conversions::to_string_t(vuln.vulExist));
             v[_XPLATSTR("softwareType")] = web::json::value::string(utility::conversions::to_string_t(vuln.softwareType));
             v[_XPLATSTR("vulType")] = web::json::value::string(utility::conversions::to_string_t(vuln.vulType));
+            v[_XPLATSTR("service_name")] = web::json::value::string(utility::conversions::to_string_t(vuln.service_name));
             port_vulns[port_index++] = v;
         }
         ip_obj[_XPLATSTR("port_vulnerabilities")] = port_vulns;
