@@ -14,19 +14,17 @@ PS：目前项目仍处于开发阶段，功能方面只进行了初步实现，
 ```bash
 sudo apt-get update
 sudo apt-get install -y nmap
+
 配置无密码执行 Nmap 操作：
-bash
-复制代码
+
 sudo visudo
 在文件末尾添加以下内容，将 username 替换为实际的用户名：
-javascript
-复制代码
+
 username ALL=(ALL) NOPASSWD: /usr/bin/nmap
 username ALL=(ALL) NOPASSWD: /bin/chown
 username ALL=(ALL) NOPASSWD: /bin/chmod
 配置 Nmap 扫描结果文件的输出目录：
-bash
-复制代码
+
 mkdir -p output_nmap
 sudo chown username:username output_nmap
 sudo chmod 777 output_nmap
