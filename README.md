@@ -219,13 +219,30 @@ sudo apt-get install -y autoconf automake autoconf-archive ninja-build
 | 3 | 弱口令检测结果 |  | 考虑安全风险 |
 | ~~<font style="color:#DF2A3F;">4</font>~~ | ~~<font style="color:#DF2A3F;">威胁检测结果</font>~~ | ~~<font style="color:#DF2A3F;"></font>~~ | ~~<font style="color:#DF2A3F;"></font>~~ |
 
+### 参考
 
-| 不在项目研究范围内 | | |
-| :---: | --- | --- |
-| 序号 | 范围 | 备注 |
-| 1 | 对防火墙的主动识别 | 如果需要识别防火墙，或是其安全策略。应采用探针式扫描。 |
-| 2 | 对入侵检测系统的主动识别 | 如果需要识别入侵检测系统，或是其<br/>安全策略。应采用探针式扫描。 |
-| 3 | 网络协议分析工具：截获并显示网络数据包，分析网络实时流量，捕捉和查看公共网络协议、专用网络协议和工控网络协议 | He |
-| 4 | 攻击路径分析 | Yang |
-| 5 | 防火墙安全策略冲突 | FU<br/>（需要系统给出识别防火墙规则的方法，比如探针式扫描） |
+windows&Linux基线检查配置文档和自动化脚本	https://github.com/tangjie1/-Baseline-check/blob/main/README.md
+
+基线检测参考	https://github.com/selinuxG/Golin
+
+POC参考	https://github.com/sma11new/PocList/blob/main/Apache%20Druid-%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%EF%BC%
+
+POC模板参考	knownsec/Pocsuite: This project has stopped to maintenance, please to https://github.com/knownsec/pocsuite3 project.
+
+漏洞扫描参考	
+https://github.com/al0ne/Vxscan/tree/master
+https://github.com/Janhsu/oday/blob/main/src/main/java/com/janhsu/oday2/controllers/RunPythonExpController.java
+https://cloud.tencent.com/developer/article/2372857
+https://github.com/NorthernSec/CVE-Scan/tree/master
+https://github.com/m0nad/HellRaiser
+
+弱口令检测参考	
+等级保护参考	https://github.com/selinuxG/Golin
+基于Python的综合扫描工具	https://github.com/al0ne/Vxscan/tree/master
+基于Nmap和CVE漏洞库的漏洞扫描	https://github.com/NorthernSec/CVE-Scan/tree/master
+
+前端页面参考	https://github.com/Arbor01/AnScan
+https://github.com/Janhsu/oday/blob/main/src/main/java/com/janhsu/oday2/controllers/RunPythonExpController.java 
+
+
 
