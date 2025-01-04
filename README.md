@@ -79,7 +79,7 @@ sudo apt-get install -y autoconf automake autoconf-archive ninja-build
 | 总览 | | | | |
 | :---: | --- | --- | --- | --- |
 | 序号 | 隶属 | 功能 | 是否支持 | 备注 |
-| <font style="color:rgb(31, 35, 40);">1</font> | 资产清点 | 主机发现 |  |  |
+| <font style="color:rgb(31, 35, 40);">1</font> | 资产清点 | 主机发现 |  | Shi |
 | <font style="color:rgb(31, 35, 40);">2</font> | | 端口扫描 | √ |  |
 | <font style="color:rgb(31, 35, 40);">3</font> | | 网络协议分析工具 |  | He |
 | <font style="color:rgb(31, 35, 40);">4</font> | | 资产管理 |  | Huang |
@@ -114,7 +114,7 @@ sudo apt-get install -y autoconf automake autoconf-archive ninja-build
 | 序号 | 功能 | 是否支持 | 备注 |
 | 1 | 探针式扫描 |  | 能够发现更多配置、系统信息 |
 | 2 | 主动扫描 | √ | nmap扫描 |
-| 3 | 主机发现 |  |  |
+| 3 | 主机发现 |  | Shi |
 | 4 | IP冲突检测 |  | 主机发现的基础上 |
 | 5 | 端口扫描 | √ |  |
 | 6 | 协议识别 | √ |  |
