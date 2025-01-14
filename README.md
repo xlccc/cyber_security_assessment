@@ -43,7 +43,6 @@ vcpkg install libssh
 vcpkg install sqlite3 cpprestsdk
 vcpkg install icu
 vcpkg install curl[core,non-http,openssl,ssl]
-vcpkg install pybind11
 vcpkg install uchardet
 vcpkg install mysql-connector-cpp:x64-linux
 ```
