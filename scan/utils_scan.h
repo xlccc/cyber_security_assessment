@@ -3,7 +3,7 @@
 #ifndef UTILS_SCAN_H
 #define UTILS_SCAN_H
 
-#include <iostream>
+#define _TURN_OFF_PLATFORM_STRING  // 禁用cpprest的U宏#include <iostream>
 #include <fstream>
 #include <vector>
 #include <string>
@@ -31,6 +31,8 @@
 #include <hiredis/hiredis.h> // Redis C++ 库
 
 using json = nlohmann::json;
+#include"DatabaseHandler.h"
+#include"mysql_connection_pool.h"
 using namespace std;
 
 

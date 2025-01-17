@@ -1,5 +1,6 @@
 #ifndef SERVERMANAGER_H
 #define SERVERMANAGER_H
+#define _TURN_OFF_PLATFORM_STRING  // 禁用cpprest的U宏
 #include <cpprest/http_listener.h>
 #include <cpprest/json.h>
 #include <cpprest/uri.h>
@@ -27,11 +28,12 @@
 #include "convert_string_t.h"
 #include "poc_check.h"
 #include <sys/stat.h>
+#include"DatabaseHandler.h"
 #include"utils.h"
 #include"utils/config.h"
+#include"mysql_connection_pool.h"
 #include"hostDiscovery.h"
 #include<regex>
-
 
 
 using namespace web;
@@ -77,6 +79,8 @@ private:
     json::value Vuln_to_json(const Vuln& vuln);
     json::value ScanResult_to_json(const ScanResult& scan_result);
     json::value ScanHostResult_to_json(const ScanHostResult& scan_host_result);
+    //将资产查询结果转成Json
+    json::value convertToJson(const std::vector<IpVulnerabilities>& vulns);
     //POC列表转json（新增）
     json::value poc_list_to_json(const std::vector<POC>& poc_list);
 
@@ -109,6 +113,10 @@ private:
     //自动选择POC
     void handle_auto_select_poc(http_request request);
 
+    //首页获取数据库中的资产数据，
+    void handle_get_all_assets_vuln_data(http_request request);
+    //scan_struct的相关结构体与数据库的交互
+
     //主机发现
     void handle_host_discovery(http_request request);
 
@@ -121,6 +129,8 @@ private:
     //返回主机发现的响应
     void sendHostDiscoveryResponse(http_request& request, const std::vector<std::string>& aliveHosts);
 
+    ConnectionPool pool;
+    DatabaseHandler dbHandler_;
     DatabaseManager dbManager;
     std::vector<POC> poc_list;
      

@@ -1,6 +1,8 @@
 # 网络安全测试平台
 该平台专为系统脆弱性和安全性检测设计，支持 Ubuntu 20.04 操作系统。功能包括资产清点、安全基线检测、安全风险评估和安全等级保护测评，并输出详细的检测报告。
 
+PS：目前项目仍处于开发阶段，功能方面只进行了初步实现，目前直接使用或许有很多问题，项目后续会不断解决、完善~
+
 ## Requirements
 ### 操作系统
 + 本平台仅在 **Ubuntu 20.04** 上测试通过，建议在此系统上运行以保证兼容性。
@@ -12,19 +14,17 @@
 ```bash
 sudo apt-get update
 sudo apt-get install -y nmap
+
 配置无密码执行 Nmap 操作：
-bash
-复制代码
+
 sudo visudo
 在文件末尾添加以下内容，将 username 替换为实际的用户名：
-javascript
-复制代码
+
 username ALL=(ALL) NOPASSWD: /usr/bin/nmap
 username ALL=(ALL) NOPASSWD: /bin/chown
 username ALL=(ALL) NOPASSWD: /bin/chmod
 配置 Nmap 扫描结果文件的输出目录：
-bash
-复制代码
+
 mkdir -p output_nmap
 sudo chown username:username output_nmap
 sudo chmod 777 output_nmap
@@ -43,8 +43,8 @@ vcpkg install libssh
 vcpkg install sqlite3 cpprestsdk
 vcpkg install icu
 vcpkg install curl[core,non-http,openssl,ssl]
-vcpkg install pybind11
 vcpkg install uchardet
+vcpkg install mysql-connector-cpp:x64-linux
 ```
 
 其他系统依赖安装：
@@ -56,11 +56,29 @@ sudo apt-get install -y autoconf automake autoconf-archive ninja-build
 
 说明：如果不使用 vcpkg 管理依赖，可手动安装上述库并确保 CMake 工程能够找到所需头文件和库路径。
 
+#### 4.数据库
+
+将目录下的sql文件在目标服务器先执行。可以利用navicat
+
+### 前端
+
+项目前端网站：https://github.com/attente12/NetSec-testing/tree/master/demo
+
+使用 IntelliJ IDEA 作为开发工具：
+
+1. 打开项目时，确保选择项目根目录。
+2. 配置 Node.js 路径：
+   - 打开 `File` > `Settings` > `Languages & Frameworks` > `Node.js and NPM`。
+   - 指定 Node.js 安装路径。
+3. 配置运行/调试任务：
+   - 点击右上角的运行配置下拉菜单，选择 `Edit Configurations`。
+   - 添加 `npm` 任务，设置 `serve` 为默认任务。
+
 ## 现阶段进度
 | 总览 | | | | |
 | :---: | --- | --- | --- | --- |
 | 序号 | 隶属 | 功能 | 是否支持 | 备注 |
-| <font style="color:rgb(31, 35, 40);">1</font> | 资产清点 | 主机发现 |  |  |
+| <font style="color:rgb(31, 35, 40);">1</font> | 资产清点 | 主机发现 |  | Shi |
 | <font style="color:rgb(31, 35, 40);">2</font> | | 端口扫描 | √ |  |
 | <font style="color:rgb(31, 35, 40);">3</font> | | 网络协议分析工具 |  | He |
 | <font style="color:rgb(31, 35, 40);">4</font> | | 资产管理 |  | Huang |
@@ -95,7 +113,7 @@ sudo apt-get install -y autoconf automake autoconf-archive ninja-build
 | 序号 | 功能 | 是否支持 | 备注 |
 | 1 | 探针式扫描 |  | 能够发现更多配置、系统信息 |
 | 2 | 主动扫描 | √ | nmap扫描 |
-| 3 | 主机发现 |  |  |
+| 3 | 主机发现 |  | Shi |
 | 4 | IP冲突检测 |  | 主机发现的基础上 |
 | 5 | 端口扫描 | √ |  |
 | 6 | 协议识别 | √ |  |
@@ -200,14 +218,30 @@ sudo apt-get install -y autoconf automake autoconf-archive ninja-build
 | 3 | 弱口令检测结果 |  | 考虑安全风险 |
 | ~~<font style="color:#DF2A3F;">4</font>~~ | ~~<font style="color:#DF2A3F;">威胁检测结果</font>~~ | ~~<font style="color:#DF2A3F;"></font>~~ | ~~<font style="color:#DF2A3F;"></font>~~ |
 
+### 参考
 
-| 不在项目研究范围内 | | |
-| :---: | --- | --- |
-| 序号 | 范围 | 备注 |
-| 1 | 对防火墙的主动识别 | 如果需要识别防火墙，或是其安全策略。应采用探针式扫描。 |
-| 2 | 对入侵检测系统的主动识别 | 如果需要识别入侵检测系统，或是其<br/>安全策略。应采用探针式扫描。 |
-| 3 | 网络协议分析工具：截获并显示网络数据包，分析网络实时流量，捕捉和查看公共网络协议、专用网络协议和工控网络协议 | He |
-| 4 | 攻击路径分析 | Yang |
-| 5 | 防火墙安全策略冲突 | FU<br/>（需要系统给出识别防火墙规则的方法，比如探针式扫描） |
+windows&Linux基线检查配置文档和自动化脚本	https://github.com/tangjie1/-Baseline-check/blob/main/README.md
+
+基线检测参考	https://github.com/selinuxG/Golin
+
+POC参考	https://github.com/sma11new/PocList/blob/main/Apache%20Druid-%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%EF%BC%
+
+POC模板参考	knownsec/Pocsuite: This project has stopped to maintenance, please to https://github.com/knownsec/pocsuite3 project.
+
+漏洞扫描参考	
+https://github.com/al0ne/Vxscan/tree/master
+https://github.com/Janhsu/oday/blob/main/src/main/java/com/janhsu/oday2/controllers/RunPythonExpController.java
+https://cloud.tencent.com/developer/article/2372857
+https://github.com/NorthernSec/CVE-Scan/tree/master
+https://github.com/m0nad/HellRaiser
+
+弱口令检测参考	
+等级保护参考	https://github.com/selinuxG/Golin
+基于Python的综合扫描工具	https://github.com/al0ne/Vxscan/tree/master
+基于Nmap和CVE漏洞库的漏洞扫描	https://github.com/NorthernSec/CVE-Scan/tree/master
+
+前端页面参考	https://github.com/Arbor01/AnScan
+https://github.com/Janhsu/oday/blob/main/src/main/java/com/janhsu/oday2/controllers/RunPythonExpController.java 
+
 
 

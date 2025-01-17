@@ -13,8 +13,10 @@
 #include<algorithm>
 #include <regex>
 #include <uchardet/uchardet.h>
+#include <unordered_map>
 #include <iconv.h>
 #include<sys/stat.h>
+#include <string>
 
 
 extern PyObject* global_importlib; // 仅声明，不定义
@@ -49,8 +51,14 @@ std::string removeExtension(const std::string& filename);
 //// 初始化Python解释器
 void initializePython();
 
+// 转换字符串为小写
+std::string toLower(const std::string& str);
+// 匹配服务类型
+std::string matchServiceType(const std::string& serviceName, const std::unordered_map<std::string, std::vector<std::string>>& rules);
 
-//// 终止Python解释器
+//匹配漏洞类型
+std::string matchVulnType(const std::string& vulnSummary, const std::unordered_map<std::string, std::vector<std::string>>& rules);
+// 终止Python解释器
 void finalizePython();
 
 
@@ -64,9 +72,12 @@ enum class PasswordStrength {
 const std::regex WEAK_PATTERN("^(\\d{6,18}|[a-z]{6,18}|[A-Z]{6,18})$");
 const std::regex MEDIUM_PATTERN("^(?=.*[0-9])(?=.*[a-zA-Z]).{6,18}$|^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{6,18}$|^(?=.*[0-9])(?=.*[^a-zA-Z0-9\\s]).{6,18}$|^(?=.*[a-z])(?=.*[^a-zA-Z0-9\\s]).{6,18}$|^(?=.*[A-Z])(?=.*[^a-zA-Z0-9\\s]).{6,18}$");
 const std::regex STRONG_PATTERN("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[^\\w\\s]).{6,18}$");
-
+// 定义类型与关键字的映射规则（使用哈希表）
+extern std::unordered_map<std::string, std::vector<std::string>> rules;
+extern std::unordered_map<std::string, std::vector<std::string>> vulnTypes;
 PasswordStrength checkPasswordStrength(const std::string& password);
 std::string passwordStrengthToString(PasswordStrength strength);
+
 
 // 判断路径是否为目录
 bool is_directory(const std::string& path);

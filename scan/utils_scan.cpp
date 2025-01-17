@@ -111,11 +111,13 @@ std::vector<ScanHostResult> parseXmlFile(const std::string& xmlFilePath) {
                     rapidxml::xml_attribute<>* nameAttr = serviceNode->first_attribute("name");
                     if (nameAttr) {
                         scanResult.service_name = nameAttr->value();
+                        scanResult.softwareType = matchServiceType(scanResult.service_name, rules);
                     }
                     // Extract product name
                     rapidxml::xml_attribute<>* productAttr = serviceNode->first_attribute("product");
                     if (productAttr) {
                         scanResult.product = productAttr->value();
+                        scanResult.softwareType = matchServiceType(scanResult.product, rules);
                     }
                     // Extract version
                     rapidxml::xml_attribute<>* versionAttr = serviceNode->first_attribute("version");
@@ -571,14 +573,14 @@ void compareAndUpdateResults(const ScanHostResult& oldResult, ScanHostResult& ne
 
 // CVE 查询函数
 void fetch_and_padding_cves(std::map<std::string, std::vector<Vuln>>& cpes, const std::vector<std::string>& cpes_to_query, int limit) {
-    std::string base_url = "http://192.168.136.128:5000/api/cvefor";
+    std::string base_url = "http://10.9.130.61:5000/api/cvefor";
 
     for (const auto& cpe_id : cpes_to_query) {
         auto& vecCVE = cpes[cpe_id];
-        web::uri_builder builder(U(base_url));
-        builder.append_path(U(cpe_id));
+        web::uri_builder builder(_XPLATSTR(base_url));
+        builder.append_path(_XPLATSTR(cpe_id));
         if (limit > 0) {
-            builder.append_query(U("limit"), limit);
+            builder.append_query(_XPLATSTR("limit"), limit);
         }
 
         web::http::client::http_client client(builder.to_uri());
@@ -597,10 +599,10 @@ void fetch_and_padding_cves(std::map<std::string, std::vector<Vuln>>& cpes, cons
                             auto cve_array = jsonObject.as_array();
                             for (auto& cve : cve_array) {
                                 Vuln tmp;
-                                tmp.Vuln_id = cve[U("id")].as_string();
+                                tmp.Vuln_id = cve[_XPLATSTR("id")].as_string();
                                 std::string cvss_str = "N/A";  // 默认值为 "N/A"
-                                if (cve.has_field(U("cvss"))) {
-                                    auto cvss_value = cve[U("cvss")];
+                                if (cve.has_field(_XPLATSTR("cvss"))) {
+                                    auto cvss_value = cve[_XPLATSTR("cvss")];
                                     if (cvss_value.is_string()) {
                                         cvss_str = cvss_value.as_string();  // 处理字符串类型的 CVSS
                                     }
@@ -615,9 +617,11 @@ void fetch_and_padding_cves(std::map<std::string, std::vector<Vuln>>& cpes, cons
                                     std::cout << "CVSS field not present for CPE: " << cpe_id << std::endl;
                                 }
                                 tmp.CVSS = cvss_str;
-                                if (cve.has_field(U("summary"))) {
-                                    tmp.summary = cve[U("summary")].as_string();
-                                    std::cout << "Summary: " << cve[U("summary")].as_string() << std::endl;
+                                if (cve.has_field(_XPLATSTR("summary"))) {
+                                    tmp.summary = cve[_XPLATSTR("summary")].as_string();
+                                    //插入漏洞类型
+                                    tmp.vulnType = matchVulnType(tmp.summary, vulnTypes);
+                                    std::cout << "Summary: " << cve[_XPLATSTR("summary")].as_string() << std::endl;
                                 }
                                 vecCVE.push_back(tmp);
                             }
@@ -841,38 +845,22 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
             else if (WIFSIGNALED(status)) {
                 std::cerr << "[Parent Process] Child process with PID: " << terminated_pid << " was terminated by signal: " << WTERMSIG(status) << std::endl;
             }
-        }
-        else {
-            std::cerr << "[Parent Process] Failed to wait for child process with PID: " << pid << std::endl;
-        }
-    }
-
-
-    // 父进程读取 Redis 中的任务结果
-    while (true) {
-        std::string result_data = pop_result_from_redis(redis_client);
-        if (result_data.empty()) break;  // 如果队列为空，退出循环
-
-        std::pair<std::string, Vuln> result = deserialize_task_result(result_data);
-        std::string portId = result.first;
-        Vuln vuln = result.second;
-
-        std::cout << "[Parent Process] Received result from port: " << portId << ", Vuln ID: " << vuln.Vuln_id << std::endl;
-
-        if (portId.empty()) {
-            scan_host_result.vuln_result.insert(vuln);
-            std::cout << "[Parent Process] Inserted OS-level vuln ID: " << vuln.Vuln_id << " into scan_host_result" << std::endl;
-        }
-        else {
-            auto port_it = std::find_if(scan_host_result.ports.begin(), scan_host_result.ports.end(),
-                [&portId](const ScanResult& port) { return port.portId == portId; });
-
-            if (port_it != scan_host_result.ports.end()) {
-                port_it->vuln_result.insert(vuln);
-                std::cout << "[Parent Process] Inserted port-level vuln ID: " << vuln.Vuln_id << " into port: " << portId << std::endl;
+            else if (result.find("[SAFE]") != std::string::npos) {
+                task.vuln.vulExist = "不存在";
             }
             else {
-                std::cerr << "[Parent Process] Error: Port ID " << portId << " not found in scan_host_result." << std::endl;
+                task.vuln.vulExist = "未验证"; 
+            }
+
+            if (key.empty()) {
+                scan_host_result.vuln_result.insert(task.vuln);
+            }
+            else {
+                auto port_it = std::find_if(scan_host_result.ports.begin(), scan_host_result.ports.end(),
+                    [&key](const ScanResult& port) { return port.portId == key; });
+                if (port_it != scan_host_result.ports.end()) {
+                    port_it->vuln_result.insert(task.vuln);
+                }
             }
         }
     }

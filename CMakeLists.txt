@@ -7,19 +7,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # 设置 vcpkg 的工具链文件，用于集成 vcpkg 管理的库
 if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-    set(CMAKE_TOOLCHAIN_FILE "/home/c/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
+    set(CMAKE_TOOLCHAIN_FILE "/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
 endif()
 
 # 设置 vcpkg 的路径
-set(VCPKG_DIR "/home/c/vcpkg")
+set(VCPKG_DIR "/vcpkg")
 
 # 添加 vcpkg 的 include 和 library 路径
 include_directories(${VCPKG_DIR}/installed/x64-linux/include)
 link_directories(${VCPKG_DIR}/installed/x64-linux/lib)
-
-#添加vcpkg相关路径，以便 CMake 能够找到安装库的配置文件
-#set(CMAKE_PREFIX_PATH "${VCPKG_DIR}/installed/x64-linux/share" CACHE PATH "Path to vcpkg installed libraries")
-
 
 # 查找并加载必要的库
 find_package(cpprestsdk CONFIG REQUIRED)
@@ -30,6 +26,8 @@ find_package(uchardet CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(hiredis CONFIG REQUIRED)
 
+# 添加 MySQL Connector/C++
+find_package(unofficial-mysql-connector-cpp CONFIG REQUIRED)
 
 
 # 手动设置Python路径
@@ -60,13 +58,11 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/utils
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/scan
-    ${cpprest_INCLUDE_DIRS}
-    ${LIBSSH_INCLUDE_DIRS}
+    ${cpprestsdk_INCLUDE_DIRS}
+    ${libssh_INCLUDE_DIRS}
     ${ICU_INCLUDE_DIRS}
     ${SQLite3_INCLUDE_DIRS}
-    ${pybind11_INCLUDE_DIRS}
     ${Python_INCLUDE_DIRS}
-    ${CMAKE_SOURCE_DIR}/include/pybind11/include #pybind11的头文件路径
 )
 
 # 设置源文件和头文件
@@ -84,6 +80,7 @@ set(SOURCES
     ServerManager.cpp
     scan/poc_check.cpp
     database/db_config.cpp
+    "database/DatabaseHandler.cpp"
     scan/hostDiscovery.cpp
     utils/threadPool.cpp)
 
@@ -103,12 +100,14 @@ set(HEADERS
     scan/utils_scan.h
     ServerManager.h
     scan/poc_check.h
+    "scan/config.h"
+    "database/DatabaseHandler.h" "database/mysql_connection_pool.h"
     scan/config.h 
     scan/hostDiscovery.h
     utils/threadPool.h)
 
 # 添加可执行文件
-add_executable(MyCppProject ${SOURCES} ${HEADERS} "scan/hostDiscovery.h")
+add_executable(MyCppProject ${SOURCES} ${HEADERS})
 
 # 链接必要的库到 C++ 项目
 target_link_libraries(MyCppProject PRIVATE 
@@ -121,9 +120,10 @@ target_link_libraries(MyCppProject PRIVATE
     ${SQLite3_LIBRARIES}
     ${Python_LIBRARIES}
     uchardet::libuchardet
+    unofficial::mysql-connector-cpp::connector  # 修正了此行
+    resolv  # 确保添加这一行
     nlohmann_json::nlohmann_json
-    hiredis::hiredis
-)
+    hiredis::hiredis)
 
- #支持 Unicode 文件名和路径
+# 支持 Unicode 文件名和路径
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -finput-charset=UTF-8 -fexec-charset=UTF-8")

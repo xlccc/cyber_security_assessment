@@ -1,6 +1,33 @@
 ﻿#include"utils.h"
 #include <iostream>
 
+std::unordered_map<std::string, std::vector<std::string>> rules = {
+    {"操作系统类型", {"Windows", "Linux", "macOS", "FreeBSD", "Solaris"}},
+    {"数据库", {"MySQL", "PostgreSQL", "MongoDB", "Redis", "Oracle", "SQL Server", "MariaDB", "Cassandra", "TiDB", "Neo4j"}},
+    {"中间件", {"WebLogic", "WebSphere", "JBoss", "Tomcat", "Kafka", "RabbitMQ", "ActiveMQ", "Elasticsearch", "Dubbo", "Spring"}},
+    {"Web应用", {"Nginx", "Apache", "IIS", "Django", "Flask", "Express", "WordPress", "Drupal", "React", "Vue", "Kibana", "Grafana"}},
+    {"系统工具", {"OpenSSH", "OpenSSL", "Telnet", "RDP", "FTP", "NFS"}}
+};
+
+// 创建哈希表，键是漏洞类型，值是关键字列表
+std::unordered_map<std::string, std::vector<std::string>> vulnTypes = {
+    {"Buffer Overflow", {"Buffer Overflow", "Stack Overflow", "Heap Overflow", "Out-of-Bounds Write", "Out-of-Bounds Read"}},
+    {"File Upload Vulnerability", {"Arbitrary File Upload", "Unrestricted File Upload", "File Inclusion", "Remote File Execution"}},
+    {"Code Injection", {"Command Injection", "Code Injection", "Arbitrary Code Execution"}},
+    {"SQL Injection", {"SQL Injection", "SQLi", "Crafted SQL Query"}},
+    {"Cross-Site Scripting (XSS)", {"Cross-Site Scripting", "XSS", "Script Injection", "Malicious Input"}},
+    {"Privilege Escalation", {"Privilege Escalation", "Elevation of Privileges", "Unauthorized Access"}},
+    {"Denial of Service (DoS)", {"Denial of Service", "DoS", "Crash", "Infinite Loop", "Resource Exhaustion"}},
+    {"Authentication Bypass", {"Authentication Bypass", "Unauthorized Access", "Token Manipulation"}},
+    {"Path Traversal", {"Path Traversal", "Directory Traversal", "File Inclusion"}},
+    {"Information Disclosure", {"Information Disclosure", "Data Leakage", "Sensitive Information Exposure"}},
+    {"Cross-Site Request Forgery (CSRF)", {"CSRF", "Cross-Site Request Forgery", "Unauthorized Actions"}},
+    {"XML External Entity (XXE)", {"XXE", "XML External Entity", "XML Parsing"}},
+    {"Remote Code Execution (RCE)", {"Remote Code Execution", "RCE", "Arbitrary Code Execution"}},
+    {"Session Hijacking", {"Session Hijacking", "Session Fixation", "Token Theft"}},
+    {"Unauthorized Access", {"Unauthorized Access", "Access Control Bypass", "Security Restriction Bypass"}}
+};
+
 PyObject* global_importlib = nullptr; // 定义
 PyObject* global_io = nullptr;        // 定义
 //获取当前时间，字符串表示
@@ -171,6 +198,43 @@ void initializePython()
     PyList_Append(sys_path, PyUnicode_FromString("/home/c/.vs/cyber_security_assessment/8e509499-79aa-4583-a94f-9ac2aefdaefd/src/scan"));
     PyList_Append(sys_path, PyUnicode_FromString("/home/c/.vs/cyber_security_assessment/8e509499-79aa-4583-a94f-9ac2aefdaefd/src"));
 
+}
+// 转换字符串为小写
+std::string toLower(const std::string& str) {
+    std::string lowerStr = str;
+    std::transform(lowerStr.begin(), lowerStr.end(), lowerStr.begin(), ::tolower);
+    return lowerStr;
+}
+// 匹配服务类型
+std::string matchVulnType(const std::string& vulnSummary, const std::unordered_map<std::string, std::vector<std::string>>& rules) {
+    if (vulnSummary.empty()) {
+        return "未知类型"; // 或者返回一个特殊标识，表示输入无效
+    }
+    std::string vulNameLower = toLower(vulnSummary); // 转换服务名称为小写
+    for (const auto& rule : rules) {
+        for (const auto& keyword : rule.second) {
+            if (vulNameLower.find(toLower(keyword)) != std::string::npos) { // 部分匹配
+                return rule.first; // 返回匹配到的类型
+            }
+        }
+    }
+    return "未知类型"; // 没有匹配到的情况
+}
+
+// 匹配服务类型
+std::string matchServiceType(const std::string& serviceName, const std::unordered_map<std::string, std::vector<std::string>>& rules) {
+    if (serviceName.empty()) {
+        return "未知类型"; // 或者返回一个特殊标识，表示输入无效
+    }
+    std::string serviceNameLower = toLower(serviceName); // 转换服务名称为小写
+    for (const auto& rule : rules) {
+        for (const auto& keyword : rule.second) {
+            if (serviceNameLower.find(toLower(keyword)) != std::string::npos) { // 部分匹配
+                return rule.first; // 返回匹配到的类型
+            }
+        }
+    }
+    return "未知类型"; // 没有匹配到的情况
 }
 void finalizePython()
 {
