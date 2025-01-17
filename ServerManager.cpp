@@ -68,7 +68,7 @@ void ServerManager::handle_request(http_request request) {
         handle_post_login(request);
     }
     //主机发现
-    else if (first_segment == U("host_discovery") && request.method() == methods::POST) {
+    else if (first_segment == _XPLATSTR("host_discovery") && request.method() == methods::POST) {
         handle_host_discovery(request);
     }
     //返回主机所有可能的cve漏洞，调用cve-search
@@ -2469,9 +2469,9 @@ void ServerManager::handle_host_discovery(http_request request) {
     try {
         // 从请求中提取查询参数
         auto query = uri::split_query(request.request_uri().query());
-        auto it = query.find(U("network"));
+        auto it = query.find(_XPLATSTR("network"));
         if (it == query.end()) {
-            request.reply(status_codes::BadRequest, U("Missing 'network' parameter"));
+            request.reply(status_codes::BadRequest, _XPLATSTR("Missing 'network' parameter"));
             return;
         }
         std::string network = utility::conversions::to_utf8string(it->second);
@@ -2487,14 +2487,14 @@ void ServerManager::handle_host_discovery(http_request request) {
             sendHostDiscoveryResponse(request, aliveHosts);
         }
         else {
-            request.reply(status_codes::BadRequest, U("Invalid 'network' parameter format"));
+            request.reply(status_codes::BadRequest, _XPLATSTR("Invalid 'network' parameter format"));
         }
 
     }
     catch (const std::exception& e) {
         // 异常处理
         std::cerr << "[ERROR] Host discovery failed: " << e.what() << std::endl;
-        request.reply(status_codes::InternalError, U("Host discovery failed"));
+        request.reply(status_codes::InternalError, _XPLATSTR("Host discovery failed"));
     }
 }
 
@@ -2543,7 +2543,7 @@ void ServerManager::sendHostDiscoveryResponse(http_request& request, const std::
     for (size_t i = 0; i < aliveHosts.size(); ++i) {
         hostArray[i] = web::json::value::string(utility::conversions::to_string_t(aliveHosts[i]));
     }
-    response[U("alive_hosts")] = hostArray;
+    response[_XPLATSTR("alive_hosts")] = hostArray;
 
     // 返回成功响应
     request.reply(status_codes::OK, response);

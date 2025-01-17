@@ -790,7 +790,7 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
     }
 
     // 父进程不再直接执行任务，而是等待子进程处理 Redis 队列中的任务
-    for(int i = 0;i < 3;i++){
+    for (int i = 0; i < 3; i++) {
         pid_t pid = fork();
 
         if (pid == 0) {
@@ -845,22 +845,38 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
             else if (WIFSIGNALED(status)) {
                 std::cerr << "[Parent Process] Child process with PID: " << terminated_pid << " was terminated by signal: " << WTERMSIG(status) << std::endl;
             }
-            else if (result.find("[SAFE]") != std::string::npos) {
-                task.vuln.vulExist = "不存在";
-            }
-            else {
-                task.vuln.vulExist = "未验证"; 
-            }
+        }
+        else {
+            std::cerr << "[Parent Process] Failed to wait for child process with PID: " << pid << std::endl;
+        }
+    }
 
-            if (key.empty()) {
-                scan_host_result.vuln_result.insert(task.vuln);
+
+    // 父进程读取 Redis 中的任务结果
+    while (true) {
+        std::string result_data = pop_result_from_redis(redis_client);
+        if (result_data.empty()) break;  // 如果队列为空，退出循环
+
+        std::pair<std::string, Vuln> result = deserialize_task_result(result_data);
+        std::string portId = result.first;
+        Vuln vuln = result.second;
+
+        std::cout << "[Parent Process] Received result from port: " << portId << ", Vuln ID: " << vuln.Vuln_id << std::endl;
+
+        if (portId.empty()) {
+            scan_host_result.vuln_result.insert(vuln);
+            std::cout << "[Parent Process] Inserted OS-level vuln ID: " << vuln.Vuln_id << " into scan_host_result" << std::endl;
+        }
+        else {
+            auto port_it = std::find_if(scan_host_result.ports.begin(), scan_host_result.ports.end(),
+                [&portId](const ScanResult& port) { return port.portId == portId; });
+
+            if (port_it != scan_host_result.ports.end()) {
+                port_it->vuln_result.insert(vuln);
+                std::cout << "[Parent Process] Inserted port-level vuln ID: " << vuln.Vuln_id << " into port: " << portId << std::endl;
             }
             else {
-                auto port_it = std::find_if(scan_host_result.ports.begin(), scan_host_result.ports.end(),
-                    [&key](const ScanResult& port) { return port.portId == key; });
-                if (port_it != scan_host_result.ports.end()) {
-                    port_it->vuln_result.insert(task.vuln);
-                }
+                std::cerr << "[Parent Process] Error: Port ID " << portId << " not found in scan_host_result." << std::endl;
             }
         }
     }
