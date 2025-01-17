@@ -27,6 +27,9 @@ find_package(libssh CONFIG REQUIRED)
 find_package(ICU REQUIRED COMPONENTS uc i18n io data)
 find_package(SQLite3 REQUIRED)
 find_package(uchardet CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
+find_package(hiredis CONFIG REQUIRED)
+
 
 
 # 手动设置Python路径
@@ -80,7 +83,9 @@ set(SOURCES
     scan/utils_scan.cpp
     ServerManager.cpp
     scan/poc_check.cpp
- "database/db_config.cpp")
+    database/db_config.cpp
+    scan/hostDiscovery.cpp
+    utils/threadPool.cpp)
 
 set(HEADERS
     Command_Excute.h
@@ -98,10 +103,12 @@ set(HEADERS
     scan/utils_scan.h
     ServerManager.h
     scan/poc_check.h
- "scan/config.h")
+    scan/config.h 
+    scan/hostDiscovery.h
+    utils/threadPool.h)
 
 # 添加可执行文件
-add_executable(MyCppProject ${SOURCES} ${HEADERS})
+add_executable(MyCppProject ${SOURCES} ${HEADERS} "scan/hostDiscovery.h")
 
 # 链接必要的库到 C++ 项目
 target_link_libraries(MyCppProject PRIVATE 
@@ -114,6 +121,8 @@ target_link_libraries(MyCppProject PRIVATE
     ${SQLite3_LIBRARIES}
     ${Python_LIBRARIES}
     uchardet::libuchardet
+    nlohmann_json::nlohmann_json
+    hiredis::hiredis
 )
 
  #支持 Unicode 文件名和路径

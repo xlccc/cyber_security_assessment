@@ -67,10 +67,6 @@ void ServerManager::handle_request(http_request request) {
     else if (first_segment == U("login") && request.method() == methods::POST) {
         handle_post_login(request);
     }
-    //主机发现
-    else if (first_segment == U("host_discovery") && request.method() == methods::POST) {
-        handle_host_discovery(request);
-    }
     //返回主机所有可能的cve漏洞，调用cve-search
     else if (first_segment == U("cveScan") && request.method() == methods::GET) {
         handle_get_cve_scan(request);
@@ -2385,90 +2381,6 @@ void ServerManager::handle_auto_select_poc(http_request request) {
     std::cout << "[DEBUG] Completed handling auto-select POC request." << std::endl;
 }
 
-//主机发现
-void ServerManager::handle_host_discovery(http_request request) {
-    try {
-        // 从请求中提取查询参数
-        auto query = uri::split_query(request.request_uri().query());
-        auto it = query.find(U("network"));
-        if (it == query.end()) {
-            request.reply(status_codes::BadRequest, U("Missing 'network' parameter"));
-            return;
-        }
-        std::string network = utility::conversions::to_utf8string(it->second);
-
-        // 检查输入是否为单个IP或网段
-        if (isValidIP(network) || isValidCIDR(network)) {
-
-            std::cout << "[INFO] Performing host discovery for network/IP: " << network << std::endl;
-            HostDiscovery hostDiscovery(network);
-            auto aliveHosts = hostDiscovery.scan();
-            
-            // 返回网段扫描结果
-            sendHostDiscoveryResponse(request, aliveHosts);
-        }
-        else {
-            request.reply(status_codes::BadRequest, U("Invalid 'network' parameter format"));
-        }
-
-    }
-    catch (const std::exception& e) {
-        // 异常处理
-        std::cerr << "[ERROR] Host discovery failed: " << e.what() << std::endl;
-        request.reply(status_codes::InternalError, U("Host discovery failed"));
-    }
-}
-
-// 校验输入是否为有效的IP地址或CIDR网段
-bool ServerManager::isValidIPOrCIDR(const std::string& input) {
-    return isValidIP(input) || isValidCIDR(input);
-}
-
-// 校验IP地址格式
-bool ServerManager::isValidIP(const std::string& ip) {
-    std::regex ipRegex(
-        R"(^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$)"
-    );
-
-    // 检查IP是否符合IPv4格式
-    if (!std::regex_match(ip, ipRegex)) {
-        return false;
-    }
-
-    // 检查是否是网络地址 (以 .0 结尾)
-    if (ip.substr(ip.find_last_of('.') + 1) == "0") {
-        return false;
-    }
-
-    // 检查是否是广播地址 (以 .255 结尾)
-    if (ip.substr(ip.find_last_of('.') + 1) == "255") {
-        return false;
-    }
-
-    return true;
-}
-
-// 校验CIDR网段格式
-bool ServerManager::isValidCIDR(const std::string& network) {
-    std::regex cidrRegex(
-        R"(^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/([1][6-9]|[2][0-9]|3[0-2])$)"
-    );
-    return std::regex_match(network, cidrRegex);
-}
-
-//返回主机发现的响应
-void ServerManager::sendHostDiscoveryResponse(http_request& request, const std::vector<std::string>& aliveHosts) {
-    // 将结果转换为 JSON 格式
-    web::json::value response = web::json::value::object();
-    web::json::value hostArray = web::json::value::array();
-    for (size_t i = 0; i < aliveHosts.size(); ++i) {
-        hostArray[i] = web::json::value::string(utility::conversions::to_string_t(aliveHosts[i]));
-    }
-    response[U("alive_hosts")] = hostArray;
-
-    // 返回成功响应
-    request.reply(status_codes::OK, response);
-}
 
 void ServerManager::start() {
     try {

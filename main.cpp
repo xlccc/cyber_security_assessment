@@ -147,6 +147,8 @@ int main()
     finalizePython();
     return 0;
 }
+
+
 //int main() {
 //    // 定义参数
 //    std::string scriptPath = "CVE_2017_12617.py"; // Python脚本名
@@ -166,3 +168,54 @@ int main()
 //
 //    return 0;
 //}
+
+
+
+//测试主机发现
+/*
+#include"ServerManager.h"
+#include <unistd.h>
+#include "utils/utils.h"
+#include "utils_scan.h"
+#include"scan/hostDiscovery.h"
+using namespace utility;          // Common utilities like string conversions
+using namespace web;              // Common features like URIs.
+using namespace web::http;        // Common HTTP functionality
+using namespace web::http::client;// HTTP client features
+using namespace concurrency::streams; // Asynchronous streams
+using namespace std;
+
+int main() {
+    std::string network;
+    std::cout << "Enter network (e.g., 192.168.1.0/16): ";
+    std::cin >> network;
+
+    // 记录开始时间
+    auto start = std::chrono::high_resolution_clock::now();
+
+
+    try {
+        HostDiscovery discovery(network);
+        std::vector<std::string> aliveHosts = discovery.scan();
+
+        std::cout << "\nAlive hosts in the network " << network << ":\n";
+        if (aliveHosts.empty()) {
+            std::cout << "No alive hosts found." << std::endl;
+        }
+        else {
+            for (const auto& ip : aliveHosts) {
+                std::cout << ip << std::endl;
+            }
+        }
+    }
+    catch (const std::exception& e) {
+        std::cerr << "[ERROR] Exception: " << e.what() << std::endl;
+    }
+
+    // 记录结束时间
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+    std::cout << "Host Discovery executed in " << elapsed.count() << " seconds." << std::endl;
+
+    return 0;
+}*/

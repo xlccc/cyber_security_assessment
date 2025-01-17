@@ -29,6 +29,8 @@
 #include <sys/stat.h>
 #include"utils.h"
 #include"utils/config.h"
+#include"hostDiscovery.h"
+#include<regex>
 
 
 
@@ -106,7 +108,18 @@ private:
     void handle_merge_vuln_results(http_request request);
     //自动选择POC
     void handle_auto_select_poc(http_request request);
-    
+
+    //主机发现
+    void handle_host_discovery(http_request request);
+
+    // 校验输入是否为有效的IP地址或CIDR网段
+    bool isValidIPOrCIDR(const std::string& input);
+    // 校验IP地址格式
+    bool isValidIP(const std::string& ip);
+    // 校验CIDR网段格式
+    bool isValidCIDR(const std::string& network);
+    //返回主机发现的响应
+    void sendHostDiscoveryResponse(http_request& request, const std::vector<std::string>& aliveHosts);
 
     DatabaseManager dbManager;
     std::vector<POC> poc_list;
