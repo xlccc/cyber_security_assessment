@@ -81,8 +81,8 @@ sudo apt-get install -y autoconf automake autoconf-archive ninja-build
 | <font style="color:rgb(31, 35, 40);">1</font> | 资产清点 | 主机发现 | √ |  |
 | <font style="color:rgb(31, 35, 40);">2</font> | | 端口扫描 | √ |  |
 | <font style="color:rgb(31, 35, 40);">3</font> | | 网络协议分析工具 |  | He |
-| <font style="color:rgb(31, 35, 40);">4</font> | | 资产管理 |  | Huang |
-| <font style="color:rgb(31, 35, 40);">5</font> | | 资产面板 |  |  |
+| <font style="color:rgb(31, 35, 40);">4</font> | | 资产管理 | √ |  |
+| <font style="color:rgb(31, 35, 40);">5</font> | | 资产面板 | √ |  |
 | <font style="color:rgb(31, 35, 40);">6</font> | 基线检测 | 等保三级 | √ |  |
 | <font style="color:rgb(31, 35, 40);">7</font> | | 等保二级 |  | 在三级基础上划分 |
 | <font style="color:rgb(31, 35, 40);">8</font> | | 工信部安全基线标准 |  |  |
@@ -121,9 +121,9 @@ sudo apt-get install -y autoconf automake autoconf-archive ninja-build
 | 8 | 操作系统识别 | √ |  |
 | 9 | 版本识别 | √ | 包含服务、操作系统版本 |
 | 10 | nmap扫描<br/>结果解析 | √ | xml文件解析 |
-| 11 | 资产管理 |  | Huang |
-| 12 | 资产分类 |  | Huang |
-| 13 | 资产面板 |  |  |
+| 11 | 资产管理 | √ |  |
+| 12 | 资产分类 | √ |  |
+| 13 | 资产面板 | √ |  |
 | 14 | DNS域名解析 |  | 使系统支持对域名扫描 |
 | 15 | 网段扫描 | √ | 比如对一个C段上所有<br/>存活主机进行扫描。 |
 | 16 | 多线程 | √ | 针对主机发现 |
@@ -215,7 +215,7 @@ sudo apt-get install -y autoconf automake autoconf-archive ninja-build
 | 序号 | 范围 | 是否支持 | 备注 |
 | 1 | 基线检测结果 | √ | 主要是配置核查 |
 | 2 | 漏洞扫描结果 |  | 考虑安全风险 |
-| 3 | 弱口令检测结果 |  | 考虑安全风险 |
+| 3 | 弱口令检测结果 |  | Huang |
 | ~~<font style="color:#DF2A3F;">4</font>~~ | ~~<font style="color:#DF2A3F;">威胁检测结果</font>~~ | ~~<font style="color:#DF2A3F;"></font>~~ | ~~<font style="color:#DF2A3F;"></font>~~ |
 
 ### 参考
