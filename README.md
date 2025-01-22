@@ -125,8 +125,8 @@ sudo apt-get install -y autoconf automake autoconf-archive ninja-build
 | 12 | 资产分类 |  | Huang |
 | 13 | 资产面板 |  |  |
 | 14 | DNS域名解析 |  | 使系统支持对域名扫描 |
-| 15 | 网段扫描 |  | 比如对一个C段上所有<br/>存活主机进行扫描。 |
-| 16 | 多线程 |  |  |
+| 15 | 网段扫描 | √ | 比如对一个C段上所有<br/>存活主机进行扫描。 |
+| 16 | 多线程 | √ | 针对主机发现 |
 
 
 | 基线检测 | | | |
@@ -139,7 +139,7 @@ sudo apt-get install -y autoconf automake autoconf-archive ninja-build
 | 5 | 报告输出 | √ |  |
 | 6 | <font style="color:rgb(31, 35, 40);">Centos7</font> | √ | SSH远程 |
 | 7 | Ubuntu | √ | SSH远程 |
-| 8 | Windows |  |  |
+| 8 | Windows |  | Wang Tang |
 | 9 | 报告输出 | √ |  |
 
 
@@ -158,7 +158,7 @@ sudo apt-get install -y autoconf automake autoconf-archive ninja-build
 | 10 | POC验证 | √ | 嵌入python解释器 |
 | 11 | 插件化扫描 | √ |  |
 | 12 | 攻击路径分析 |  | Yang |
-| 13 | 多线程 |  | Shi |
+| 13 | 多线程 | √ |  |
 | 14 | 报告输出 |  |  |
 
 
