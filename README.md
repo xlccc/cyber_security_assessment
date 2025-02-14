@@ -59,6 +59,19 @@ sudo apt-get install -y autoconf automake autoconf-archive ninja-build
 #### 4.数据库
 
 将目录下的sql文件在目标服务器先执行。可以利用navicat
+```bash
+#1.安装mysql
+#2.登录mysql：
+   mysql -u root -p 
+#3.创建数据库：
+   CREATE DATABASE test_db
+#4.执行SQL文件：
+   mysql -u root -p your_database_name < /path/to/your.sql
+#5.配置mysql远程连接：
+#在localhost登入mysql后，更改 “mysql” 数据库里的 “user” 表里的 “host” 项，将"localhost"改称"%（代表允许远程）
+update user set host = '%' where user = 'root';
+select host, user from user;
+```
 
 ### 前端
 
