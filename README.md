@@ -1,6 +1,8 @@
 # 网络安全测试平台
 该平台专为系统脆弱性和安全性检测设计，支持 Ubuntu 20.04 操作系统。功能包括资产清点、安全基线检测、安全风险评估和安全等级保护测评，并输出详细的检测报告。
 
+PS：目前项目仍处于开发阶段，功能方面只进行了初步实现，目前直接使用或许有很多问题，项目后续会不断解决、完善~
+
 ## Requirements
 ### 操作系统
 + 本平台仅在 **Ubuntu 20.04** 上测试通过，建议在此系统上运行以保证兼容性。
@@ -12,19 +14,17 @@
 ```bash
 sudo apt-get update
 sudo apt-get install -y nmap
+
 配置无密码执行 Nmap 操作：
-bash
-复制代码
+
 sudo visudo
 在文件末尾添加以下内容，将 username 替换为实际的用户名：
-javascript
-复制代码
+
 username ALL=(ALL) NOPASSWD: /usr/bin/nmap
 username ALL=(ALL) NOPASSWD: /bin/chown
 username ALL=(ALL) NOPASSWD: /bin/chmod
 配置 Nmap 扫描结果文件的输出目录：
-bash
-复制代码
+
 mkdir -p output_nmap
 sudo chown username:username output_nmap
 sudo chmod 777 output_nmap
@@ -43,7 +43,6 @@ vcpkg install libssh
 vcpkg install sqlite3 cpprestsdk
 vcpkg install icu
 vcpkg install curl[core,non-http,openssl,ssl]
-vcpkg install pybind11
 vcpkg install uchardet
 vcpkg install mysql-connector-cpp:x64-linux
 ```
@@ -60,16 +59,43 @@ sudo apt-get install -y autoconf automake autoconf-archive ninja-build
 #### 4.数据库
 
 将目录下的sql文件在目标服务器先执行。可以利用navicat
+```bash
+#1.安装mysql
+#2.登录mysql：
+   mysql -u root -p 
+#3.创建数据库：
+   CREATE DATABASE test_db
+#4.执行SQL文件：
+   mysql -u root -p your_database_name < /path/to/your.sql
+#5.配置mysql远程连接：
+#在localhost登入mysql后，更改 “mysql” 数据库里的 “user” 表里的 “host” 项，将"localhost"改称"%（代表允许远程）
+update user set host = '%' where user = 'root';
+select host, user from user;
+```
+
+### 前端
+
+项目前端网站：https://github.com/attente12/NetSec-testing/tree/master/demo
+
+使用 IntelliJ IDEA 作为开发工具：
+
+1. 打开项目时，确保选择项目根目录。
+2. 配置 Node.js 路径：
+   - 打开 `File` > `Settings` > `Languages & Frameworks` > `Node.js and NPM`。
+   - 指定 Node.js 安装路径。
+3. 配置运行/调试任务：
+   - 点击右上角的运行配置下拉菜单，选择 `Edit Configurations`。
+   - 添加 `npm` 任务，设置 `serve` 为默认任务。
 
 ## 现阶段进度
 | 总览 | | | | |
 | :---: | --- | --- | --- | --- |
 | 序号 | 隶属 | 功能 | 是否支持 | 备注 |
-| <font style="color:rgb(31, 35, 40);">1</font> | 资产清点 | 主机发现 |  |  |
+| <font style="color:rgb(31, 35, 40);">1</font> | 资产清点 | 主机发现 | √ |  |
 | <font style="color:rgb(31, 35, 40);">2</font> | | 端口扫描 | √ |  |
 | <font style="color:rgb(31, 35, 40);">3</font> | | 网络协议分析工具 |  | He |
-| <font style="color:rgb(31, 35, 40);">4</font> | | 资产管理 |  | Huang |
-| <font style="color:rgb(31, 35, 40);">5</font> | | 资产面板 |  |  |
+| <font style="color:rgb(31, 35, 40);">4</font> | | 资产管理 | √ |  |
+| <font style="color:rgb(31, 35, 40);">5</font> | | 资产面板 | √ |  |
 | <font style="color:rgb(31, 35, 40);">6</font> | 基线检测 | 等保三级 | √ |  |
 | <font style="color:rgb(31, 35, 40);">7</font> | | 等保二级 |  | 在三级基础上划分 |
 | <font style="color:rgb(31, 35, 40);">8</font> | | 工信部安全基线标准 |  |  |
@@ -100,7 +126,7 @@ sudo apt-get install -y autoconf automake autoconf-archive ninja-build
 | 序号 | 功能 | 是否支持 | 备注 |
 | 1 | 探针式扫描 |  | 能够发现更多配置、系统信息 |
 | 2 | 主动扫描 | √ | nmap扫描 |
-| 3 | 主机发现 |  |  |
+| 3 | 主机发现 | √ |  |
 | 4 | IP冲突检测 |  | 主机发现的基础上 |
 | 5 | 端口扫描 | √ |  |
 | 6 | 协议识别 | √ |  |
@@ -108,12 +134,12 @@ sudo apt-get install -y autoconf automake autoconf-archive ninja-build
 | 8 | 操作系统识别 | √ |  |
 | 9 | 版本识别 | √ | 包含服务、操作系统版本 |
 | 10 | nmap扫描<br/>结果解析 | √ | xml文件解析 |
-| 11 | 资产管理 |  | Huang |
-| 12 | 资产分类 |  | Huang |
-| 13 | 资产面板 |  |  |
+| 11 | 资产管理 | √ |  |
+| 12 | 资产分类 | √ |  |
+| 13 | 资产面板 | √ |  |
 | 14 | DNS域名解析 |  | 使系统支持对域名扫描 |
-| 15 | 网段扫描 |  | 比如对一个C段上所有<br/>存活主机进行扫描。 |
-| 16 | 多线程 |  |  |
+| 15 | 网段扫描 | √ | 比如对一个C段上所有<br/>存活主机进行扫描。 |
+| 16 | 多线程 | √ | 针对主机发现 |
 
 
 | 基线检测 | | | |
@@ -126,7 +152,7 @@ sudo apt-get install -y autoconf automake autoconf-archive ninja-build
 | 5 | 报告输出 | √ |  |
 | 6 | <font style="color:rgb(31, 35, 40);">Centos7</font> | √ | SSH远程 |
 | 7 | Ubuntu | √ | SSH远程 |
-| 8 | Windows |  |  |
+| 8 | Windows |  | Wang Tang |
 | 9 | 报告输出 | √ |  |
 
 
@@ -145,7 +171,7 @@ sudo apt-get install -y autoconf automake autoconf-archive ninja-build
 | 10 | POC验证 | √ | 嵌入python解释器 |
 | 11 | 插件化扫描 | √ |  |
 | 12 | 攻击路径分析 |  | Yang |
-| 13 | 多线程 |  | Shi |
+| 13 | 多线程 | √ |  |
 | 14 | 报告输出 |  |  |
 
 
@@ -202,16 +228,33 @@ sudo apt-get install -y autoconf automake autoconf-archive ninja-build
 | 序号 | 范围 | 是否支持 | 备注 |
 | 1 | 基线检测结果 | √ | 主要是配置核查 |
 | 2 | 漏洞扫描结果 |  | 考虑安全风险 |
-| 3 | 弱口令检测结果 |  | 考虑安全风险 |
+| 3 | 弱口令检测结果 |  | Huang |
 | ~~<font style="color:#DF2A3F;">4</font>~~ | ~~<font style="color:#DF2A3F;">威胁检测结果</font>~~ | ~~<font style="color:#DF2A3F;"></font>~~ | ~~<font style="color:#DF2A3F;"></font>~~ |
 
+### 参考
 
-| 不在项目研究范围内 | | |
-| :---: | --- | --- |
-| 序号 | 范围 | 备注 |
-| 1 | 对防火墙的主动识别 | 如果需要识别防火墙，或是其安全策略。应采用探针式扫描。 |
-| 2 | 对入侵检测系统的主动识别 | 如果需要识别入侵检测系统，或是其<br/>安全策略。应采用探针式扫描。 |
-| 3 | 网络协议分析工具：截获并显示网络数据包，分析网络实时流量，捕捉和查看公共网络协议、专用网络协议和工控网络协议 | He |
-| 4 | 攻击路径分析 | Yang |
-| 5 | 防火墙安全策略冲突 | FU<br/>（需要系统给出识别防火墙规则的方法，比如探针式扫描） |
+windows&Linux基线检查配置文档和自动化脚本	https://github.com/tangjie1/-Baseline-check/blob/main/README.md
+
+基线检测参考	https://github.com/selinuxG/Golin
+
+POC参考	https://github.com/sma11new/PocList/blob/main/Apache%20Druid-%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%EF%BC%
+
+POC模板参考	knownsec/Pocsuite: This project has stopped to maintenance, please to https://github.com/knownsec/pocsuite3 project.
+
+漏洞扫描参考	
+https://github.com/al0ne/Vxscan/tree/master
+https://github.com/Janhsu/oday/blob/main/src/main/java/com/janhsu/oday2/controllers/RunPythonExpController.java
+https://cloud.tencent.com/developer/article/2372857
+https://github.com/NorthernSec/CVE-Scan/tree/master
+https://github.com/m0nad/HellRaiser
+
+弱口令检测参考	
+等级保护参考	https://github.com/selinuxG/Golin
+基于Python的综合扫描工具	https://github.com/al0ne/Vxscan/tree/master
+基于Nmap和CVE漏洞库的漏洞扫描	https://github.com/NorthernSec/CVE-Scan/tree/master
+
+前端页面参考	https://github.com/Arbor01/AnScan
+https://github.com/Janhsu/oday/blob/main/src/main/java/com/janhsu/oday2/controllers/RunPythonExpController.java 
+
+
 

@@ -86,9 +86,9 @@ struct POCTask {
     std::string port;
     Vuln vuln;
 
-    // 定义 < 操作符，仅基于 url, ip 和 port 排序
+    // 定义 < 操作符，仅基于 url, ip 和 port 排序，加入 vuln 的比较以区分不同任务
     bool operator<(const POCTask& other) const {
-        return std::tie(url, ip, port) < std::tie(other.url, other.ip, other.port);
+        return std::tie(url, ip, port, vuln) < std::tie(other.url, other.ip, other.port, other.vuln);
     }
 };
 
