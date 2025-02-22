@@ -151,6 +151,9 @@ void ServerManager::handle_request(http_request request) {
     else if (first_segment == _XPLATSTR("mysqlScan") && request.method() == methods::POST) {
 		handle_post_mysql_scan(request);
 	}
+    else if (first_segment == _XPLATSTR("getAliveHosts") && request.method() == methods::GET) {
+		handle_get_alive_hosts(request);
+	}
 	else {
 		request.reply(status_codes::NotFound, _XPLATSTR("Path not found"));
 	}
@@ -2497,6 +2500,39 @@ void ServerManager::log_poc_callback(const http_request& request) {
     request.reply(status_codes::OK, _XPLATSTR("[!]POC callback received and logged"));
 }
 
+void ServerManager::handle_get_alive_hosts(http_request request)
+{
+    json::value response_data;
+    http_response response;
+
+    try {
+        // 获取存活的主机
+        std::vector<std::string> alive_hosts;
+        dbHandler_.readAliveHosts(alive_hosts, pool);
+
+        // 构建响应数据
+        json::value host_array = json::value::array();
+        for (const auto& host : alive_hosts) {
+            host_array[host_array.size()] = json::value::string(utility::conversions::to_string_t(host));
+        }
+        response_data[_XPLATSTR("alive_hosts")] = host_array;
+
+        // 设置响应头并回复
+        response.set_body(response_data);
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+        response.set_status_code(status_codes::OK);  // 设置 HTTP 状态码
+    }
+    catch (const std::exception& e) {
+        // 处理异常，返回 500 错误
+        response.set_status_code(status_codes::InternalError);
+        response.set_body(json::value::string(_XPLATSTR("Internal Server Error")));
+    }
+
+    request.reply(response);
+}
+
 // 处理插件化扫描请求
 void ServerManager::handle_post_poc_scan(http_request request) {
     request.extract_json().then([=](json::value json_data) {
@@ -2791,7 +2827,8 @@ void ServerManager::handle_host_discovery(http_request request) {
             std::cout << "[INFO] Performing host discovery for network/IP: " << network << std::endl;
             HostDiscovery hostDiscovery(network);
             auto aliveHosts = hostDiscovery.scan();
-            
+            //将存活主机存入数据库
+            dbHandler_.insertAliveHosts(aliveHosts, pool);
             // 返回网段扫描结果
             sendHostDiscoveryResponse(request, aliveHosts);
         }
