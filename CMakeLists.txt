@@ -23,9 +23,12 @@ find_package(libssh CONFIG REQUIRED)
 find_package(ICU REQUIRED COMPONENTS uc i18n io data)
 find_package(SQLite3 REQUIRED)
 find_package(uchardet CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
+find_package(hiredis CONFIG REQUIRED)
 
 # 添加 MySQL Connector/C++
 find_package(unofficial-mysql-connector-cpp CONFIG REQUIRED)
+
 
 # 手动设置Python路径
 set(Python_EXECUTABLE "/usr/bin/python3.8")
@@ -80,6 +83,11 @@ set(SOURCES
     ServerManager.cpp
     scan/poc_check.cpp
     database/db_config.cpp
+    "database/DatabaseHandler.cpp"
+    "run/mysql_scan.cpp"
+    scan/hostDiscovery.cpp
+    utils/threadPool.cpp
+ )
  "database/DatabaseHandler.cpp" "pgsql_scan.cpp")
 
 set(HEADERS
@@ -104,7 +112,14 @@ set(HEADERS
     scan/utils_scan.h
     ServerManager.h
     scan/poc_check.h
+    "scan/config.h"
+    "database/DatabaseHandler.h" "database/mysql_connection_pool.h"
+    scan/config.h 
+    scan/hostDiscovery.h
+    utils/threadPool.h
     scan/config.h
+ "database/DatabaseHandler.h" "database/mysql_connection_pool.h"
+    multipart_form_data.h "run/mysql_scan.h")
     pgsql_scan.h
  "database/DatabaseHandler.h" "database/mysql_connection_pool.h")
 
@@ -124,7 +139,8 @@ target_link_libraries(MyCppProject PRIVATE
     uchardet::libuchardet
     unofficial::mysql-connector-cpp::connector  # 修正了此行
     resolv  # 确保添加这一行
-)
+    nlohmann_json::nlohmann_json
+    hiredis::hiredis)
 
 # 支持 Unicode 文件名和路径
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -finput-charset=UTF-8 -fexec-charset=UTF-8")

@@ -29,13 +29,17 @@
 #include "poc_check.h"
 #include <sys/stat.h>
 #include"DatabaseHandler.h"
+#include"multipart_form_data.h"
 #include"utils.h"
 #include"utils/config.h"
 #include"mysql_connection_pool.h"
+#include"hostDiscovery.h"
+#include<regex>
+#include "run/mysql_scan.h"
+
 #include"SSHConnectionPool.h"
 #include"redis_scan.h"
 #include"pgsql_scan.h"
-
 using namespace web;
 using namespace web::http;
 using namespace web::http::experimental::listener;
@@ -54,7 +58,8 @@ public:
 
 
 private:
-
+    // 创建用于连接本地服务器的配置
+    DBConfig localConfig;
     // ´æ´¢portIdºÍservice_nameµÄmap
     std::map<std::string, std::string> port_services;
 
@@ -112,10 +117,26 @@ private:
     void handle_merge_vuln_results(http_request request);
     //自动选择POC
     void handle_auto_select_poc(http_request request);
-    
+
     //首页获取数据库中的资产数据，
     void handle_get_all_assets_vuln_data(http_request request);
+    
+    //数据库弱口令检测扫描
+    void handle_post_mysql_scan(http_request request);
     //scan_struct的相关结构体与数据库的交互
+
+    //主机发现
+    void handle_host_discovery(http_request request);
+
+    // 校验输入是否为有效的IP地址或CIDR网段
+    bool isValidIPOrCIDR(const std::string& input);
+    // 校验IP地址格式
+    bool isValidIP(const std::string& ip);
+    // 校验CIDR网段格式
+    bool isValidCIDR(const std::string& network);
+    //返回主机发现的响应
+    void sendHostDiscoveryResponse(http_request& request, const std::vector<std::string>& aliveHosts);
+
     void redis_get_scan(http_request request);
 
     ConnectionPool pool;
