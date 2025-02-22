@@ -1,4 +1,4 @@
-#include"Event.h"
+﻿#include"Event.h"
 #include"Command_Excute.h"
 #include<libssh/libssh.h>
 #include"Padding.h"
@@ -381,7 +381,7 @@ void fun(vector<event>& Event, ssh_session session) {
 
 	//3.2检查重要目录或文件权限设置
 	//3.2.1检查/etc/xinetd.conf文件权限
-	event mod_xinetd;
+	event mod_xinetd; 
 	mod_xinetd.description = "检查/etc/xinetd.conf文件权限";
 	mod_xinetd.basis = "<=600";
 	mod_xinetd.recommend = "/etc/xinted.conf的权限应该小于等于600";

@@ -59,7 +59,7 @@ public:
 
 private:
     // 数据库连接配置，写死在私有成员中
-    const std::string host_ = "10.9.130.193";  // 数据库主机
+    const std::string host_ = "10.9.130.130";  // 数据库主机
     const uint16_t port_ = 33060;          // X Protocol默认端口
     const std::string user_ = "root";      // 数据库用户名
     const std::string password_ = "Navicat822!"; // 数据库密码

@@ -22,7 +22,7 @@
 #include <cpprest/filestream.h>
 #include "Login.h"
 #include "Command_Excute.h"
-#include "Padding.h"
+#include "Padding2.h"
 #include "scan/portScan.h"
 #include "utils_scan.h"
 #include "convert_string_t.h"
@@ -32,7 +32,9 @@
 #include"utils.h"
 #include"utils/config.h"
 #include"mysql_connection_pool.h"
-
+#include"SSHConnectionPool.h"
+#include"redis_scan.h"
+#include"pgsql_scan.h"
 
 using namespace web;
 using namespace web::http;
@@ -114,7 +116,8 @@ private:
     //首页获取数据库中的资产数据，
     void handle_get_all_assets_vuln_data(http_request request);
     //scan_struct的相关结构体与数据库的交互
-    
+    void redis_get_scan(http_request request);
+
     ConnectionPool pool;
     DatabaseHandler dbHandler_;
     DatabaseManager dbManager;

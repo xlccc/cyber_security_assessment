@@ -71,13 +71,16 @@ set(SOURCES
     main_1.cpp
     main.cpp
     Padding.cpp
+    # dd
+    Padding2.cpp
+    redis_scan.cpp
     utils/utils.cpp
     scan/portScan.cpp
     scan/utils_scan.cpp
     ServerManager.cpp
     scan/poc_check.cpp
     database/db_config.cpp
- "database/DatabaseHandler.cpp")
+ "database/DatabaseHandler.cpp" "pgsql_scan.cpp")
 
 set(HEADERS
     Command_Excute.h
@@ -89,6 +92,12 @@ set(HEADERS
     Event_h.h
     Login.h
     Padding.h
+    #dd
+    Padding2.h 
+    redis_scan.h
+    SSHConnectionPool.h
+    EventChecker.h
+    ThreadPool.h
     utils/utils.h
     scan/portScan.h
     scan/scan_struct.h
@@ -96,6 +105,7 @@ set(HEADERS
     ServerManager.h
     scan/poc_check.h
     scan/config.h
+    pgsql_scan.h
  "database/DatabaseHandler.h" "database/mysql_connection_pool.h")
 
 # 添加可执行文件

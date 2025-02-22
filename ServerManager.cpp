@@ -6,7 +6,7 @@ using namespace web::http::experimental::listener;
 using namespace concurrency::streams;
 
 ServerManager::ServerManager() : dbManager(DB_PATH) {
-    utility::string_t address = _XPLATSTR("http://10.9.130.193:8081/");
+    utility::string_t address = _XPLATSTR("http://10.9.130.130:8081/");
     uri_builder uri(address);
     auto addr = uri.to_uri().to_string();
     listener = std::make_unique<http_listener>(addr);
@@ -134,9 +134,19 @@ void ServerManager::handle_request(http_request request) {
     else if (first_segment == _XPLATSTR("getAllAssetsVulnData") && request.method() == methods::GET) {
         handle_get_all_assets_vuln_data(request);
     }
+    else if (first_segment == _XPLATSTR("redisScan") && request.method() == methods::GET) {
+        redis_get_scan(request);
+    }
     else {
         request.reply(status_codes::NotFound, _XPLATSTR("Path not found"));
     }
+}
+
+void ServerManager::redis_get_scan(http_request request) {
+    
+    //std::cout << check_redis_unauthorized("root","12341234","12341234","10.9.130.130") << std::endl;
+    //std::cout << check_pgsql_unauthorized("root", "12341234","postgres","12341234" ,"10.9.130.130","5432" ) << std::endl;
+    request.reply(web::http::status_codes::OK, "result");
 }
 
 void ServerManager::handle_get_userinfo(http_request request) {
@@ -151,8 +161,34 @@ void ServerManager::handle_get_userinfo(http_request request) {
     ServerInfo[_XPLATSTR("isInternet")] = json::value::string(info_new.isInternet);
     ServerInfo[_XPLATSTR("ProductName")] = json::value::string(info_new.ProductName);
     ServerInfo[_XPLATSTR("version")] = json::value::string(info_new.version);
-    json::value response_data = json::value::array();
+    
+    // 对 Event 根据 description 去重，保留最后一个
+    map<string, event> lastEventMap;
+    for (const auto& event : Event) {
+        lastEventMap[event.description] = event;
+    }
 
+    // 将 map 中的值转换回 vector
+    vector<event> uniqueEvent;
+    for (const auto& pair : lastEventMap) {
+        uniqueEvent.push_back(pair.second);
+    }
+
+    json::value response_data = json::value::array();
+    for (size_t i = 0; i < uniqueEvent.size(); ++i) {
+        json::value user_data;
+        user_data[_XPLATSTR("basis")] = json::value::string(utility::conversions::to_string_t(uniqueEvent[i].basis));
+        user_data[_XPLATSTR("command")] = json::value::string(utility::conversions::to_string_t(uniqueEvent[i].command));
+        user_data[_XPLATSTR("description")] = json::value::string(utility::conversions::to_string_t(uniqueEvent[i].description));
+        user_data[_XPLATSTR("IsComply")] = json::value::string(utility::conversions::to_string_t(uniqueEvent[i].IsComply));
+        user_data[_XPLATSTR("recommend")] = json::value::string(utility::conversions::to_string_t(uniqueEvent[i].recommend));
+        user_data[_XPLATSTR("result")] = json::value::string(utility::conversions::to_string_t(uniqueEvent[i].result));
+        user_data[_XPLATSTR("importantLevel")] = json::value::string(utility::conversions::to_string_t(uniqueEvent[i].importantLevel));
+        response_data[i] = user_data;
+    }
+
+    /*
+    json::value response_data = json::value::array();
     for (size_t i = 0; i < Event.size(); ++i) {
         json::value user_data;
 
@@ -165,6 +201,7 @@ void ServerManager::handle_get_userinfo(http_request request) {
         user_data[_XPLATSTR("importantLevel")] = json::value::string(utility::conversions::to_string_t(Event[i].importantLevel));
         response_data[i] = user_data;
     }
+    */
     main_body[_XPLATSTR("ServerInfo")] = ServerInfo;
     main_body[_XPLATSTR("Event_result")] = response_data;
     http_response response(status_codes::OK);
@@ -182,28 +219,37 @@ void ServerManager::handle_post_login(http_request request) {
         string ip = (global_ip);
         string pd = (global_pd);
 
-        ssh_session session = initialize_ssh_session(ip.c_str(), "root", pd.c_str());
-        if (session == NULL) {
-            request.reply(status_codes::InternalError, _XPLATSTR("SSH session failed to start."));
-            return;
+        // 从请求体获取 ids
+        vector<int> selectedIds;
+        if (jsonReq.has_field(_XPLATSTR("ids"))) {
+            const json::array& ids = jsonReq[_XPLATSTR("ids")].as_array();
+            for (const auto& id : ids) {
+                selectedIds.push_back(id.as_integer());
+            }
         }
 
+        /*
+        vector<int> selectedIds = {
+        1,  // 密码生命周期检查
+        4,  // 密码复杂度检查
+        5   // 空密码检查
+        };
+        */
 
-        fun(Event, session);
-
-        for (int i = 0; i < Event.size(); i++) {
-            cout << "描述信息：" << Event[i].description << " "
-                << "执行指令:  " << Event[i].command << " 执行结果：" << Event[i].result << " "
-                << "是否符合基线：  " << Event[i].IsComply
-                << endl;
-        }
-
+        fun2(Event, ip, "root", pd, selectedIds);
+        // Create connection pool for ServerInfo
+        SSHConnectionPool pool(ip, "root", pd, 1); // Single connection is enough for sequential operations
         ServerInfo info;
-        ServerInfo_Padding(info, session);
+        ServerInfo_Padding2(info, pool);
         info_new = convert(info);
 
-        ssh_disconnect(session);
-        ssh_free(session);
+        // Process results...
+        for (const auto& e : Event) {
+            cout << "描述信息：" << e.description << " "
+                << "执行指令:  " << e.command << " 执行结果：" << e.result << " "
+                << "是否符合基线：  " << e.IsComply
+                << endl;
+        }
 
         http_response response(status_codes::OK);
         response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
@@ -1086,7 +1132,8 @@ void ServerManager::handle_post_hydra(http_request request) {
             std::string passwordFile = "/hydra/passwords.txt";
 
             //说明有这个服务
-            if (port_services.find(service_name) != port_services.end()) {
+            //if (port_services.find(service_name) != port_services.end()) {
+            if(1){
                 // Construct the hydra command
                 std::string command = "hydra -L " + usernameFile + " -P " + passwordFile + " -f " + service_name + "://" + ip;
 
