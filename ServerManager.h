@@ -29,10 +29,11 @@
 #include "poc_check.h"
 #include <sys/stat.h>
 #include"DatabaseHandler.h"
+#include"multipart_form_data.h"
 #include"utils.h"
 #include"utils/config.h"
 #include"mysql_connection_pool.h"
-
+#include "run/mysql_scan.h"
 
 using namespace web;
 using namespace web::http;
@@ -113,8 +114,13 @@ private:
     
     //首页获取数据库中的资产数据，
     void handle_get_all_assets_vuln_data(http_request request);
-    //scan_struct的相关结构体与数据库的交互
     
+    //数据库弱口令检测扫描
+    void handle_post_mysql_scan(http_request request);
+    //scan_struct的相关结构体与数据库的交互
+    // 
+    // 创建用于连接本地服务器的配置
+    DBConfig localConfig;
     ConnectionPool pool;
     DatabaseHandler dbHandler_;
     DatabaseManager dbManager;

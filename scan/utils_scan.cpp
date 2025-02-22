@@ -617,7 +617,7 @@ void compareAndUpdateResults(const ScanHostResult& oldResult, ScanHostResult& ne
 
 // CVE 查询函数
 void fetch_and_padding_cves(std::map<std::string, std::vector<Vuln>>& cpes, const std::vector<std::string>& cpes_to_query, int limit) {
-    std::string base_url = "http://10.9.130.61:5000/api/cvefor";
+    std::string base_url = "http://10.9.130.189:5000/api/cvefor";
 
     for (const auto& cpe_id : cpes_to_query) {
         auto& vecCVE = cpes[cpe_id];
@@ -677,6 +677,8 @@ void fetch_and_padding_cves(std::map<std::string, std::vector<Vuln>>& cpes, cons
         }
     }
 }
+
+
 
 //创建POC任务
 std::map<std::string, std::vector<POCTask>> create_poc_task(const std::vector<POC>& poc_list, const ScanHostResult& scan_host_result, bool match_infra) {
