@@ -81,9 +81,10 @@ set(SOURCES
     scan/poc_check.cpp
     database/db_config.cpp
     "database/DatabaseHandler.cpp"
+    "run/mysql_scan.cpp"
     scan/hostDiscovery.cpp
-    utils/threadPool.cpp)
- "database/DatabaseHandler.cpp" "run/mysql_scan.cpp")
+    utils/threadPool.cpp
+ )
 
 set(HEADERS
     Command_Excute.h
@@ -105,7 +106,7 @@ set(HEADERS
     "database/DatabaseHandler.h" "database/mysql_connection_pool.h"
     scan/config.h 
     scan/hostDiscovery.h
-    utils/threadPool.h)
+    utils/threadPool.h
     scan/config.h
  "database/DatabaseHandler.h" "database/mysql_connection_pool.h"
     multipart_form_data.h "run/mysql_scan.h")

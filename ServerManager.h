@@ -55,7 +55,8 @@ public:
 
 
 private:
-
+    // 创建用于连接本地服务器的配置
+    DBConfig localConfig;
     // ´æ´¢portIdºÍservice_nameµÄmap
     std::map<std::string, std::string> port_services;
 
