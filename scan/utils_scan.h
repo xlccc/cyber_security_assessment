@@ -29,12 +29,10 @@
 #include <mutex>	//锁
 #include <condition_variable>	//条件变量，用于控制执行
 #include <hiredis/hiredis.h> // Redis C++ 库
-
-using json = nlohmann::json;
 #include"DatabaseHandler.h"
 #include"mysql_connection_pool.h"
 using namespace std;
-
+using json = nlohmann::json;
 
 
 //解析nmap端口扫描结果的xml文件
@@ -68,10 +66,10 @@ std::map<std::string, std::vector<POCTask>> create_poc_task(const std::vector<PO
 std::map<std::string, std::vector<POCTask>> create_poc_task(const std::vector<POC>& poc_list, const ScanHostResult& scan_host_result, bool match_infra);
 
 //多进程执行POC任务
-void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc_tasks_by_port, ScanHostResult& scan_host_result);
+void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc_tasks_by_port, ScanHostResult& scan_host_result, DatabaseHandler& dbHandler, ConnectionPool& pool);
 
 //多进程版本的单个POC任务执行
-void execute_poc_task(const std::string& key, POCTask& task, redisContext* redis_client);
+void execute_poc_task(const std::string& key, POCTask& task, redisContext* redis_client, DatabaseHandler& dbHandler, ConnectionPool& pool);
 
 
 ////执行POC任务（非多进程版本）

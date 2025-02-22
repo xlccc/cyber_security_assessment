@@ -2589,7 +2589,7 @@ void ServerManager::handle_post_poc_scan(http_request request) {
             //execute_poc_tasks(poc_tasks_by_port, scan_host_result, pool, dbHandler_);
 
            // 使用多进程版本的执行 PoC 任务并更新结果
-            execute_poc_tasks_parallel(poc_tasks_by_port, scan_host_result);
+            execute_poc_tasks_parallel(poc_tasks_by_port, scan_host_result, dbHandler_ , pool );
 
             // 将新的扫描结果保存为历史数据
             historicalData.data[ip] = scan_host_result;
