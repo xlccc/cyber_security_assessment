@@ -7,16 +7,16 @@ using namespace concurrency::streams;
 
 ServerManager::ServerManager()
     : localConfig{
-        "10.9.130.189",  // host
+        "10.9.130.23",  // host
         33060,            // port
         "root",           // user
-        "ComplexPassword123!", // password
+        "Navicat822!", // password
         "test_db"         // schema
     },
     pool(localConfig),    // 使用 localConfig 初始化 pool
     dbManager(DB_PATH)    // 原有的 dbManager 初始化
 {
-    utility::string_t address = _XPLATSTR("http://10.9.130.189:8081/");
+    utility::string_t address = _XPLATSTR("http://10.9.130.23:8081/");
     uri_builder uri(address);
     auto addr = uri.to_uri().to_string();
     listener = std::make_unique<http_listener>(addr);
@@ -151,9 +151,6 @@ void ServerManager::handle_request(http_request request) {
     else if (first_segment == _XPLATSTR("mysqlScan") && request.method() == methods::POST) {
 		handle_post_mysql_scan(request);
 	}
-	else {
-		request.reply(status_codes::NotFound, _XPLATSTR("Path not found"));
-	}
     else if (first_segment == _XPLATSTR("redisScan") && request.method() == methods::GET) {
         redis_get_scan(request);
     }
@@ -164,8 +161,8 @@ void ServerManager::handle_request(http_request request) {
 
 void ServerManager::redis_get_scan(http_request request) {
     
-    //std::cout << check_redis_unauthorized("root","12341234","12341234","10.9.130.130") << std::endl;
-    //std::cout << check_pgsql_unauthorized("root", "12341234","postgres","12341234" ,"10.9.130.130","5432" ) << std::endl;
+    std::cout << check_redis_unauthorized("root","12341234","12341234","10.9.130.23") << std::endl;
+    std::cout << check_pgsql_unauthorized("root", "12341234","postgres","12341234" ,"10.9.130.23","5432" ) << std::endl;
     request.reply(web::http::status_codes::OK, "result");
 }
 
