@@ -44,7 +44,9 @@ vcpkg install sqlite3 cpprestsdk
 vcpkg install icu
 vcpkg install curl[core,non-http,openssl,ssl]
 vcpkg install uchardet
+vcpkg install nlohmann-json
 vcpkg install mysql-connector-cpp:x64-linux
+vcpkg install spdlog
 ```
 
 其他系统依赖安装：
