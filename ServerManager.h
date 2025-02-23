@@ -111,6 +111,8 @@ private:
     // 记录 /poc_callback 路径的请求（待修改）
     void log_poc_callback(const http_request& request);
 
+	void handle_get_alive_hosts(http_request request);
+
     //插件化扫描
     void handle_post_poc_scan(http_request request);
     //合并两种漏洞扫描方法的结果

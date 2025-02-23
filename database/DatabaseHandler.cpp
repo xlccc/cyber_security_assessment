@@ -596,3 +596,45 @@ void DatabaseHandler::insertHostCPEs(int shr_id, const std::set<std::string>& cp
     }
 }
 
+void DatabaseHandler::insertAliveHosts(const std::vector<std::string>& aliveHosts, ConnectionPool& pool)
+{
+    try {
+        auto conn = pool.getConnection();  // 获取连接
+        for (const auto& ip : aliveHosts) {
+            conn->sql(
+                "INSERT INTO alive_hosts (ip_address, create_time, update_time) "
+                "VALUES (?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) "
+                "ON DUPLICATE KEY UPDATE "
+                "ip_address = VALUES(ip_address), "
+                "update_time = CURRENT_TIMESTAMP"
+            )
+                .bind(ip)
+                .execute();
+            std::cout << "成功插入或更新存活主机: " << ip << std::endl;
+        }
+    }
+    catch (const mysqlx::Error& err) {
+        std::cerr << "数据库错误: " << err.what() << std::endl;
+    }
+}
+
+void DatabaseHandler::readAliveHosts(std::vector<std::string>& aliveHosts, ConnectionPool& pool)
+{
+    try {
+		auto conn = pool.getConnection();  // 获取连接
+		mysqlx::SqlResult result = conn->sql("SELECT ip_address FROM alive_hosts").execute();
+		for (auto row : result) {
+			aliveHosts.push_back(row[0].get<std::string>());
+		}
+	}
+	catch (const mysqlx::Error& err) {
+		std::cerr << "数据库错误: " << err.what() << std::endl;
+	}
+	catch (std::exception& ex) {
+		std::cerr << "异常: " << ex.what() << std::endl;
+	}
+	catch (...) {
+		std::cerr << "未知错误发生" << std::endl;
+	}
+}
+
