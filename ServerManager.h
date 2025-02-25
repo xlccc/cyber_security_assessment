@@ -29,13 +29,14 @@
 #include "poc_check.h"
 #include <sys/stat.h>
 #include"DatabaseHandler.h"
+#include"multipart_form_data.h"
 #include"utils.h"
 #include"utils/config.h"
 #include"mysql_connection_pool.h"
 #include"hostDiscovery.h"
 #include<regex>
+#include "run/mysql_scan.h"
 #include <spdlog/spdlog.h>
-
 
 
 using namespace web;
@@ -58,6 +59,8 @@ private:
     std::shared_ptr<spdlog::logger> user_logger; // 用户日志
     std::shared_ptr<spdlog::logger> console;    //控制台日志
 
+    // 创建用于连接本地服务器的配置
+    DBConfig localConfig;
     // ´æ´¢portIdºÍservice_nameµÄmap
     std::map<std::string, std::string> port_services;
 
@@ -109,6 +112,8 @@ private:
     // 记录 /poc_callback 路径的请求（待修改）
     void log_poc_callback(const http_request& request);
 
+	void handle_get_alive_hosts(http_request request);
+
     //插件化扫描
     void handle_post_poc_scan(http_request request);
     //合并两种漏洞扫描方法的结果
@@ -118,6 +123,9 @@ private:
 
     //首页获取数据库中的资产数据，
     void handle_get_all_assets_vuln_data(http_request request);
+    
+    //数据库弱口令检测扫描
+    void handle_post_mysql_scan(http_request request);
     //scan_struct的相关结构体与数据库的交互
 
     //主机发现
@@ -131,6 +139,7 @@ private:
     bool isValidCIDR(const std::string& network);
     //返回主机发现的响应
     void sendHostDiscoveryResponse(http_request& request, const std::vector<std::string>& aliveHosts);
+
 
     ConnectionPool pool;
     DatabaseHandler dbHandler_;

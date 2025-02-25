@@ -24,48 +24,48 @@
 //
 //    void handle_options(http_request request) {
 //        http_response response(status_codes::OK);
-//        response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
-//        response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, OPTIONS"));
-//        response.headers().add(U("Access-Control-Allow-Headers"), U("Content-Type"));
+//        response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+//        response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, OPTIONS"));
+//        response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
 //        request.reply(response);
 //    }
 //
 //    void handle_get(http_request request) {
 //        json::value main_body = json::value::object();
 //        json::value ServerInfo = json::value::object();
-//        ServerInfo[U("arch")] = json::value::string(utility::conversions::to_string_t(info_new.arch));
-//        ServerInfo[U("cpu")] = json::value::string(utility::conversions::to_string_t(info_new.cpu));
-//        ServerInfo[U("cpuCore")] = json::value::string(utility::conversions::to_string_t(info_new.cpuCore));
-//        ServerInfo[U("cpuPhysical")] = json::value::string(utility::conversions::to_string_t(info_new.cpuPhysical));
-//        ServerInfo[U("free")] = json::value::string(utility::conversions::to_string_t(info_new.free));
-//        ServerInfo[U("hostname")] = json::value::string(utility::conversions::to_string_t(info_new.hostname));
-//        ServerInfo[U("isInternet")] = json::value::string(utility::conversions::to_string_t(info_new.isInternet));
-//        ServerInfo[U("ProductName")] = json::value::string(utility::conversions::to_string_t(info_new.ProductName));
-//        ServerInfo[U("version")] = json::value::string(utility::conversions::to_string_t(info_new.version));
+//        ServerInfo[_XPLATSTR("arch")] = json::value::string(utility::conversions::to_string_t(info_new.arch));
+//        ServerInfo[_XPLATSTR("cpu")] = json::value::string(utility::conversions::to_string_t(info_new.cpu));
+//        ServerInfo[_XPLATSTR("cpuCore")] = json::value::string(utility::conversions::to_string_t(info_new.cpuCore));
+//        ServerInfo[_XPLATSTR("cpuPhysical")] = json::value::string(utility::conversions::to_string_t(info_new.cpuPhysical));
+//        ServerInfo[_XPLATSTR("free")] = json::value::string(utility::conversions::to_string_t(info_new.free));
+//        ServerInfo[_XPLATSTR("hostname")] = json::value::string(utility::conversions::to_string_t(info_new.hostname));
+//        ServerInfo[_XPLATSTR("isInternet")] = json::value::string(utility::conversions::to_string_t(info_new.isInternet));
+//        ServerInfo[_XPLATSTR("ProductName")] = json::value::string(utility::conversions::to_string_t(info_new.ProductName));
+//        ServerInfo[_XPLATSTR("version")] = json::value::string(utility::conversions::to_string_t(info_new.version));
 //        json::value response_data = json::value::array();
 //
 //        for (size_t i = 0; i < new_Event.size(); ++i) {
 //            json::value user_data;
-//            user_data[U("basis")] = json::value::string(utility::conversions::to_string_t(new_Event[i].basis));
-//            user_data[U("command")] = json::value::string(utility::conversions::to_string_t(new_Event[i].command));
-//            user_data[U("description")] = json::value::string(utility::conversions::to_string_t(new_Event[i].description));
-//            user_data[U("IsComply")] = json::value::string(utility::conversions::to_string_t(new_Event[i].IsComply));
-//            user_data[U("recommend")] = json::value::string(utility::conversions::to_string_t(new_Event[i].recommend));
-//            user_data[U("result")] = json::value::string(utility::conversions::to_string_t(new_Event[i].result));
+//            user_data[_XPLATSTR("basis")] = json::value::string(utility::conversions::to_string_t(new_Event[i].basis));
+//            user_data[_XPLATSTR("command")] = json::value::string(utility::conversions::to_string_t(new_Event[i].command));
+//            user_data[_XPLATSTR("description")] = json::value::string(utility::conversions::to_string_t(new_Event[i].description));
+//            user_data[_XPLATSTR("IsComply")] = json::value::string(utility::conversions::to_string_t(new_Event[i].IsComply));
+//            user_data[_XPLATSTR("recommend")] = json::value::string(utility::conversions::to_string_t(new_Event[i].recommend));
+//            user_data[_XPLATSTR("result")] = json::value::string(utility::conversions::to_string_t(new_Event[i].result));
 //            response_data[i] = user_data;
 //        }
-//        main_body[U("ServerInfo")] = ServerInfo;
-//        main_body[U("Event_result")] = response_data;
+//        main_body[_XPLATSTR("ServerInfo")] = ServerInfo;
+//        main_body[_XPLATSTR("Event_result")] = response_data;
 //        http_response response(status_codes::OK);
-//        response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
+//        response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
 //        response.set_body(main_body);
 //        request.reply(response);
 //    }
 //
 //    void handle_post(http_request request) {
 //        request.extract_json().then([this, &request](json::value jsonReq) {
-//            this->global_ip = jsonReq[U("ip")].as_string();
-//            this->global_pd = jsonReq[U("pd")].as_string();
+//            this->global_ip = jsonReq[_XPLATSTR("ip")].as_string();
+//            this->global_pd = jsonReq[_XPLATSTR("pd")].as_string();
 //
 //            std::cout << global_ip << std::endl;
 //            std::cout << global_pd << std::endl;
@@ -74,7 +74,7 @@
 //
 //            ssh_session session = initialize_ssh_session(ip.c_str(), "root", pd.c_str());
 //            if (session == NULL) {
-//                request.reply(status_codes::InternalError, U("SSH session failed to start."));
+//                request.reply(status_codes::InternalError, _XPLATSTR("SSH session failed to start."));
 //                return;
 //            }
 //
@@ -96,9 +96,9 @@
 //            ssh_free(session);
 //            
 //            http_response response(status_codes::OK);
-//            response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
+//            response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
 //            json::value response_data = json::value::object();
-//            response_data[U("message")] = json::value::string(U("Received"));
+//            response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("Received"));
 //            response.set_body(response_data);
 //            request.reply(response);
 //            }).wait();
@@ -106,19 +106,19 @@
 //
 //    void handle_login_get(http_request request) {
 //        json::value jsonResponse;
-//        jsonResponse[U("ip")] = json::value::string(global_ip);
-//        jsonResponse[U("pd")] = json::value::string(global_pd);
+//        jsonResponse[_XPLATSTR("ip")] = json::value::string(global_ip);
+//        jsonResponse[_XPLATSTR("pd")] = json::value::string(global_pd);
 //        request.reply(status_codes::OK, jsonResponse);
 //    }
 //};
 //
 ////int main(int argc, char** argv) {
-////    utility::string_t address1 = U("http://localhost:8081/userinfo");
+////    utility::string_t address1 = _XPLATSTR("http://localhost:8081/userinfo");
 ////    uri_builder uri(address1);
 ////    auto addr1 = uri.to_uri().to_string();
 ////    http_listener listener1(addr1);
 ////
-////    utility::string_t address2 = U("http://localhost:8081/login");
+////    utility::string_t address2 = _XPLATSTR("http://localhost:8081/login");
 ////    uri_builder uri2(address2);
 ////    auto addr2 = uri2.to_uri().to_string();
 ////    http_listener listener2(addr2);
@@ -145,16 +145,16 @@
 ////
 ////    try {
 ////        listener1.open().then([&listener1, &addr1]() {
-////            std::cout << U("Starting to listen at ") << addr1 << std::endl;
+////            std::cout << _XPLATSTR("Starting to listen at ") << addr1 << std::endl;
 ////            }).wait();
 ////
 ////            listener2.open().then([&listener2, &addr2]() {
-////                std::cout << U("Starting to listen at ") << addr2 << std::endl;
+////                std::cout << _XPLATSTR("Starting to listen at ") << addr2 << std::endl;
 ////                }).wait();
 ////
-////                std::cout << U("Listening for requests at: ") << addr1 << std::endl;
+////                std::cout << _XPLATSTR("Listening for requests at: ") << addr1 << std::endl;
 ////                std::string line;
-////                std::cout << U("Press Enter to close the server.") << std::endl;
+////                std::cout << _XPLATSTR("Press Enter to close the server.") << std::endl;
 ////                std::getline(std::cin, line);
 ////                listener1.close().wait();
 ////                listener2.close().wait();

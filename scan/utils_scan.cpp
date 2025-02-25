@@ -638,6 +638,8 @@ void fetch_and_padding_cves(std::map<std::string, std::vector<Vuln>>& cpes, cons
     }
 }
 
+
+
 //创建POC任务
 std::map<std::string, std::vector<POCTask>> create_poc_task(const std::vector<POC>& poc_list, const ScanHostResult& scan_host_result, bool match_infra) {
     std::map<std::string, std::set<POCTask>> temp_tasks_by_port;
@@ -769,7 +771,7 @@ std::map<std::string, std::vector<POCTask>> create_poc_task(const std::vector<PO
 
 
 // 多进程执行 POC 任务
-void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc_tasks_by_port, ScanHostResult& scan_host_result) {
+void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc_tasks_by_port, ScanHostResult& scan_host_result, DatabaseHandler& dbHandler, ConnectionPool& pool) {
 
     system_logger->info("Executing poc tasks parallelly");
     console->info("Total CPU cores: {}", std::thread::hardware_concurrency());
@@ -823,7 +825,7 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
                 std::string key = task.first;  // 获取 key
 
                 // 执行任务
-                execute_poc_task(key, task.second, child_redis_client);  // 正确传递 key 和任务
+                execute_poc_task(key, task.second, child_redis_client, dbHandler, pool);  // 正确传递 key 和任务
 
             }
 
@@ -901,7 +903,7 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
 }
 
 //多进程版本的单个POC任务执行
-void execute_poc_task(const std::string& key, POCTask& task, redisContext* redis_client) {
+void execute_poc_task(const std::string& key, POCTask& task, redisContext* redis_client, DatabaseHandler& dbHandler, ConnectionPool& pool) {
 
     // 执行 Python 脚本并获取输出
     std::string result = runPythonWithOutput(task.vuln.script, task.url, task.ip, key.empty() ? 0 : std::stoi(key));
@@ -916,7 +918,13 @@ void execute_poc_task(const std::string& key, POCTask& task, redisContext* redis
     else {
         task.vuln.vulExist = "未验证";
     }
-
+    if(key.empty()){
+        dbHandler.alterHostVulnResultAfterPocVerify(pool, task.vuln, task.ip);
+    }
+    else {
+        dbHandler.alterPortVulnResultAfterPocVerify(pool, task.vuln, task.ip, key);
+    }
+    
     // 将任务结果序列化为 JSON
     std::string serialized_result = serialize_task_result(task.vuln, key);
 

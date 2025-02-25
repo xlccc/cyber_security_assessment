@@ -36,6 +36,11 @@ public:
     //将提取出的所有 CPE 插入到 host_cpe 表
     void insertHostCPEs(int shr_id, const std::set<std::string>& cpes, ConnectionPool& pool);
     
+    //将主机发现的存活主机存到alive_hosts表中
+    void insertAliveHosts(const std::vector<std::string>& aliveHosts, ConnectionPool& pool);
+
+    //读取所有存活主机
+    void readAliveHosts(std::vector<std::string>& aliveHosts, ConnectionPool& pool);
 };
 
 #endif // DATABASEHANDLER_H

@@ -44,7 +44,9 @@ vcpkg install sqlite3 cpprestsdk
 vcpkg install icu
 vcpkg install curl[core,non-http,openssl,ssl]
 vcpkg install uchardet
+vcpkg install nlohmann-json
 vcpkg install mysql-connector-cpp:x64-linux
+vcpkg install spdlog
 ```
 
 其他系统依赖安装：
@@ -59,6 +61,19 @@ sudo apt-get install -y autoconf automake autoconf-archive ninja-build
 #### 4.数据库
 
 将目录下的sql文件在目标服务器先执行。可以利用navicat
+```bash
+#1.安装mysql
+#2.登录mysql：
+   mysql -u root -p 
+#3.创建数据库：
+   CREATE DATABASE test_db
+#4.执行SQL文件：
+   mysql -u root -p your_database_name < /path/to/your.sql
+#5.配置mysql远程连接：
+#在localhost登入mysql后，更改 “mysql” 数据库里的 “user” 表里的 “host” 项，将"localhost"改称"%（代表允许远程）
+update user set host = '%' where user = 'root';
+select host, user from user;
+```
 
 ### 前端
 
@@ -81,8 +96,8 @@ sudo apt-get install -y autoconf automake autoconf-archive ninja-build
 | <font style="color:rgb(31, 35, 40);">1</font> | 资产清点 | 主机发现 | √ |  |
 | <font style="color:rgb(31, 35, 40);">2</font> | | 端口扫描 | √ |  |
 | <font style="color:rgb(31, 35, 40);">3</font> | | 网络协议分析工具 |  | He |
-| <font style="color:rgb(31, 35, 40);">4</font> | | 资产管理 |  | Huang |
-| <font style="color:rgb(31, 35, 40);">5</font> | | 资产面板 |  |  |
+| <font style="color:rgb(31, 35, 40);">4</font> | | 资产管理 | √ |  |
+| <font style="color:rgb(31, 35, 40);">5</font> | | 资产面板 | √ |  |
 | <font style="color:rgb(31, 35, 40);">6</font> | 基线检测 | 等保三级 | √ |  |
 | <font style="color:rgb(31, 35, 40);">7</font> | | 等保二级 |  | 在三级基础上划分 |
 | <font style="color:rgb(31, 35, 40);">8</font> | | 工信部安全基线标准 |  |  |
@@ -121,12 +136,12 @@ sudo apt-get install -y autoconf automake autoconf-archive ninja-build
 | 8 | 操作系统识别 | √ |  |
 | 9 | 版本识别 | √ | 包含服务、操作系统版本 |
 | 10 | nmap扫描<br/>结果解析 | √ | xml文件解析 |
-| 11 | 资产管理 |  | Huang |
-| 12 | 资产分类 |  | Huang |
-| 13 | 资产面板 |  |  |
+| 11 | 资产管理 | √ |  |
+| 12 | 资产分类 | √ |  |
+| 13 | 资产面板 | √ |  |
 | 14 | DNS域名解析 |  | 使系统支持对域名扫描 |
-| 15 | 网段扫描 |  | 比如对一个C段上所有<br/>存活主机进行扫描。 |
-| 16 | 多线程 |  |  |
+| 15 | 网段扫描 | √ | 比如对一个C段上所有<br/>存活主机进行扫描。 |
+| 16 | 多线程 | √ | 针对主机发现 |
 
 
 | 基线检测 | | | |
@@ -139,7 +154,7 @@ sudo apt-get install -y autoconf automake autoconf-archive ninja-build
 | 5 | 报告输出 | √ |  |
 | 6 | <font style="color:rgb(31, 35, 40);">Centos7</font> | √ | SSH远程 |
 | 7 | Ubuntu | √ | SSH远程 |
-| 8 | Windows |  |  |
+| 8 | Windows |  | Wang Tang |
 | 9 | 报告输出 | √ |  |
 
 
@@ -158,7 +173,7 @@ sudo apt-get install -y autoconf automake autoconf-archive ninja-build
 | 10 | POC验证 | √ | 嵌入python解释器 |
 | 11 | 插件化扫描 | √ |  |
 | 12 | 攻击路径分析 |  | Yang |
-| 13 | 多线程 |  | Shi |
+| 13 | 多线程 | √ |  |
 | 14 | 报告输出 |  |  |
 
 
@@ -215,7 +230,7 @@ sudo apt-get install -y autoconf automake autoconf-archive ninja-build
 | 序号 | 范围 | 是否支持 | 备注 |
 | 1 | 基线检测结果 | √ | 主要是配置核查 |
 | 2 | 漏洞扫描结果 |  | 考虑安全风险 |
-| 3 | 弱口令检测结果 |  | 考虑安全风险 |
+| 3 | 弱口令检测结果 |  | Huang |
 | ~~<font style="color:#DF2A3F;">4</font>~~ | ~~<font style="color:#DF2A3F;">威胁检测结果</font>~~ | ~~<font style="color:#DF2A3F;"></font>~~ | ~~<font style="color:#DF2A3F;"></font>~~ |
 
 ### 参考

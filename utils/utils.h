@@ -17,8 +17,9 @@
 #include <iconv.h>
 #include<sys/stat.h>
 #include <string>
-
-
+#include <random>
+#include <fstream>
+#include<iostream>
 extern PyObject* global_importlib; // 仅声明，不定义
 extern PyObject* global_io;         // 仅声明，不定义
 
@@ -82,6 +83,50 @@ std::string passwordStrengthToString(PasswordStrength strength);
 // 判断路径是否为目录
 bool is_directory(const std::string& path);
 
+// 生成随机字符串
+inline std::string generate_random_string(size_t length = 10) {
+    const std::string chars =
+        "abcdefghijklmnopqrstuvwxyz"
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "0123456789";
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(0, chars.size() - 1);
 
+    std::string result;
+    for (size_t i = 0; i < length; ++i) {
+        result += chars[dis(gen)];
+    }
+    return result;
+}
+
+// 保存上传的文件
+inline void save_uploaded_file(const std::string& filepath, const std::vector<unsigned char>& data) {
+    std::ofstream file(filepath, std::ios::binary);
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to create file: " + filepath);
+    }
+    file.write(reinterpret_cast<const char*>(data.data()), data.size());
+    file.close();
+
+#ifdef __unix__
+    chmod(filepath.c_str(), S_IRUSR | S_IWUSR);
+#endif
+}
+
+// 删除文件
+inline bool remove_file(const std::string& filepath) {
+    try {
+        if (std::remove(filepath.c_str()) != 0) {
+            std::cerr << "Error deleting file: " << filepath << std::endl;
+            return false;
+        }
+        return true;
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Exception when deleting file: " << e.what() << std::endl;
+        return false;
+    }
+}
 
 #endif // UTILS_H
