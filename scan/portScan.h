@@ -6,6 +6,7 @@
 #include <array>
 #include <memory>
 #include <stdexcept>
+#include"log/log.h"
 
 std::string executeCommand(const std::string& command);
 

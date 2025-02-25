@@ -34,6 +34,8 @@
 #include"mysql_connection_pool.h"
 #include"hostDiscovery.h"
 #include<regex>
+#include <spdlog/spdlog.h>
+
 
 
 using namespace web;
@@ -51,9 +53,10 @@ public:
     void start();
     void stop();
 
-
-
 private:
+    std::shared_ptr<spdlog::logger> system_logger; // 系统日志
+    std::shared_ptr<spdlog::logger> user_logger; // 用户日志
+    std::shared_ptr<spdlog::logger> console;    //控制台日志
 
     // ´æ´¢portIdºÍservice_nameµÄmap
     std::map<std::string, std::string> port_services;

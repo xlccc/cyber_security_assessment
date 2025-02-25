@@ -75,8 +75,8 @@ std::string convertToUTF8(const std::string& input, const std::string& fromEncod
     sourceStr.toUTF8String(output);
 
     // 输出调试信息
-    std::cout << "Original data (" << fromEncoding << "): " << input << std::endl;
-    std::cout << "Converted data (UTF-8): " << output << std::endl;
+    //std::cout << "Original data (" << fromEncoding << "): " << input << std::endl;
+    //std::cout << "Converted data (UTF-8): " << output << std::endl;
 
     return output;
 }
@@ -121,8 +121,8 @@ std::string autoConvertToUTF8(const std::string& input) {
         output = convertEncoding(input, detectedEncoding, "UTF-8");
     }
 
-    std::cout << "Original data (" << detectedEncoding << "): " << input << std::endl;
-    std::cout << "Converted data (UTF-8): " << output << std::endl;
+    //std::cout << "Original data (" << detectedEncoding << "): " << input << std::endl;
+    //std::cout << "Converted data (UTF-8): " << output << std::endl;
 
     uchardet_delete(ud);
     return output;

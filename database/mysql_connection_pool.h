@@ -59,10 +59,10 @@ public:
 
 private:
     // 数据库连接配置，写死在私有成员中
-    const std::string host_ = "10.9.130.61";  // 数据库主机
+    const std::string host_ = "192.168.136.128";  // 数据库主机
     const uint16_t port_ = 33060;          // X Protocol默认端口
     const std::string user_ = "root";      // 数据库用户名
-    const std::string password_ = "ComplexPassword123!"; // 数据库密码
+    const std::string password_ = "123456"; // 数据库密码
     const std::string schema_ = "test_db";  // 数据库名
     const size_t initial_size_ = 2;        // 初始连接数
     const size_t max_size_ = 20;           // 最大连接数

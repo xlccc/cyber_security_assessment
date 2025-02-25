@@ -29,6 +29,7 @@
 #include <mutex>	//锁
 #include <condition_variable>	//条件变量，用于控制执行
 #include <hiredis/hiredis.h> // Redis C++ 库
+#include "log/log.h"
 
 using json = nlohmann::json;
 #include"DatabaseHandler.h"

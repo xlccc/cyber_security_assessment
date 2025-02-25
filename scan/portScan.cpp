@@ -17,10 +17,10 @@ std::string executeCommand(const std::string& command) {
     }
     int status = pclose(pipe);
     if (status == -1) {
-        std::cerr << "Failed to close command stream: " << command << std::endl;
+        system_logger->error("Failed to close command stream: {}", command);
     }
     else if (status != 0) {
-        std::cerr << "Command failed with status " << status << ": " << command << std::endl;
+        system_logger->error("Command failed with status {}: {}", status, command);
     }
     return result;
 }
@@ -47,7 +47,7 @@ std::string performPortScan(const std::string& targetHost, bool allPorts) {
     std::string command2 = "sudo chown c:c " + outputPath;
     std::string command3 = "sudo chmod 666 " + outputPath;
 
-    std::cout << "Execute nmap port scan at " + targetHost << std::endl;
+    system_logger->info("Execute nmap port scan at {}", targetHost);
 
     try {
         executeCommand(command1);
@@ -55,18 +55,18 @@ std::string performPortScan(const std::string& targetHost, bool allPorts) {
         executeCommand(command3);
     }
     catch (const std::exception& e) {
-        std::cerr << "Exception caught: " << e.what() << std::endl;
+        system_logger->error("Exception caught: {}", e.what());
         throw;
     }
 
     if (access(outputPath.c_str(), F_OK) != -1) {
-        std::cout << "File exists after scan: " << outputPath << std::endl;
+        user_logger->info("File exists after scan: {}", outputPath);
     }
     else {
-        std::cerr << "File does not exist after scan: " << outputPath << std::endl;
+        system_logger->error("File does not exist after scan: {}", outputPath);
     }
 
-    std::cout << "nmap result saved to: " + outputFileName << std::endl;
+    //console->info("nmap result saved to: {}", outputFileName);
 
     return outputPath;
 }
