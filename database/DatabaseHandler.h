@@ -13,7 +13,7 @@ class DatabaseHandler {
 public:
     DatabaseHandler(){}
 
-    void executeInsert(const std::string& sql, ConnectionPool& pool); // 执行插入操作的方法
+	void executeInsert(const ScanHostResult& scanHostResult, ConnectionPool& pool); // 执行插入操作的方法,专门插入scan_host_result表，在getNmap中
     void executeUpdateOrInsert(const ScanHostResult  &scanHostResult, ConnectionPool& pool);
     void processVulns(const ScanHostResult& hostResult, ConnectionPool& pool);
     void processHostVulns(const ScanHostResult& hostResult, const int shr_id, ConnectionPool& pool);
@@ -38,9 +38,12 @@ public:
     
     //将主机发现的存活主机存到alive_hosts表中
     void insertAliveHosts(const std::vector<std::string>& aliveHosts, ConnectionPool& pool);
-
-    //读取所有存活主机
+	//将主机发现的存活主机存到scan_host_result表中
+    void insertAliveHosts2scanHostResult(const std::vector<std::string>& aliveHosts, ConnectionPool& pool);
+    //读取scan_host_result表。未到达过期时间的作为存活主机返回
     void readAliveHosts(std::vector<std::string>& aliveHosts, ConnectionPool& pool);
+    
+
 };
 
 #endif // DATABASEHANDLER_H

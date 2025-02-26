@@ -2,8 +2,17 @@
 #include "DatabaseHandler.h"
 using namespace mysqlx;
 // 插入执行函数的实现
-void DatabaseHandler::executeInsert(const std::string& sql, ConnectionPool& pool) {
+void DatabaseHandler::executeInsert(const ScanHostResult& scanHostResult, ConnectionPool& pool) {
     try {
+        // 定义插入语句
+        std::string sql =
+            "INSERT INTO scan_host_result (ip, scan_time, alive, expire_time) VALUES ('" +
+            scanHostResult.ip + "', '" +
+            scanHostResult.scan_time + "', 'true', " +
+            "DATE_ADD('" + scanHostResult.scan_time + "', INTERVAL 7 DAY)" +
+            ") ON DUPLICATE KEY UPDATE scan_time = VALUES(scan_time), " +
+            "alive = 'true', " +
+            "expire_time = DATE_ADD(VALUES(scan_time), INTERVAL 7 DAY)";
         auto conn = pool.getConnection();  // 获取连接
 
         // 执行一些SQL操作
@@ -302,98 +311,124 @@ void DatabaseHandler::alterVulnAfterPocTask(ConnectionPool& pool, const POCTask&
         std::cerr << "未知错误发生" << std::endl;
     }
 }
-
 std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPool& pool)
 {
+    std::map<std::string, IpVulnerabilities> ip_vulns_map;
+
     try {
         auto conn = pool.getConnection();
-        // 执行SQL查询
-        mysqlx::SqlResult result = conn->sql(R"(
-    -- 主机漏洞
-    SELECT 
-        shr.ip,
-        NULL AS port_id,
-        v.vuln_id,
-        v.vul_name AS vuln_name,
-        v.CVSS AS cvss,
-        v.summary,
-        hvr.vulExist,
-        '主机漏洞' AS vuln_type,
-        '操作系统' AS software_type, -- 主机漏洞部分写死为"操作系统"
-        v.vuln_type AS vulnerability_type, -- 新增：从vuln表获取漏洞类型
-        NULL AS service_name  -- 添加这一列以匹配端口漏洞查询
-    FROM scan_host_result shr
-    JOIN host_vuln_result hvr ON shr.id = hvr.shr_id
-    JOIN vuln v ON v.id = hvr.vuln_id
-    WHERE hvr.vulExist IN ('存在', '不存在')
-    UNION ALL
-    -- 端口漏洞
-    SELECT 
-        shr.ip,
-        op.port AS port_id,
-        v.vuln_id,
-        v.vul_name AS vuln_name,
-        v.CVSS AS cvss,
-        v.summary,
-        pvr.vulExist,
-        '端口漏洞' AS vuln_type,
-        op.software_type, -- 查询 open_ports 表中的 software_type
-        v.vuln_type AS vulnerability_type, -- 新增：从vuln表获取漏洞类型
-        op.product
-    FROM scan_host_result shr
-    JOIN open_ports op ON shr.id = op.shr_id
-    JOIN port_vuln_result pvr ON op.id = pvr.port_id AND shr.id = pvr.shr_id
-    JOIN vuln v ON v.id = pvr.vuln_id
-    WHERE pvr.vulExist IN ('存在', '不存在')
-    ORDER BY ip, port_id;
-)").execute();
 
-        // 使用map临时存储结果，key为IP
-        std::map<std::string, IpVulnerabilities> ip_vulns_map;
+        // 1. 先查询主机漏洞
+        std::cout << "正在查询主机漏洞..." << std::endl;
+        mysqlx::SqlResult hostResult = conn->sql(R"(
+            SELECT 
+                shr.ip,
+                NULL AS port_id,
+                v.vuln_id,
+                v.vul_name AS vuln_name,
+                v.CVSS AS cvss,
+                v.summary,
+                hvr.vulExist,
+                '主机漏洞' AS vuln_type,
+                '操作系统' AS software_type,
+                v.vuln_type AS vulnerability_type,
+                NULL AS service_name
+            FROM scan_host_result shr
+            JOIN host_vuln_result hvr ON shr.id = hvr.shr_id
+            JOIN vuln v ON v.id = hvr.vuln_id
+            WHERE hvr.vulExist IN ('存在', '不存在')
+            AND shr.alive = 'true' AND shr.expire_time > CURRENT_TIMESTAMP
+            ORDER BY ip;
+        )").execute();
 
-        // 处理查询结果
-        for (auto row : result) {
+        // 处理主机漏洞结果
+        int hostVulnCount = 0;
+        for (auto row : hostResult) {
+            hostVulnCount++;
             std::string ip = row[0].get<std::string>();
-
             // 如果这个IP还没有记录，创建新记录
             if (ip_vulns_map.find(ip) == ip_vulns_map.end()) {
                 ip_vulns_map[ip] = IpVulnerabilities{ ip };
             }
 
-            // 创建漏洞信息对象
-            std::string vuln_type = row[7].get<std::string>();
-            if (vuln_type == "主机漏洞") {
-                VulnerabilityInfo vuln;
-                vuln.vuln_id = row[2].get<std::string>();
-                vuln.vuln_name = row[3].get<std::string>();
-                vuln.cvss = row[4].get<std::string>();
-                vuln.summary = row[5].get<std::string>();
-                vuln.vulExist = row[6].get<std::string>();
-                vuln.softwareType = row[8].get<std::string>();    // software_type
-                vuln.vulType = row[9].get<std::string>();         // 从vuln表获取的漏洞类型
-                ip_vulns_map[ip].host_vulnerabilities.push_back(vuln);
-            }
-            else {
-                PortVulnerabilityInfo port_vuln;
-                port_vuln.port_id = row[1].get<int>();
-                port_vuln.vuln_id = row[2].get<std::string>();
-                port_vuln.vuln_name = row[3].get<std::string>();
-                port_vuln.cvss = row[4].get<std::string>();
-                port_vuln.summary = row[5].get<std::string>();
-                port_vuln.vulExist = row[6].get<std::string>();
-                port_vuln.softwareType = row[8].get<std::string>(); // software_type
-                port_vuln.vulType = row[9].get<std::string>();      // 从vuln表获取的漏洞类型
-                port_vuln.service_name = row[10].get<std::string>(); // 新增：service_name
-                ip_vulns_map[ip].port_vulnerabilities.push_back(port_vuln);
-            }
+            VulnerabilityInfo vuln;
+            vuln.vuln_id = row[2].get<std::string>();
+            vuln.vuln_name = row[3].get<std::string>();
+            vuln.cvss = row[4].get<std::string>();
+            vuln.summary = row[5].get<std::string>();
+            vuln.vulExist = row[6].get<std::string>();
+            vuln.softwareType = row[8].get<std::string>();
+            vuln.vulType = row[9].get<std::string>();
+            ip_vulns_map[ip].host_vulnerabilities.push_back(vuln);
         }
+        std::cout << "主机漏洞查询完成，找到 " << hostVulnCount << " 个结果" << std::endl;
+
+        // 2. 再查询端口漏洞
+        std::cout << "正在查询端口漏洞..." << std::endl;
+        mysqlx::SqlResult portResult = conn->sql(R"(
+            SELECT 
+                shr.ip,
+                op.port AS port_id,
+                v.vuln_id,
+                v.vul_name AS vuln_name,
+                v.CVSS AS cvss,
+                v.summary,
+                pvr.vulExist,
+                '端口漏洞' AS vuln_type,
+                op.software_type,
+                v.vuln_type AS vulnerability_type,
+                op.product
+            FROM scan_host_result shr
+            JOIN open_ports op ON shr.id = op.shr_id
+            JOIN port_vuln_result pvr ON op.id = pvr.port_id AND shr.id = pvr.shr_id
+            JOIN vuln v ON v.id = pvr.vuln_id
+            WHERE pvr.vulExist IN ('存在', '不存在')
+            AND shr.alive = 'true' AND shr.expire_time > CURRENT_TIMESTAMP
+            ORDER BY ip, port_id;
+        )").execute();
+
+        // 处理端口漏洞结果
+        int portVulnCount = 0;
+        for (auto row : portResult) {
+            portVulnCount++;
+            std::string ip = row[0].get<std::string>();
+            // 如果这个IP还没有记录，创建新记录
+            if (ip_vulns_map.find(ip) == ip_vulns_map.end()) {
+                ip_vulns_map[ip] = IpVulnerabilities{ ip };
+            }
+
+            PortVulnerabilityInfo port_vuln;
+            port_vuln.port_id = row[1].get<int>();
+            port_vuln.vuln_id = row[2].get<std::string>();
+            port_vuln.vuln_name = row[3].get<std::string>();
+            port_vuln.cvss = row[4].get<std::string>();
+            port_vuln.summary = row[5].get<std::string>();
+            port_vuln.vulExist = row[6].get<std::string>();
+            port_vuln.softwareType = row[8].get<std::string>();
+            port_vuln.vulType = row[9].get<std::string>();
+            port_vuln.service_name = row[10].get<std::string>();
+            ip_vulns_map[ip].port_vulnerabilities.push_back(port_vuln);
+        }
+        std::cout << "端口漏洞查询完成，找到 " << portVulnCount << " 个结果" << std::endl;
+
+        // 统计总结果
+        int totalIPs = ip_vulns_map.size();
+        int totalHostVulns = 0;
+        int totalPortVulns = 0;
+        for (const auto& pair : ip_vulns_map) {
+            totalHostVulns += pair.second.host_vulnerabilities.size();
+            totalPortVulns += pair.second.port_vulnerabilities.size();
+        }
+
+        std::cout << "总IP数: " << totalIPs << std::endl;
+        std::cout << "总主机漏洞数: " << totalHostVulns << std::endl;
+        std::cout << "总端口漏洞数: " << totalPortVulns << std::endl;
 
         // 将map转换为vector返回
         std::vector<IpVulnerabilities> result_vector;
         for (const auto& pair : ip_vulns_map) {
             result_vector.push_back(pair.second);
         }
-
         return result_vector;
     }
     catch (const mysqlx::Error& err) {
@@ -405,7 +440,116 @@ std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPoo
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
     }
+
+    // 发生错误时返回空结果
+    return std::vector<IpVulnerabilities>{};
 }
+//std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPool& pool)
+//{
+//    try {
+//        auto conn = pool.getConnection();
+//        // 执行SQL查询，添加条件过滤掉已过期的主机
+//        mysqlx::SqlResult result = conn->sql(R"(
+//    -- 主机漏洞
+//    SELECT 
+//        shr.ip,
+//        NULL AS port_id,
+//        v.vuln_id,
+//        v.vul_name AS vuln_name,
+//        v.CVSS AS cvss,
+//        v.summary,
+//        hvr.vulExist,
+//        '主机漏洞' AS vuln_type,
+//        '操作系统' AS software_type, -- 主机漏洞部分写死为"操作系统"
+//        v.vuln_type AS vulnerability_type, -- 新增：从vuln表获取漏洞类型
+//        NULL AS service_name  -- 添加这一列以匹配端口漏洞查询
+//    FROM scan_host_result shr
+//    JOIN host_vuln_result hvr ON shr.id = hvr.shr_id
+//    JOIN vuln v ON v.id = hvr.vuln_id
+//    WHERE hvr.vulExist IN ('存在', '不存在')
+//    AND shr.alive = 'true' AND shr.expire_time > CURRENT_TIMESTAMP
+//    UNION ALL
+//    -- 端口漏洞
+//    SELECT 
+//        shr.ip,
+//        op.port AS port_id,
+//        v.vuln_id,
+//        v.vul_name AS vuln_name,
+//        v.CVSS AS cvss,
+//        v.summary,
+//        pvr.vulExist,
+//        '端口漏洞' AS vuln_type,
+//        op.software_type, -- 查询 open_ports 表中的 software_type
+//        v.vuln_type AS vulnerability_type, -- 新增：从vuln表获取漏洞类型
+//        op.product
+//    FROM scan_host_result shr
+//    JOIN open_ports op ON shr.id = op.shr_id
+//    JOIN port_vuln_result pvr ON op.id = pvr.port_id AND shr.id = pvr.shr_id
+//    JOIN vuln v ON v.id = pvr.vuln_id
+//    WHERE pvr.vulExist IN ('存在', '不存在')
+//    AND shr.alive = 'true' AND shr.expire_time > CURRENT_TIMESTAMP
+//    ORDER BY ip, port_id;
+//)").execute();
+//        // 使用map临时存储结果，key为IP
+//        std::map<std::string, IpVulnerabilities> ip_vulns_map;
+//        // 处理查询结果
+//         // 用于统计结果数量
+//        int resultCount = 0;
+//        for (auto row : result) {
+//			resultCount++;
+//            std::string ip = row[0].get<std::string>();
+//            // 如果这个IP还没有记录，创建新记录
+//            if (ip_vulns_map.find(ip) == ip_vulns_map.end()) {
+//                ip_vulns_map[ip] = IpVulnerabilities{ ip };
+//            }
+//            // 创建漏洞信息对象
+//            std::string vuln_type = row[7].get<std::string>();
+//			std::cout << vuln_type << std::endl;
+//            if (vuln_type == "主机漏洞") {
+//                VulnerabilityInfo vuln;
+//                vuln.vuln_id = row[2].get<std::string>();
+//                vuln.vuln_name = row[3].get<std::string>();
+//                vuln.cvss = row[4].get<std::string>();
+//                vuln.summary = row[5].get<std::string>();
+//                vuln.vulExist = row[6].get<std::string>();
+//                vuln.softwareType = row[8].get<std::string>();    // software_type
+//                vuln.vulType = row[9].get<std::string>();         // 从vuln表获取的漏洞类型
+//                ip_vulns_map[ip].host_vulnerabilities.push_back(vuln);
+//            }
+//            else {
+//                PortVulnerabilityInfo port_vuln;
+//                port_vuln.port_id = row[1].get<int>();
+//                port_vuln.vuln_id = row[2].get<std::string>();
+//                port_vuln.vuln_name = row[3].get<std::string>();
+//                port_vuln.cvss = row[4].get<std::string>();
+//                port_vuln.summary = row[5].get<std::string>();
+//                port_vuln.vulExist = row[6].get<std::string>();
+//                port_vuln.softwareType = row[8].get<std::string>(); // software_type
+//                port_vuln.vulType = row[9].get<std::string>();      // 从vuln表获取的漏洞类型
+//                port_vuln.service_name = row[10].get<std::string>(); // 新增：service_name
+//                ip_vulns_map[ip].port_vulnerabilities.push_back(port_vuln);
+//            }
+//        }
+//        // 输出查询结果的总数量
+//        std::cout << "查询结果总数量: " << resultCount << std::endl;
+//        // 将map转换为vector返回
+//        std::vector<IpVulnerabilities> result_vector;
+//        for (const auto& pair : ip_vulns_map) {
+//            result_vector.push_back(pair.second);
+//        }
+//        return result_vector;
+//    }
+//    catch (const mysqlx::Error& err) {
+//        std::cerr << "数据库错误: " << err.what() << std::endl;
+//    }
+//    catch (std::exception& ex) {
+//        std::cerr << "异常: " << ex.what() << std::endl;
+//    }
+//    catch (...) {
+//        std::cerr << "未知错误发生" << std::endl;
+//    }
+//    
+//}
 
 void DatabaseHandler::processHostCpe(const ScanHostResult& hostResult, const int shr_id, ConnectionPool& pool)
 {
@@ -618,15 +762,42 @@ void DatabaseHandler::insertAliveHosts(const std::vector<std::string>& aliveHost
     }
 }
 
+void DatabaseHandler::insertAliveHosts2scanHostResult(const std::vector<std::string>& aliveHosts, ConnectionPool& pool)
+{
+    try {
+        auto conn = pool.getConnection();  // 获取连接
+        for (const auto& ip : aliveHosts) {
+            conn->sql(
+                "INSERT INTO scan_host_result (ip, scan_time, alive, expire_time) "
+                "VALUES (?, CURRENT_TIMESTAMP, 'true', DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 7 DAY)) "
+                "ON DUPLICATE KEY UPDATE "
+                "scan_time = CURRENT_TIMESTAMP, "
+                "alive = 'true', "
+                "expire_time = DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 7 DAY)"
+            )
+                .bind(ip)
+                .execute();
+            std::cout << "成功插入或更新存活主机: " << ip << std::endl;
+        }
+    }
+    catch (const mysqlx::Error& err) {
+        std::cerr << "数据库错误: " << err.what() << std::endl;
+    }
+}
+
 void DatabaseHandler::readAliveHosts(std::vector<std::string>& aliveHosts, ConnectionPool& pool)
 {
     try {
-		auto conn = pool.getConnection();  // 获取连接
-		mysqlx::SqlResult result = conn->sql("SELECT ip_address FROM alive_hosts").execute();
-		for (auto row : result) {
-			aliveHosts.push_back(row[0].get<std::string>());
-		}
-	}
+        auto conn = pool.getConnection();  // 获取连接
+        mysqlx::SqlResult result = conn->sql(
+            "SELECT ip FROM scan_host_result "
+            "WHERE alive = 'true' AND expire_time > CURRENT_TIMESTAMP"
+        ).execute();
+
+        for (auto row : result) {
+            aliveHosts.push_back(row[0].get<std::string>());
+        }
+    }
 	catch (const mysqlx::Error& err) {
 		std::cerr << "数据库错误: " << err.what() << std::endl;
 	}

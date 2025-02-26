@@ -1056,15 +1056,9 @@ void ServerManager::handle_post_get_Nmap(http_request request)
         historicalData.data[ip] = scan_host_result[0];  // 目前只支持单个主机，取第一个
 
        
-
-        // 定义插入语句
-        std::string sql =
-            "INSERT INTO scan_host_result (ip, scan_time) VALUES ('" +
-            scan_host_result[0].ip + "', '" +
-            scan_host_result[0].scan_time +
-            "') ON DUPLICATE KEY UPDATE scan_time = VALUES(scan_time)";
-
-        dbHandler_.executeInsert(sql, pool);
+		scan_host_result[0].ip = ip;
+        //getNmap的部分，始终会为存活状态
+        dbHandler_.executeInsert(scan_host_result[0], pool);
         dbHandler_.executeUpdateOrInsert(scan_host_result[0], pool);
 
         // 获取结束时间（用于测试）
@@ -2827,8 +2821,8 @@ void ServerManager::handle_host_discovery(http_request request) {
             std::cout << "[INFO] Performing host discovery for network/IP: " << network << std::endl;
             HostDiscovery hostDiscovery(network);
             auto aliveHosts = hostDiscovery.scan();
-            //将存活主机存入数据库
-            dbHandler_.insertAliveHosts(aliveHosts, pool);
+            //将存活主机存入scan_host_result表中
+            dbHandler_.insertAliveHosts2scanHostResult(aliveHosts, pool);
             // 返回网段扫描结果
             sendHostDiscoveryResponse(request, aliveHosts);
         }
