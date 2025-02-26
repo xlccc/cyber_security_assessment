@@ -9,6 +9,7 @@
 #include <future>
 #include <functional>
 #include <iostream>
+#include "log/log.h"
 
 class ThreadPool {
 public:
@@ -45,7 +46,7 @@ auto ThreadPool::enqueue(F&& f, Args&&... args) -> std::future<typename std::res
             throw std::runtime_error("[ERROR] Cannot enqueue task, ThreadPool is stopped.");
         }
         tasks.emplace([task]() { (*task)(); });
-        std::cout << "[DEBUG] Task added to queue. Queue size: " << tasks.size() << ".\n";
+        system_logger->debug("Task added to queue. Queue size: {}.", tasks.size());
     }
     condition.notify_one();
     return res;

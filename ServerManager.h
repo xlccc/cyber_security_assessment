@@ -36,6 +36,8 @@
 #include"hostDiscovery.h"
 #include<regex>
 #include "run/mysql_scan.h"
+#include <spdlog/spdlog.h>
+
 
 #include"SSHConnectionPool.h"
 #include"redis_scan.h"
@@ -55,9 +57,11 @@ public:
     void start();
     void stop();
 
-
-
 private:
+    std::shared_ptr<spdlog::logger> system_logger; // 系统日志
+    std::shared_ptr<spdlog::logger> user_logger; // 用户日志
+    std::shared_ptr<spdlog::logger> console;    //控制台日志
+
     // 创建用于连接本地服务器的配置
     DBConfig localConfig;
     // ´æ´¢portIdºÍservice_nameµÄmap

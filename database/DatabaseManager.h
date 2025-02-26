@@ -7,6 +7,8 @@
 #include<iostream>
 #include"poc.h"
 #include"../utils/utils.h"
+#include <spdlog/spdlog.h>
+
 
 // DatabaseManager类，封装数据库操作
 class DatabaseManager {
@@ -51,6 +53,10 @@ public:
     std::vector<POC> getAllData();
 
 private:
+    std::shared_ptr<spdlog::logger> system_logger; // 系统日志
+    std::shared_ptr<spdlog::logger> user_logger; // 用户日志
+    std::shared_ptr<spdlog::logger> console;    //控制台日志
+
     sqlite3* db; // SQLite数据库连接对象 
     int size;    //记录个数
     // 静态回调函数用于处理查询结果

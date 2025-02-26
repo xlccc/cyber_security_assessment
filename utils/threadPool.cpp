@@ -1,10 +1,10 @@
 #include "threadPool.h"
 
 ThreadPool::ThreadPool(int numThreads) : stop(false) {
-    std::cout << "[DEBUG] Initializing ThreadPool with " << numThreads << " threads.\n";
+    system_logger->debug("Initializing ThreadPool with {} threads.", numThreads);
     for (int i = 0; i < numThreads; ++i) {
         workers.emplace_back([this] { workerLoop(); });
-        std::cout << "[DEBUG] Thread " << i + 1 << " created.\n";
+        system_logger->debug("Thread {} created.", i + 1);
     }
 }
 
@@ -17,7 +17,8 @@ ThreadPool::~ThreadPool() {
     for (std::thread& worker : workers) {
         worker.join();
     }
-    std::cout << "[DEBUG] ThreadPool destroyed. All threads joined.\n";
+    system_logger->debug("ThreadPool destroyed. All threads joined.");
+
 }
 
 void ThreadPool::workerLoop() {
@@ -30,13 +31,14 @@ void ThreadPool::workerLoop() {
             condition.wait(lock, [this] { return stop || !tasks.empty(); });
 
             if (stop && tasks.empty()) {
-                std::cout << "[DEBUG] Worker thread exiting as ThreadPool is stopped.\n";
+                system_logger->error("Cannot enqueue task, ThreadPool is stopped.");
+                system_logger->debug("Worker thread exiting as ThreadPool is stopped.");
                 return;
             }
 
             task = std::move(tasks.front());
             tasks.pop();
-            std::cout << "[DEBUG] Task retrieved from queue. Remaining tasks: " << tasks.size() << ".\n";
+            system_logger->debug("Task retrieved from queue. Remaining tasks: {}.", tasks.size());
         }
         task();
     }

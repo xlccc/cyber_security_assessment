@@ -15,7 +15,7 @@ std::vector<ScanHostResult> parseXmlFile(const std::string& xmlFilePath) {
     // Open the XML file
     std::ifstream file(xmlFilePath);
     if (!file) {
-        std::cerr << "Failed to open XML file: " << xmlFilePath << std::endl;
+        system_logger->error("Failed to open XML file: {}", xmlFilePath);
         return scanHostResults; // Return empty result
     }
 
@@ -28,14 +28,14 @@ std::vector<ScanHostResult> parseXmlFile(const std::string& xmlFilePath) {
         xmlDoc.parse<0>(&xmlContent[0]);
     }
     catch (rapidxml::parse_error& e) {
-        std::cerr << "Failed to parse XML file: " << e.what() << std::endl;
+        system_logger->error("Failed to parse XML file: {}", e.what());
         return scanHostResults; // Return empty result
     }
 
     // Get the root node "nmaprun"
     rapidxml::xml_node<>* rootNode = xmlDoc.first_node("nmaprun");
     if (!rootNode) {
-        std::cerr << "No 'nmaprun' node found in XML file." << std::endl;
+        system_logger->error("No 'nmaprun' node found in XML file.");
         return scanHostResults; // Return empty result
     }
 
@@ -220,16 +220,16 @@ std::vector<ScanHostResult> parseXmlFile(const std::string& xmlFilePath) {
 
 std::string runPythonWithOutput(const std::string& scriptPath_extension, const std::string& url, const std::string& ip, int port) {
     std::string result = "";
-    std::cout << "正在执行：" << scriptPath_extension << std::endl;
+    system_logger->info("Executing script: {}", scriptPath_extension);
 
     // 去除文件扩展名
     std::string scriptPath = removeExtension(scriptPath_extension);
-    std::cout << "去除后缀：" << scriptPath << std::endl;
+    system_logger->info("Removed extension: {}", scriptPath);
 
     // 重定向 stdout 和 stderr
     PyObject* string_io = PyObject_CallMethod(global_io, "StringIO", NULL);
     if (!string_io) {
-        std::cerr << "无法创建 StringIO。" << std::endl;
+        system_logger->error("Failed to create StringIO.");
         return result;
     }
     PyObject* sys = PyImport_ImportModule("sys");
@@ -257,7 +257,7 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
         Py_XDECREF(reloaded_module);
     }
     Py_XDECREF(reload_func);
-    std::cout << "模块成功加载或刷新" << std::endl;
+    system_logger->info("Module successfully loaded or refreshed.");
 
     // 获取类对象 DemoPOC
     PyObject* poc_class = PyObject_GetAttrString(poc_module, "DemoPOC");
@@ -330,7 +330,7 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
     }
 
     Py_DECREF(string_io); // 释放 string_io
-    std::cout << "运行结果：" << std::endl << result << std::endl;
+    console->info("Execution result:\n{}", result);
 
     return result;
 }
@@ -484,21 +484,21 @@ std::vector<std::string> compareCPEs(const std::map<std::string, std::vector<Vul
 // 比对并更新结果，根据端口信息和 CPE 信息来决定查询策略
 void compareAndUpdateResults(const ScanHostResult& oldResult, ScanHostResult& newResult, int limit) {
     // 处理操作系统层面的增量扫描
-    std::cout << "开始操作系统层面的增量扫描..." << std::endl;
+    system_logger->info("开始操作系统层面的增量扫描...");
     std::vector<std::string> osCPEsToQuery;  // 用于存储需要查询的操作系统 CPE
-
+    
     for (auto& newCPE_pair : newResult.cpes) {
         const auto& newCPE = newCPE_pair.first;
         auto& newCVEList = newCPE_pair.second;
 
         if (oldResult.cpes.find(newCPE) != oldResult.cpes.end()) {
-            // CPE 相同，复用历史的 CVE 数据
-            std::cout << "操作系统 CPE " << newCPE << " 沿用历史 CVE 数据。" << std::endl;
+            // CPE 相同，复用历史的 CVE 数据vs
+            //console_logger->info("OS CPE {} uses historical CVE data.", newCPE);
             newCVEList = oldResult.cpes.at(newCPE); // 复用历史 CVE
         }
         else {
             // CPE 不同，记录需要查询的 CPE
-            std::cout << "操作系统 CPE " << newCPE << " 信息有变化，记录查询。" << std::endl;
+            //console_logger->info("操作系统 CPE {} 信息有变化，查询可能的CVE漏洞", newCPE);
             osCPEsToQuery.push_back(newCPE);  // 记录新 CPE 以便批量查询
         }
     }
@@ -509,7 +509,8 @@ void compareAndUpdateResults(const ScanHostResult& oldResult, ScanHostResult& ne
     }
 
     // 处理端口层面的增量扫描
-    std::cout << "开始端口层面的增量扫描..." << std::endl;
+    system_logger->info("开始端口层面的增量扫描...");
+
     std::unordered_map<std::string, ScanResult> oldPortsMap;
 
     // 将旧的端口信息存入 map，端口号作为 key
@@ -536,12 +537,14 @@ void compareAndUpdateResults(const ScanHostResult& oldResult, ScanHostResult& ne
 
                     if (oldPort.cpes.find(newCPE) != oldPort.cpes.end()) {
                         // CPE 相同，复用历史的 CVE 数据
-                        std::cout << "端口 " << newPort.portId << " 的 CPE " << newCPE << " 沿用历史 CVE 数据。" << std::endl;
+
+                        //console_logger->info("端口 {} 的 CPE {} 沿用历史 CVE 数据。", newPort.portId, newCPE);
                         newCVEList = oldPort.cpes.at(newCPE); // 复用历史 CVE
                     }
                     else {
                         // CPE 不同，记录需要查询的 CPE
-                        std::cout << "端口 " << newPort.portId << " 的 CPE " << newCPE << " 信息有变化，记录查询。" << std::endl;
+                        //console_logger->info("端口 {}的 CPE {} 信息有变化，查询可能的CVE漏洞", newPort.portId, newCPE);
+
                         portCPEsToQuery.push_back(newCPE);  // 记录新 CPE 以便批量查询
                     }
                 }
@@ -549,7 +552,7 @@ void compareAndUpdateResults(const ScanHostResult& oldResult, ScanHostResult& ne
             }
             else {
                 // 如果其他信息不一致，说明端口变化，重新查询所有 CPE 的 CVE
-                std::cout << "端口 " << newPort.portId << " 信息发生变化，重新查询所有 CPE 的 CVE。" << std::endl;
+                //console_logger->info("端口 {} 信息发生变化，重新查询所有 CPE 的 CVE。", newPort.portId);
                 for (const auto& cpe_pair : newPort.cpes) {
                     portCPEsToQuery.push_back(cpe_pair.first);  // 记录所有 CPE
                 }
@@ -557,7 +560,7 @@ void compareAndUpdateResults(const ScanHostResult& oldResult, ScanHostResult& ne
         }
         else {
             // 新增端口，查询所有 CPE
-            std::cout << "端口 " << newPort.portId << " 是新端口，查询所有 CPE 的 CVE。" << std::endl;
+            //console_logger->info("端口 {} 是新端口，查询所有 CPE 的 CVE。", newPort.portId);
             for (const auto& cpe_pair : newPort.cpes) {
                 portCPEsToQuery.push_back(cpe_pair.first);  // 记录所有 CPE
             }
@@ -591,7 +594,7 @@ void fetch_and_padding_cves(std::map<std::string, std::vector<Vuln>>& cpes, cons
                     return response.extract_json();
                 }
                 else {
-                    std::cerr << "Failed to fetch CVE data for CPE: " << cpe_id << ", Status code: " << response.status_code() << std::endl;
+                    system_logger->error("Failed to fetch CVE data for CPE: {}, Status code: {}", cpe_id, response.status_code());
                     return pplx::task_from_result(web::json::value());
                 }
                     }).then([&](web::json::value jsonObject) {
@@ -610,18 +613,18 @@ void fetch_and_padding_cves(std::map<std::string, std::vector<Vuln>>& cpes, cons
                                         cvss_str = std::to_string(cvss_value.as_number().to_double());  // 处理数字类型的 CVSS
                                     }
                                     else {
-                                        std::cerr << "Unexpected CVSS type for CPE: " << cpe_id << std::endl;
+                                        system_logger->error("Unexpected CVSS type for CPE: {}", cpe_id);
                                     }
                                 }
                                 else {
-                                    std::cout << "CVSS field not present for CPE: " << cpe_id << std::endl;
+                                    system_logger->warn("CVSS field not present for CPE: {}", cpe_id);
                                 }
                                 tmp.CVSS = cvss_str;
                                 if (cve.has_field(_XPLATSTR("summary"))) {
                                     tmp.summary = cve[_XPLATSTR("summary")].as_string();
                                     //插入漏洞类型
                                     tmp.vulnType = matchVulnType(tmp.summary, vulnTypes);
-                                    std::cout << "Summary: " << cve[_XPLATSTR("summary")].as_string() << std::endl;
+                                    //console->info("CVE summary: {}", cve[_XPLATSTR("summary")].as_string());
                                 }
                                 vecCVE.push_back(tmp);
                             }
@@ -629,7 +632,8 @@ void fetch_and_padding_cves(std::map<std::string, std::vector<Vuln>>& cpes, cons
                         }).wait();
         }
         catch (const std::exception& e) {
-            std::cerr << "Exception occurred while fetching CVE data for CPE: " << cpe_id << ", Error: " << e.what() << std::endl;
+            system_logger->error("Exception occurred while fetching CVE data for CPE: {}, Error: {}", cpe_id, e.what());
+
         }
     }
 }
@@ -768,7 +772,9 @@ std::map<std::string, std::vector<POCTask>> create_poc_task(const std::vector<PO
 
 // 多进程执行 POC 任务
 void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc_tasks_by_port, ScanHostResult& scan_host_result, DatabaseHandler& dbHandler, ConnectionPool& pool) {
-    std::cout << "共有核心数：" << std::thread::hardware_concurrency() << std::endl;
+
+    system_logger->info("Executing poc tasks parallelly");
+    console->info("Total CPU cores: {}", std::thread::hardware_concurrency());
 
     // 记录开始时间
     auto start = std::chrono::high_resolution_clock::now();
@@ -778,7 +784,7 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
 
     // 在父进程中初始化 Python 环境
     Py_Initialize();
-    std::cout << "[Parent Process] Python environment initialized." << std::endl;
+    system_logger->info("[Parent Process] Python environment initialized.");
 
     // 发布任务到 Redis 队列
     for (auto& entry : poc_tasks_by_port) {
@@ -800,17 +806,17 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
             redisContext* child_redis_client = get_redis_client();  // 子进程初始化自己的 Redis 连接
 
             if (child_redis_client == nullptr || child_redis_client->err) {
-                std::cerr << "[Child Process] Redis connection failed: " << child_redis_client->errstr << std::endl;
+                system_logger->error("[Child Process] Redis connection failed: {}", child_redis_client->errstr);
                 exit(1);  // 如果连接失败，退出
             }
 
-            std::cout << "[Child Process] Redis connection initialized/get" << std::endl;
+            system_logger->info("[Child Process] Redis connection initialized/get.");
 
             // 执行任务的循环
             while (true) {
                 std::string task_data = pop_task_from_redis(child_redis_client);
                 if (task_data.empty()) {
-                    std::cout << "[Child Process] No tasks in Redis, exiting." << std::endl;
+                    system_logger->info("[Child Process] No tasks in Redis, exiting.");
                     break;  // 如果队列为空，则退出循环
                 }
 
@@ -829,10 +835,10 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
         else if (pid > 0) {
             // 父进程：记录子进程 PID
             child_pids.push_back(pid);
-            std::cout << "[Parent Process] Forked child process with PID: " << pid << std::endl;
+            system_logger->info("[Parent Process] Forked child process with PID: {}", pid);
         }
         else {
-            std::cerr << "Fork failed for task" << std::endl;
+            system_logger->error("Fork failed for task.");
         }
     }
 
@@ -842,14 +848,15 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
         pid_t terminated_pid = waitpid(pid, &status, 0);
         if (terminated_pid > 0) {
             if (WIFEXITED(status)) {
-                std::cout << "[Parent Process] Child process with PID: " << terminated_pid << " exited normally with status: " << WEXITSTATUS(status) << std::endl;
+                system_logger->info("[Parent Process] Child process with PID: {} exited normally with status: {}", terminated_pid, WEXITSTATUS(status));
             }
             else if (WIFSIGNALED(status)) {
-                std::cerr << "[Parent Process] Child process with PID: " << terminated_pid << " was terminated by signal: " << WTERMSIG(status) << std::endl;
+                system_logger->error("[Parent Process] Child process with PID: {} was terminated by signal: {}", terminated_pid, WTERMSIG(status));
             }
         }
         else {
-            std::cerr << "[Parent Process] Failed to wait for child process with PID: " << pid << std::endl;
+            console->error("[Parent Process] Failed to wait for child process with PID: {}", pid);
+            system_logger->error("[Parent Process] Failed to wait for child process with PID: {}", pid);
         }
     }
 
@@ -863,11 +870,11 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
         std::string portId = result.first;
         Vuln vuln = result.second;
 
-        std::cout << "[Parent Process] Received result from port: " << portId << ", Vuln ID: " << vuln.Vuln_id << std::endl;
+        console->info("[Parent Process] Received result from port: {}, Vuln ID: {}", portId, vuln.Vuln_id);
 
         if (portId.empty()) {
             scan_host_result.vuln_result.insert(vuln);
-            std::cout << "[Parent Process] Inserted OS-level vuln ID: " << vuln.Vuln_id << " into scan_host_result" << std::endl;
+            console->info("[Parent Process] Inserted OS-level vuln ID: {} into scan_host_result", vuln.Vuln_id);
         }
         else {
             auto port_it = std::find_if(scan_host_result.ports.begin(), scan_host_result.ports.end(),
@@ -875,23 +882,24 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
 
             if (port_it != scan_host_result.ports.end()) {
                 port_it->vuln_result.insert(vuln);
-                std::cout << "[Parent Process] Inserted port-level vuln ID: " << vuln.Vuln_id << " into port: " << portId << std::endl;
+                console->info("[Parent Process] Inserted port-level vuln ID: {} into port: {}", vuln.Vuln_id, portId);
             }
             else {
-                std::cerr << "[Parent Process] Error: Port ID " << portId << " not found in scan_host_result." << std::endl;
+                console->error("[Parent Process] Error: Port ID {} not found in scan_host_result.", portId);
+                system_logger->error("[Parent Process] Error: Port ID {} not found in scan_host_result.", portId);
             }
         }
     }
 
     // 在父进程中清理 Python 环境
     Py_Finalize();
-    std::cout << "[Parent Process] Python environment finalized." << std::endl;
+    system_logger->info("[Parent Process] Python environment finalized.");
 
 
     // 记录结束时间
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
-    std::cout << "POC tasks executed in " << elapsed.count() << " seconds." << std::endl;
+    system_logger->info("Parallel POC tasks executed in {} seconds.", elapsed.count());
 }
 
 //多进程版本的单个POC任务执行
@@ -1049,21 +1057,21 @@ void execute_poc_task(const std::string& key, POCTask& task, redisContext* redis
 //合并 漏洞库匹配、插件化扫描两种方式的扫描结果
 void merge_vuln_results(ScanHostResult& host_result) {
     std::cout << "开始合并操作系统漏洞..." << std::endl;
+    system_logger->info("IP : {} 开始合并操作系统漏洞...", host_result.ip);
 
     // 合并操作系统漏洞
     std::set<Vuln> merged_os_vulns;
 
     // 插入插件化扫描的漏洞，忽略“未验证”的漏洞
     for (const auto& poc_vuln : host_result.vuln_result) {
-        std::cout << "检查插件化扫描漏洞: " << poc_vuln.vul_name
-            << " (ID: " << poc_vuln.Vuln_id << "), 状态: " << poc_vuln.vulExist << std::endl;
+        //console->info("检查插件化扫描漏洞: {} (ID: {}), Status: {}", poc_vuln.vul_name, poc_vuln.Vuln_id, poc_vuln.vulExist);
 
         if (poc_vuln.vulExist != "未验证") {
             merged_os_vulns.insert(poc_vuln);  // 插入插件化扫描的漏洞
-            std::cout << "已添加插件化扫描漏洞: " << poc_vuln.vul_name << std::endl;
+            //console->info("已添加插件化扫描漏洞: {}", poc_vuln.vul_name);
         }
         else {
-            std::cout << "跳过未验证的漏洞: " << poc_vuln.vul_name << std::endl;
+            //console->info("跳过未验证的漏洞: {}", poc_vuln.vul_name);
         }
     }
 
@@ -1072,35 +1080,35 @@ void merge_vuln_results(ScanHostResult& host_result) {
         for (const auto& cpe_vuln : cpe_entry.second) {
             if (merged_os_vulns.find(cpe_vuln) == merged_os_vulns.end()) {
                 merged_os_vulns.insert(cpe_vuln);  // 插入漏洞库匹配中的漏洞
-                std::cout << "已添加漏洞库匹配中的漏洞: " << cpe_vuln.vul_name
-                    << " (ID: " << cpe_vuln.Vuln_id << ")" << std::endl;
+
+                //console_logger->info("已添加漏洞库匹配中的漏洞: {} (ID: {})", cpe_vuln.vul_name, cpe_vuln.Vuln_id);
             }
             else {
-                std::cout << "漏洞库匹配中的漏洞已存在，跳过: " << cpe_vuln.vul_name << std::endl;
+                //console_logger->info("漏洞库匹配中的漏洞已存在，跳过: {}", cpe_vuln.vul_name);
             }
         }
     }
 
     // 更新操作系统漏洞结果
     host_result.vuln_result = merged_os_vulns;
-    std::cout << "操作系统漏洞合并完成，漏洞总数: " << host_result.vuln_result.size() << std::endl;
+    system_logger->info("操作系统漏洞合并完成，漏洞总数: {}", host_result.vuln_result.size());
 
     // 合并端口漏洞
     for (auto& port : host_result.ports) {
-        std::cout << "开始合并端口: " << port.portId << " 的漏洞..." << std::endl;
+        system_logger->info("IP : {} 开始合并端口 {} 的漏洞...", host_result.ip,port.portId);
         std::set<Vuln> merged_port_vulns;
 
         // 插入插件化扫描中的漏洞，忽略“未验证”的漏洞
         for (const auto& poc_vuln : port.vuln_result) {
-            std::cout << "检查端口插件化扫描漏洞: " << poc_vuln.vul_name
-                << " (ID: " << poc_vuln.Vuln_id << "), 状态: " << poc_vuln.vulExist << std::endl;
+
+            //console->info("检查端口插件化扫描漏洞: {} (POC ID: {}), Status: {}", poc_vuln.vul_name, poc_vuln.Vuln_id, poc_vuln.vulExist);
 
             if (poc_vuln.vulExist != "未验证") {
                 merged_port_vulns.insert(poc_vuln);
-                std::cout << "已添加端口插件化扫描漏洞: " << poc_vuln.vul_name << std::endl;
+                //console->info("已添加端口插件化扫描漏洞: {}", poc_vuln.vul_name);
             }
             else {
-                std::cout << "跳过未验证的端口漏洞: " << poc_vuln.vul_name << std::endl;
+                //console->info("跳过未验证的端口漏洞: {}", poc_vuln.vul_name);
             }
         }
 
@@ -1109,20 +1117,23 @@ void merge_vuln_results(ScanHostResult& host_result) {
             for (const auto& cpe_vuln : cpe_entry.second) {
                 if (merged_port_vulns.find(cpe_vuln) == merged_port_vulns.end()) {
                     merged_port_vulns.insert(cpe_vuln);
-                    std::cout << "已添加端口漏洞库匹配中的漏洞: " << cpe_vuln.vul_name
-                        << " (ID: " << cpe_vuln.Vuln_id << ")" << std::endl;
+
+                    //console->info("已添加端口漏洞库匹配中的漏洞: {} (ID:{})", cpe_vuln.vul_name, cpe_vuln.Vuln_id);
                 }
                 else {
-                    std::cout << "端口漏洞库匹配中的漏洞已存在，跳过: " << cpe_vuln.vul_name << std::endl;
+                    //console->info("端口漏洞库匹配中的漏洞已存在，跳过:  {}", cpe_vuln.vul_name);
+
                 }
             }
         }
 
         // 更新端口漏洞结果
         port.vuln_result = merged_port_vulns;
-        std::cout << "端口 " << port.portId << " 的漏洞合并完成，漏洞总数: " << port.vuln_result.size() << std::endl;
+
+        //console->info("端口 {} 的漏洞合并完成，漏洞总数: {}", port.portId, port.vuln_result.size());
     }
-    std::cout << "所有漏洞合并完成！" << std::endl;
+
+    system_logger->info("IP : {} 所有漏洞合并完成！", host_result.ip);
 }
 
 
@@ -1163,7 +1174,7 @@ redisContext* get_redis_client() {
         // 如果没有连接，则创建新的连接
         redis_client = redisConnect("127.0.0.1", 6379);
         if (redis_client == nullptr || redis_client->err) {
-            std::cerr << "Error connecting to Redis: " << redis_client->errstr << std::endl;
+            system_logger->error("Error connecting to Redis: {}", redis_client->errstr);
             exit(1);
         }
     }
@@ -1229,7 +1240,9 @@ std::pair<std::string, POCTask> deserialize_task_data(const std::string& task_da
         return { key, task };  // 返回 key 和任务
     }
     catch (const std::exception& e) {
-        std::cerr << "Error deserializing task data: " << e.what() << std::endl;
+
+        console->error("Error deserializing task data: {}", e.what());
+        system_logger->error("Error deserializing task data: {}", e.what());
         return { "", POCTask() };  // 处理异常并返回默认值
     }
 }
@@ -1240,9 +1253,10 @@ std::pair<std::string, POCTask> deserialize_task_data(const std::string& task_da
 void push_task_to_redis(redisContext* c, const std::string& task_data) {
     redisReply* reply = (redisReply*)redisCommand(c, "LPUSH POC_TASK_QUEUE %s", task_data.c_str());
     if (reply == nullptr) {
-        std::cerr << "Error pushing task to Redis" << std::endl;
+        console->error("Error pushing task to Redis.");
+        system_logger->error("Error pushing task to Redis.");
     }
-    std::cout << "[Parent Process] Pushed task to Redis: " << task_data << std::endl;
+    console->info("[Parent Process] Pushed task to Redis: {}", task_data);
     freeReplyObject(reply);
 }
 
@@ -1251,27 +1265,29 @@ std::string pop_task_from_redis(redisContext* redis_client) {
     // 获取队列长度并打印
     redisReply* length_reply = (redisReply*)redisCommand(redis_client, "LLEN POC_TASK_QUEUE");
     if (length_reply == nullptr) {
-        std::cerr << "[pop_task_from_redis] Failed to get queue length: " << redis_client->errstr << std::endl;
+        console->error("[pop_task_from_redis] Failed to get queue length: {}", redis_client->errstr);
+        system_logger->error("[pop_task_from_redis] Failed to get queue length: {}", redis_client->errstr);
         return "";
     }
-    std::cout << "[pop_task_from_redis] Current queue length: " << length_reply->integer << std::endl;
+    console->info("[pop_task_from_redis] Current queue length: {}", length_reply->integer);
     freeReplyObject(length_reply);
 
     // 尝试弹出任务
     redisReply* reply = (redisReply*)redisCommand(redis_client, "RPOP POC_TASK_QUEUE");
     if (reply == nullptr) {
-        std::cerr << "[pop_task_from_redis] Redis command failed: " << redis_client->errstr << std::endl;
+        console->error("[pop_task_from_redis] Redis command failed: {}", redis_client->errstr);
+        system_logger->error("[pop_task_from_redis] Redis command failed: {}", redis_client->errstr);
         return "";
     }
 
     if (reply->type == REDIS_REPLY_STRING) {
         std::string task_data = reply->str;
-        std::cout << "[pop_task_from_redis] Task data: " << task_data << std::endl;
+        console->info("[pop_task_from_redis] Task data: {}", task_data);
         freeReplyObject(reply);
         return task_data;
     }
     else {
-        std::cout << "[pop_task_from_redis] No task data found (empty response)." << std::endl;
+        console->info("[pop_task_from_redis] No task data found (empty response).");;
         freeReplyObject(reply);
         return "";
     }
@@ -1281,33 +1297,35 @@ std::string pop_task_from_redis(redisContext* redis_client) {
 void push_result_to_redis(redisContext* c, const std::string& result_data) {
     redisReply* reply = (redisReply*)redisCommand(c, "LPUSH POC_RESULT_QUEUE %s", result_data.c_str());
     if (reply == nullptr) {
-        std::cerr << "Error pushing result to Redis" << std::endl;
+        console->error("Error pushing result to Redis.");
+        system_logger->error("Error pushing result to Redis.");
     }
-    std::cout << "[Child Process] Pushed result to Redis: " << result_data << std::endl;
+    console->info("[Child Process] Pushed result to Redis: {}", result_data);
     freeReplyObject(reply);
 }
 
 // 从 Redis 获取任务结果
 std::string pop_result_from_redis(redisContext* c) {
-    std::cout << "[DEBUG] Attempting to pop result from Redis..." << std::endl;
+    console->info("[DEBUG] Attempting to pop result from Redis...");
 
     redisReply* reply = (redisReply*)redisCommand(c, "RPOP POC_RESULT_QUEUE");
 
     // 检查 Redis 命令是否成功执行
     if (reply == nullptr) {
-        std::cerr << "[ERROR] Redis command failed, reply is nullptr" << std::endl;
+        console->error("[ERROR] Redis command failed, reply is nullptr.");
+        system_logger->error("[ERROR] Redis command failed, reply is nullptr.");
         return "";
     }
 
     // 检查返回的数据是否为空
     if (reply->type == REDIS_REPLY_NIL) {
-        std::cout << "[DEBUG] No result in the Redis queue (RPOP returned NIL)" << std::endl;
+        console->info("[DEBUG] No result in the Redis queue (RPOP returned NIL).");
         freeReplyObject(reply);
         return "";
     }
 
     // 输出调试信息：打印返回的任务结果
-    std::cout << "[DEBUG] Popped result: " << reply->str << std::endl;
+    console->info("[DEBUG] Popped result: {}", reply->str);
 
     // 获取任务结果并释放 Redis 回复对象
     std::string result_data(reply->str);

@@ -3,16 +3,23 @@
 
 
 DatabaseManager::DatabaseManager(const std::string& dbPath) {
+    //获取日志
+    system_logger = spdlog::get("system_logger");
+    user_logger = spdlog::get("user_logger");
+    console = spdlog::get("console");
 
     // 打开数据库，如果不存在则创建，参数1：db的文件路径，参数2：返回的sqlite3*对象
     db = nullptr;
-    std::cout << "SQLite database Path: " << dbPath << std::endl;
+
+    console->info("SQLite database Path: {}", dbPath);
+    system_logger->info("SQLite database Path: {}",dbPath);
+
     if (sqlite3_open(dbPath.c_str(), &db) != SQLITE_OK) {
-        std::cerr << "Error opening SQLite database: " << sqlite3_errmsg(db) << std::endl;
+        system_logger->error("Error opening SQLite database: {}", sqlite3_errmsg(db));
     }
     else
     {
-        std::cout << "open SQLite database " << std::endl;
+        system_logger->info("Opened SQLite database.");
     }
 }
 
@@ -56,7 +63,7 @@ bool DatabaseManager::createTable() {
     //成功返回SQLITE_OK
     int rc = sqlite3_exec(db, sql.c_str(), nullptr, 0, &errMsg);
     if (rc != SQLITE_OK) {
-        std::cerr << "SQL error: " << errMsg << std::endl;
+        system_logger->error("SQL error: {}", errMsg);
         sqlite3_free(errMsg);
         return false;
     }
@@ -71,7 +78,7 @@ bool DatabaseManager::insertData(const std::string& vuln_id, const std::string& 
     sqlite3_stmt* stmt;
     //编译SQL语句,-1表示读取到第一个终止符停止。
     if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
-        std::cerr << "SQL error: " << sqlite3_errmsg(db) << std::endl;
+        system_logger->error("SQL error: {}", sqlite3_errmsg(db));
         return false;
     }
     //将值绑定到参数
@@ -89,7 +96,7 @@ bool DatabaseManager::insertData(const std::string& vuln_id, const std::string& 
     //如果语句的最近评估没有遇到错误，或者从未评估过语句，则 sqlite3_finalize() 返回 SQLITE_OK。
     sqlite3_finalize(stmt);
     if (rc != SQLITE_DONE) {
-        std::cerr << "SQL error: " << sqlite3_errmsg(db) << std::endl;
+        system_logger->error("SQL error: {}", sqlite3_errmsg(db));
         return false;
     }
     return true;
@@ -101,7 +108,7 @@ bool DatabaseManager::deleteDataById(int id) {
     char* errMsg = nullptr;
     int rc = sqlite3_exec(db, sql.c_str(), nullptr, 0, &errMsg);
     if (rc != SQLITE_OK) {
-        std::cerr << "SQL error: " << errMsg << std::endl;
+        system_logger->error("SQL error: {}", errMsg);
         sqlite3_free(errMsg);
         return false;
     }
@@ -114,7 +121,7 @@ bool DatabaseManager::updateDataById(int id, const POC& poc) {
     std::string checkSql = "SELECT COUNT(*) FROM POC WHERE ID = ?;";
     sqlite3_stmt* checkStmt;
     if (sqlite3_prepare_v2(db, checkSql.c_str(), -1, &checkStmt, nullptr) != SQLITE_OK) {
-        std::cerr << "SQL error: " << sqlite3_errmsg(db) << std::endl;
+        system_logger->error("SQL error: {}", sqlite3_errmsg(db));
         return false;
     }
     sqlite3_bind_int(checkStmt, 1, id);
@@ -126,7 +133,7 @@ bool DatabaseManager::updateDataById(int id, const POC& poc) {
     sqlite3_finalize(checkStmt);
 
     if (!idExists) {
-        std::cerr << "SQL error: ID does not exist." << std::endl;
+        system_logger->error("SQL error: ID does not exist.");
         return false;
     }
 
@@ -136,7 +143,7 @@ bool DatabaseManager::updateDataById(int id, const POC& poc) {
 
     sqlite3_stmt* stmt;
     if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
-        std::cerr << "SQL error: " << sqlite3_errmsg(db) << std::endl;
+        system_logger->error("SQL error: {}", sqlite3_errmsg(db));
         return false;
     }
     //将值绑定到参数
@@ -156,7 +163,7 @@ bool DatabaseManager::updateDataById(int id, const POC& poc) {
     //如果语句的最近评估没有遇到错误，或者从未评估过语句，则 sqlite3_finalize() 返回 SQLITE_OK。
     sqlite3_finalize(stmt);
     if (rc != SQLITE_DONE) {
-        std::cerr << "SQL error: " << sqlite3_errmsg(db) << std::endl;
+        system_logger->error("SQL error: {}", sqlite3_errmsg(db));
         return false;
     }
     std::cout << "修改成功" << std::endl;
@@ -180,12 +187,12 @@ std::vector<POC> DatabaseManager::searchData(const std::string& keyword) {
         "Script_type LIKE '" + pattern + "' OR "
         "Timestamp LIKE '" + pattern + "';";
 
-    std::cout << sql << std::endl;
+    //std::cout << sql << std::endl;
 
     char* errMsg = nullptr;
     int rc = sqlite3_exec(db, sql.c_str(), callback, &records, &errMsg);
     if (rc != SQLITE_OK) {
-        std::cerr << "SQL error: " << errMsg << std::endl;
+        system_logger->error("SQL error: {}", errMsg);
         sqlite3_free(errMsg);
     }
     return records;
@@ -214,7 +221,7 @@ std::vector<POC> DatabaseManager::searchDataByIds(const std::vector<int>& ids) {
     // 执行SQL语句并处理结果
     int rc = sqlite3_exec(db, sql.c_str(), callback, &records, &errMsg);
     if (rc != SQLITE_OK) {
-        std::cerr << "SQL error: " << errMsg << std::endl;
+        system_logger->error("SQL error: {}", errMsg);
         sqlite3_free(errMsg);
     }
 
@@ -233,7 +240,7 @@ std::vector<POC> DatabaseManager::searchDataByCVE(const std::string& vuln_id) {
     // 执行SQL语句，并处理结果
     int rc = sqlite3_exec(db, sql.c_str(), callback, &records, &errMsg);
     if (rc != SQLITE_OK) {
-        std::cerr << "SQL error: " << errMsg << std::endl;
+        system_logger->error("SQL error: {}", errMsg);
         sqlite3_free(errMsg);
     }
     return records;
@@ -250,7 +257,7 @@ bool DatabaseManager::isExistCVE(const std::string& vuln_id)
     // 执行SQL语句，并处理结果
     int rc = sqlite3_exec(db, sql.c_str(), callback, &records, &errMsg);
     if (rc != SQLITE_OK) {
-        std::cerr << "SQL error: " << errMsg << std::endl;
+        system_logger->error("SQL error: {}", errMsg);
         sqlite3_free(errMsg);
     }
     if (!records.empty())
@@ -269,7 +276,7 @@ std::string DatabaseManager::searchPOCById(const int & id) {
     // 执行SQL语句，并处理结果
     int rc = sqlite3_exec(db, sql.c_str(), callback, &records, &errMsg);
     if (rc != SQLITE_OK) {
-        std::cerr << "SQL error: " << errMsg << std::endl;
+        system_logger->error("SQL error: {}", errMsg);
         sqlite3_free(errMsg);
     }
     if (records.empty())
@@ -289,7 +296,7 @@ std::string DatabaseManager::searchPOCById(const std::string& vuln_id) {
     // 执行SQL语句，并处理结果
     int rc = sqlite3_exec(db, sql.c_str(), callback, &records, &errMsg);
     if (rc != SQLITE_OK) {
-        std::cerr << "SQL error: " << errMsg << std::endl;
+        system_logger->error("SQL error: {}", errMsg);
         sqlite3_free(errMsg);
     }
     if (records.empty())
@@ -310,12 +317,12 @@ bool DatabaseManager::searchDataById(const int& id, POC& poc) {
     // 执行SQL语句，并处理结果
     int rc = sqlite3_exec(db, sql.c_str(), callback, &records, &errMsg);
     if (rc != SQLITE_OK) {
-        std::cerr << "SQL error: " << errMsg << std::endl;
+        system_logger->error("SQL error: {}", errMsg);
         sqlite3_free(errMsg);
     }
     if (records.empty())    //没有ID对应的POC数据
     {
-        std::cerr << "SQL error: ID does not exist." << std::endl;
+        system_logger->error("SQL error: POC ID {} does not exist.",id);
         return false;
     }
     poc = records[0];
@@ -371,7 +378,7 @@ std::vector<POC> DatabaseManager::getAllData() {
     char* errMsg = nullptr;
     int rc = sqlite3_exec(db, sql.c_str(), callback, &records, &errMsg);
     if (rc != SQLITE_OK) {
-        std::cerr << "SQL error: " << errMsg << std::endl;
+        system_logger->error("SQL error: {}", errMsg);
         sqlite3_free(errMsg);
         exit(1);            //执行失败必须退出，其他功能依赖于此函数的成功调用
     }
