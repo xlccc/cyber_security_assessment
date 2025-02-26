@@ -11,10 +11,10 @@ HostDiscovery::HostDiscovery(const std::string& network)
     if (isValidCIDR(network)) {
         this->subnet = getSubnet(network);
 
-        std::cout << "[INFO] Initialized HostDiscovery with network: " << network << std::endl;
+        system_logger->info("Initialized HostDiscovery with network: {}", network);
     }
     else
-        std::cout << "[INFO] Initialized HostDiscovery with targeted IP: " << network << std::endl;
+        system_logger->info("Initialized HostDiscovery with targeted IP: {}", network);
 }
 
 bool HostDiscovery::isValidIP(const std::string& ip) {
@@ -38,7 +38,7 @@ std::vector<std::string> HostDiscovery::scan() {
 
     if (isValidIP(network)) {
         // µ¥¸öIP¼ì²â
-        std::cout << "[INFO] Scanning single IP: " << network << std::endl;
+        system_logger->info("Scanning single IP: {}", network);
         if (ping(network)) {
             aliveHosts.push_back(network);
         }
@@ -50,7 +50,7 @@ std::vector<std::string> HostDiscovery::scan() {
             std::pair<unsigned int, unsigned int> ipRange = calculateIPRange();
             unsigned int startIP = ipRange.first;
             unsigned int endIP = ipRange.second;
-            std::cout << "[INFO] Calculating IP range from " << ipToString(startIP) << " to " << ipToString(endIP) << std::endl;
+            system_logger->info("Calculating IP range from {} to {}", ipToString(startIP), ipToString(endIP));
 
             for (unsigned int ip = startIP; ip <= endIP; ++ip) {
                 std::string ipAddress = ipToString(ip);
@@ -62,11 +62,11 @@ std::vector<std::string> HostDiscovery::scan() {
             }
         }
         catch (const std::exception& e) {
-            std::cerr << "[ERROR] Exception during scanning: " << e.what() << std::endl;
+            system_logger->error("Exception during scanning: {}", e.what());;
         }
     }
     else {
-        std::cerr << "[ERROR] Invalid Network/IP format: " << network << std::endl;
+        system_logger->error("Invalid Network/IP format: {}", network);
     }
 
     return aliveHosts;
@@ -110,10 +110,10 @@ std::future<void> HostDiscovery::submitPingTask(const std::string& ipAddress, st
         if (ping(ipAddress)) {
             std::lock_guard<std::mutex> lock(resultMutex);
             aliveHosts.push_back(ipAddress);
-            std::cout << "[INFO] Host " << ipAddress << " is alive.\n";
+            user_logger->info("Host {} is alive.", ipAddress);
         }
         else {
-            std::cout << "[WARN] Host " << ipAddress << " did not respond to ping.\n";
+            user_logger->warn("Host {} did not respond to ping.", ipAddress);
         }
         });
 }
@@ -134,11 +134,11 @@ unsigned int HostDiscovery::ipToInt(const std::string& ip) {
             shift -= 8;
         }
         catch (const std::invalid_argument& e) {
-            std::cerr << "[ERROR] Invalid IP format: " << e.what() << std::endl;
+            system_logger->error("[ERROR] Invalid IP format: {}", e.what());
             throw;
         }
         catch (const std::out_of_range& e) {
-            std::cerr << "[ERROR] " << e.what() << std::endl;
+            system_logger->error("[ERROR] {}", e.what());
             throw;
         }
     }

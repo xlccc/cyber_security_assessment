@@ -47,7 +47,7 @@ void verifyPOCs(std::vector<ScanHostResult>& scanHostResults, DatabaseHandler& d
 
     for (auto& hostResult : scanHostResults) {
         std::string ip = hostResult.ip;
-        std::cout << "------扫描操作系统漏洞-----" << std::endl;
+        console->info("------扫描操作系统漏洞-----");
         // 操作系统级别漏洞进行POC验证
         for (auto& cpeEntry : hostResult.cpes) {
             for (auto& cve : cpeEntry.second) {
@@ -69,7 +69,7 @@ void verifyPOCs(std::vector<ScanHostResult>& scanHostResults, DatabaseHandler& d
                 }
             }
         }
-        std::cout << "------扫描端口漏洞-----" << std::endl;
+        console->info("------扫描端口漏洞-----");
         // 端口级别漏洞进行POC验证
         for (auto& portResult : hostResult.ports) {
             std::string portId = portResult.portId;
@@ -79,11 +79,11 @@ void verifyPOCs(std::vector<ScanHostResult>& scanHostResults, DatabaseHandler& d
                     if (cve.pocExist && cve.ifCheck) {
 
                         //测试
-                        std::cout << "POC脚本：" << cve.script << std::endl;
+                        console->info("POC脚本: {}", cve.script);
 
                         std::string result = runPythonWithOutput(cve.script, hostResult.url, hostResult.ip, std::stoi(portResult.portId));
 
-                        std::cout << result << std::endl;
+                        //console->info("扫描结果: \n{}", result);
                         // 检查result中是否包含[!]来判断漏洞是否存在
                         if (result.find("[!]") != std::string::npos) {
                             cve.vulExist = "存在";

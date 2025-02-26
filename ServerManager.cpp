@@ -7,16 +7,16 @@ using namespace concurrency::streams;
 
 ServerManager::ServerManager()
     : localConfig{
-        "10.9.130.189",  // host
+        "192.168.136.128",  // host
         33060,            // port
         "root",           // user
-        "ComplexPassword123!", // password
+        "123456", // password
         "test_db"         // schema
     },
     pool(localConfig),    // 使用 localConfig 初始化 pool
     dbManager(DB_PATH)    // 原有的 dbManager 初始化
 {
-    utility::string_t address = _XPLATSTR("http://10.9.130.189:8081/");
+    utility::string_t address = _XPLATSTR("http://192.168.136.128:8081/");
     uri_builder uri(address);
     auto addr = uri.to_uri().to_string();
     listener = std::make_unique<http_listener>(addr);
@@ -36,11 +36,18 @@ ServerManager::ServerManager()
         }
         temp_file.close();
     }
+
+    //获取日志
+    system_logger = spdlog::get("system_logger");
+    user_logger = spdlog::get("user_logger");
+    console = spdlog::get("console");
 }
 
 void ServerManager::open_listener() {
     listener->open().then([this]() {
-        std::cout << "Starting to listen at: " << listener->uri().to_string() << std::endl;
+        console->info("Starting to listen at: {}", listener->uri().to_string());
+        system_logger->info("Starting to listen at: {}", listener->uri().to_string());
+
         }).wait();
 }
 
@@ -56,7 +63,8 @@ void ServerManager::handle_request(http_request request) {
     auto path = uri::split_path(uri::decode(request.relative_uri().path()));
 
     // 打印接收到的请求方法和路径
-    std::cout << "Received " << request.method() << " request for: " << request.relative_uri().to_string() << std::endl;
+    system_logger->info("Received {} request for: {}", request.method(), request.relative_uri().to_string());
+
 
     if (path.empty()) {
         request.reply(status_codes::NotFound, _XPLATSTR("Path not found"));
@@ -319,8 +327,10 @@ void ServerManager::handle_post_insert_data(http_request request) {
                 std::string headers = part.substr(0, header_end_pos);
                 std::string part_data = part.substr(header_end_pos + 4, part.length() - header_end_pos - 6); // Exclude trailing CRLF
 
+                /*测试所用
                 std::cout << headers << std::endl;
                 std::cout << part_data << std::endl;
+                */
 
                 std::string decoded_data = autoConvertToUTF8(part_data);
 
@@ -995,7 +1005,7 @@ void ServerManager::handle_post_get_Nmap(http_request request)
 
         std::string ip = body[_XPLATSTR("ip")].as_string();
 
-        std::cout << "IP地址: " << ip << std::endl;
+        user_logger->info("IP：{} 开始CVE-search漏洞扫描", ip);
 
         // 获取前端传来的 all_ports 参数，判断是否扫描全部端口
         //bool allPorts = body.has_field(_XPLATSTR("all_ports")) ? body[_XPLATSTR("all_ports")].as_bool() : false;
@@ -1066,9 +1076,7 @@ void ServerManager::handle_post_get_Nmap(http_request request)
         // 计算时间差（以毫秒为单位）
         std::chrono::duration<double, std::milli> elapsed = end - start;
         // 输出时间差
-        std::cout << "代码执行时间: " << elapsed.count() << " 毫秒" << std::endl;
-
-        std::cout << "Nmap 扫描完成并获取 CVE 数据。" << std::endl;
+        user_logger->info("IP：{} cve-search漏洞扫描完成，代码执行时间: {} 毫秒", ip, elapsed.count());
 
         // 创建响应
         http_response response(status_codes::OK);
@@ -1886,7 +1894,9 @@ bool ServerManager::check_and_get_filename(const std::string& body, const std::s
                 if (name_pos != std::string::npos) {
                     filename = headers.substr(name_pos + 10);  // 10 = length of 'filename="'
                     filename = filename.substr(0, filename.find("\""));  // Remove trailing quote
-                    std::cout << "Extracted filename: " << filename << std::endl;
+                    
+                    // 测试所用
+                    // std::cout << "Extracted filename: " << filename << std::endl;
 
                     // 构建文件路径
                     auto path = _XPLATSTR("../../../src/scan/scripts/") + utility::conversions::to_string_t(filename);
@@ -2073,7 +2083,9 @@ void ServerManager::handle_post_poc_verify(http_request request) {
             }).wait();
     }
     catch (const std::exception& e) {
-        std::cerr << "Error while processing POC verify request: " << e.what() << std::endl;
+        console->error("Error while processing POC verify request: {}", e.what());
+        system_logger->error("Error while processing POC verify request: {}", e.what());
+
         json::value response_data;
         response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("An error occurred during POC verification: ") + utility::conversions::to_string_t(e.what()));
         http_response response(status_codes::InternalError);
@@ -2293,7 +2305,9 @@ void ServerManager::update_poc_by_cve(http_request request) {
 
     }
     catch (const std::exception& e) {
-        std::cerr << "Error while processing POC upload request: " << e.what() << std::endl;
+        console->error("Error while processing POC upload request: {}", e.what());
+        system_logger->error("Error while processing POC upload requestt: {}", e.what());
+
         response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("上传过程中发生错误：") + utility::conversions::to_string_t(e.what()));
         response.set_status_code(status_codes::InternalError);
     }
@@ -2537,6 +2551,7 @@ void ServerManager::handle_post_poc_scan(http_request request) {
             }
             std::string ip = json_data[_XPLATSTR("ip")].as_string();
 
+            user_logger->info("IP：{} 开始插件化漏洞扫描", ip);
             //测试所用
             //std::vector<POC> poc_list = dbManager.getAllData();
             
@@ -2583,7 +2598,9 @@ void ServerManager::handle_post_poc_scan(http_request request) {
             // 检查是否有历史扫描数据
             if (historicalData.data.find(ip) != historicalData.data.end()) {
                 scan_host_result = historicalData.data[ip];
-                std::cout << "使用历史扫描数据。" << std::endl;
+                
+                console->info("IP：{} 使用历史端口扫描数据。", ip);
+                user_logger->info("IP：{} 使用历史端口扫描数据。", ip);
             }
             else {
                 // 执行端口扫描
@@ -2600,7 +2617,9 @@ void ServerManager::handle_post_poc_scan(http_request request) {
                 }
                 scan_host_result = scan_host_results[0];
                 historicalData.data[ip] = scan_host_result;
-                std::cout << "Nmap 扫描完成，更新历史数据。" << std::endl;
+
+
+                user_logger->info("IP：{} Nmap 扫描完成，更新历史数据。", ip);
             }
 
             // 选择是否进行基础设施匹配
@@ -2683,22 +2702,22 @@ void ServerManager::handle_merge_vuln_results(http_request request) {
 
 // 自动选择POC
 void ServerManager::handle_auto_select_poc(http_request request) {
-    std::cout << "[DEBUG] Handling auto-select POC request." << std::endl;
 
     request.extract_json().then([=](json::value json_data) {
+        std::string ip;
         try {
-            std::cout << "[DEBUG] Extracting JSON data from request." << std::endl;
 
             // 提取 IP 地址
             if (!json_data.has_field(_XPLATSTR("ip"))) {
                 throw std::runtime_error("Invalid request: Missing 'ip' field.");
             }
-            std::string ip = json_data[_XPLATSTR("ip")].as_string();
-            std::cout << "[DEBUG] Extracted IP: " << ip << std::endl;
+            ip = json_data[_XPLATSTR("ip")].as_string();
+
+            user_logger->info("{} 开始自动选择POC...", ip);
 
             // 获取所有PoC 列表
             std::vector<POC> poc_list = dbManager.getAllData();  // 假设从数据库中提取所有可用的 POC
-            std::cout << "[DEBUG] Retrieved " << poc_list.size() << " POCs from the database." << std::endl;
+            //console->debug("[DEBUG] Retrieved {} POCs from the database.", poc_list.size());
 
             // 定义变量以存储扫描结果
             ScanHostResult scan_host_result;
@@ -2706,10 +2725,10 @@ void ServerManager::handle_auto_select_poc(http_request request) {
             // 从历史数据中获取主机的扫描结果（或者执行新扫描）
             if (historicalData.data.find(ip) != historicalData.data.end()) {
                 scan_host_result = historicalData.data[ip];
-                std::cout << "[DEBUG] Using historical scan data for IP: " << ip << std::endl;
+                //std::cout << "[DEBUG] Using historical scan data for IP: " << ip << std::endl;
             }
             else {
-                std::cout << "[DEBUG] No scan data available for the specified IP" << ip << std::endl;
+                //std::cout << "[DEBUG] No scan data available for the specified IP" << ip << std::endl;
                 // 执行端口扫描
                 bool allPorts = json_data.has_field(_XPLATSTR("all_ports")) ? json_data[_XPLATSTR("all_ports")].as_bool() : false;
                 std::string outputPath = performPortScan(ip, allPorts);
@@ -2724,22 +2743,21 @@ void ServerManager::handle_auto_select_poc(http_request request) {
                 }
                 scan_host_result = scan_host_results[0];
                 historicalData.data[ip] = scan_host_result;
-                std::cout << "Nmap 扫描完成，更新历史数据。" << std::endl;
+                user_logger->info("{} Nmap 端口扫描（服务、版本）完成，更新历史数据。", ip);
             }
-
 
             // 自动选择匹配的 POC
             std::vector<POC> selected_pocs;
 
             for (const auto& poc : poc_list) {
                 if (poc.script.empty()) {
-                    std::cout << "[DEBUG] Skipping POC with ID " << poc.id << " due to missing script." << std::endl;
+                    user_logger->error("{} Skipping POC with ID {} due to missing script.", ip, poc.id);
                     continue;  // 如果 PoC 没有脚本，跳过
                 }
 
                 std::string infra_lower = poc.affected_infra;
                 std::transform(infra_lower.begin(), infra_lower.end(), infra_lower.begin(), ::tolower);
-                std::cout << "[DEBUG] Checking POC ID " << poc.id << " with affected infrastructure: " << infra_lower << std::endl;
+                //std::cout << "[DEBUG] Checking POC ID " << poc.id << " with affected infrastructure: " << infra_lower << std::endl;
 
                 bool matched = false;
 
@@ -2749,7 +2767,7 @@ void ServerManager::handle_auto_select_poc(http_request request) {
                     std::transform(os_lower.begin(), os_lower.end(), os_lower.begin(), ::tolower);
 
                     if (os_lower.find(infra_lower) != std::string::npos) {
-                        std::cout << "[DEBUG] Matched OS: " << os << " with POC ID " << poc.id << std::endl;
+                        //std::cout << ip << " Matched OS: " << os << " with POC ID " << poc.id << std::endl;
                         selected_pocs.push_back(poc);
                         matched = true;
                         break;  // 如果已经匹配到，则跳出操作系统匹配循环
@@ -2765,8 +2783,8 @@ void ServerManager::handle_auto_select_poc(http_request request) {
                         std::transform(product_lower.begin(), product_lower.end(), product_lower.begin(), ::tolower);
 
                         if (service_lower.find(infra_lower) != std::string::npos || product_lower.find(infra_lower) != std::string::npos) {
-                            std::cout << "[DEBUG] Matched service/product: " << port.service_name << "/" << port.product
-                                << " with POC ID " << poc.id << std::endl;
+                            //std::cout << "[DEBUG] Matched service/product: " << port.service_name << "/" << port.product
+                            //    << " with POC ID " << poc.id << std::endl;
                             selected_pocs.push_back(poc);
                             break;  // 如果匹配到服务或协议，跳出端口匹配循环
                         }
@@ -2774,16 +2792,18 @@ void ServerManager::handle_auto_select_poc(http_request request) {
                 }
             }
 
-            std::cout << "[DEBUG] Total matched POCs: " << selected_pocs.size() << std::endl;
+            user_logger->info("{} Total matched POCs: {}", ip, selected_pocs.size());
 
             // 将匹配的 PoC 列表返回给前端
             json::value result_json = poc_list_to_json(selected_pocs);
             request.reply(status_codes::OK, result_json);
 
+            user_logger->info("{} Completed handling auto-select POC request.", ip);
+
         }
         catch (const std::exception& e) {
             // 错误处理
-            std::cerr << "[ERROR] " << e.what() << std::endl;
+            user_logger->error("{} Error in auto-selecting PoC : {}", ip, e.what());
 
             json::value error_response;
             error_response[_XPLATSTR("error")] = json::value::string("Error in auto-selecting PoC.");
@@ -2792,7 +2812,6 @@ void ServerManager::handle_auto_select_poc(http_request request) {
         }
         }).wait();
 
-    std::cout << "[DEBUG] Completed handling auto-select POC request." << std::endl;
 }
 
 void ServerManager::handle_get_all_assets_vuln_data(http_request request)
@@ -2805,6 +2824,7 @@ void ServerManager::handle_get_all_assets_vuln_data(http_request request)
 
 //主机发现
 void ServerManager::handle_host_discovery(http_request request) {
+    std::string network;
     try {
         // 从请求中提取查询参数
         auto query = uri::split_query(request.request_uri().query());
@@ -2813,12 +2833,12 @@ void ServerManager::handle_host_discovery(http_request request) {
             request.reply(status_codes::BadRequest, _XPLATSTR("Missing 'network' parameter"));
             return;
         }
-        std::string network = utility::conversions::to_utf8string(it->second);
+        network = utility::conversions::to_utf8string(it->second);
 
         // 检查输入是否为单个IP或网段
         if (isValidIP(network) || isValidCIDR(network)) {
 
-            std::cout << "[INFO] Performing host discovery for network/IP: " << network << std::endl;
+            user_logger->info("[INFO] Performing host discovery for network/IP: {}", network);
             HostDiscovery hostDiscovery(network);
             auto aliveHosts = hostDiscovery.scan();
             //将存活主机存入scan_host_result表中
@@ -2833,7 +2853,7 @@ void ServerManager::handle_host_discovery(http_request request) {
     }
     catch (const std::exception& e) {
         // 异常处理
-        std::cerr << "[ERROR] Host discovery failed: " << e.what() << std::endl;
+        system_logger->error("network/IP: {} Host discovery failed: {}", network, e.what());
         request.reply(status_codes::InternalError, _XPLATSTR("Host discovery failed"));
     }
 }
@@ -2870,7 +2890,7 @@ bool ServerManager::isValidIP(const std::string& ip) {
 // 校验CIDR网段格式
 bool ServerManager::isValidCIDR(const std::string& network) {
     std::regex cidrRegex(
-        R"(^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/([1][6-9]|[2][0-9]|3[0-2])$)"
+        R"(^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}0/([1-9]|1[0-9]|2[0-9]|3[0-2])$)"
     );
     return std::regex_match(network, cidrRegex);
 }
@@ -2988,8 +3008,6 @@ void ServerManager::stop() {
         ucout << "Stopped listening." << std::endl;
     }
     catch (const std::exception& e) {
-        std::cerr << "An error occurred while stopping: " << e.what() << std::endl;
+        system_logger->error("An error occurred while stopping: {}", e.what());
     }
 }
-
-

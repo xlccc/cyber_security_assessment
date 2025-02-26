@@ -8,6 +8,7 @@
 #include <mutex>
 #include <iostream>
 #include <regex>
+#include"log/log.h"
 
 
 //主机发现类

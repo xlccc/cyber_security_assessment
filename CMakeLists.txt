@@ -25,10 +25,8 @@ find_package(SQLite3 REQUIRED)
 find_package(uchardet CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(hiredis CONFIG REQUIRED)
-
-# 添加 MySQL Connector/C++
 find_package(unofficial-mysql-connector-cpp CONFIG REQUIRED)
-
+find_package(spdlog CONFIG REQUIRED)
 
 # 手动设置Python路径
 set(Python_EXECUTABLE "/usr/bin/python3.8")
@@ -83,8 +81,7 @@ set(SOURCES
     "database/DatabaseHandler.cpp"
     "run/mysql_scan.cpp"
     scan/hostDiscovery.cpp
-    utils/threadPool.cpp
- )
+    utils/threadPool.cpp "log/log.cpp")
 
 set(HEADERS
     Command_Excute.h
@@ -109,10 +106,11 @@ set(HEADERS
     utils/threadPool.h
     scan/config.h
  "database/DatabaseHandler.h" "database/mysql_connection_pool.h"
-    multipart_form_data.h "run/mysql_scan.h")
+    multipart_form_data.h "run/mysql_scan.h"
+    "log/log.h")
 
 # 添加可执行文件
-add_executable(MyCppProject ${SOURCES} ${HEADERS})
+add_executable(MyCppProject ${SOURCES} ${HEADERS} "log/log.h" "log/log.cpp")
 
 # 链接必要的库到 C++ 项目
 target_link_libraries(MyCppProject PRIVATE 
@@ -128,7 +126,10 @@ target_link_libraries(MyCppProject PRIVATE
     unofficial::mysql-connector-cpp::connector  # 修正了此行
     resolv  # 确保添加这一行
     nlohmann_json::nlohmann_json
-    hiredis::hiredis)
+    hiredis::hiredis
+    spdlog::spdlog
+    stdc++fs #c++14实验性特性
+    )
 
 # 支持 Unicode 文件名和路径
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -finput-charset=UTF-8 -fexec-charset=UTF-8")

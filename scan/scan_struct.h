@@ -22,7 +22,6 @@ struct Vuln
     std::string vulExist = "未验证";    //是否存在该漏洞，分为三种：存在、不存在、未验证
 
 
-
     // 重载 == 运算符
     bool operator==(const Vuln& other) const {
         if (!Vuln_id.empty() && !other.Vuln_id.empty()) {
