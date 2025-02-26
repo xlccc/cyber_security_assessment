@@ -311,9 +311,14 @@ void DatabaseHandler::alterVulnAfterPocTask(ConnectionPool& pool, const POCTask&
         std::cerr << "未知错误发生" << std::endl;
     }
 }
-std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPool& pool)
+std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPool& pool, std::vector<std::string> alive_hosts)
 {
     std::map<std::string, IpVulnerabilities> ip_vulns_map;
+	for (auto ip : alive_hosts) {
+		if (ip_vulns_map.find(ip) == ip_vulns_map.end()) {
+			ip_vulns_map[ip] = IpVulnerabilities{ ip };
+		}
+	}
 
     try {
         auto conn = pool.getConnection();

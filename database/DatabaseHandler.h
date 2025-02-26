@@ -22,7 +22,8 @@ public:
     void alterHostVulnResultAfterPocVerify(ConnectionPool& pool, const Vuln& vuln, std::string ip);//更新操作类型的漏洞是否存在
     void alterPortVulnResultAfterPocVerify(ConnectionPool& pool, const Vuln& vuln, std::string ip, std::string portId);//更新端口的漏洞是否存在
     void alterVulnAfterPocTask(ConnectionPool& pool, const POCTask& task);
-    std::vector<IpVulnerabilities> getVulnerabilities(ConnectionPool& pool);
+    //获得资产信息
+    std::vector<IpVulnerabilities> getVulnerabilities(ConnectionPool& pool, std::vector<std::string> alive_hosts);
     //目标ip下的所有cpe, 用于增量扫描
     void processHostCpe(const ScanHostResult& hostResult, const int shr_id, ConnectionPool& pool);
     // 插入漏洞数据到 vuln 表

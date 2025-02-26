@@ -2816,7 +2816,10 @@ void ServerManager::handle_auto_select_poc(http_request request) {
 
 void ServerManager::handle_get_all_assets_vuln_data(http_request request)
 {
-    std::vector<IpVulnerabilities> vulnerabilities = dbHandler_.getVulnerabilities(pool);
+    // 获取存活的主机
+    std::vector<std::string> alive_hosts;
+    dbHandler_.readAliveHosts(alive_hosts, pool);
+    std::vector<IpVulnerabilities> vulnerabilities = dbHandler_.getVulnerabilities(pool, alive_hosts);
     // 转换为JSON
     web::json::value json_data = convertToJson(vulnerabilities);
     request.reply(status_codes::OK, json_data);
