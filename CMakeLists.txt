@@ -83,8 +83,7 @@ set(SOURCES
     database/db_config.cpp
     "run/mysql_scan.cpp"
     scan/hostDiscovery.cpp
-    utils/threadPool.cpp
- "database/DatabaseHandler.cpp" "pgsql_scan.cpp")
+ "database/DatabaseHandler.cpp" "pgsql_scan.cpp"
     utils/threadPool.cpp "log/log.cpp")
 
 set(HEADERS
@@ -113,10 +112,8 @@ set(HEADERS
     scan/hostDiscovery.h
     utils/threadPool.h
     scan/config.h
- "database/DatabaseHandler.h" "database/mysql_connection_pool.h"
     multipart_form_data.h "run/mysql_scan.h"
-    "log/log.h")
-    multipart_form_data.h "run/mysql_scan.h"
+    "log/log.h"
     pgsql_scan.h
  "database/DatabaseHandler.h" "database/mysql_connection_pool.h")
 

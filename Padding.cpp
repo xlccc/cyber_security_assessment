@@ -2591,7 +2591,7 @@ void ServerInfo_Padding(ServerInfo& info, ssh_session session) {
 	string ProductName = "dmidecode -t system | grep 'Product Name' | awk -F \":\" '{print $2}' | xargs| tr -d \"\\n\"";
 	info.ProductName = execute_commands(session, ProductName);
 	string free = "free - g | grep Mem | awk '{print $2}'| tr -d \"\\n\"";
-	info.free = execute_commands(session, ProductName);
+	info.free = execute_commands(session, free);
 	string ping = "(ping -c 1 8.8.8.8 > /dev/null 2>&1 && echo true || echo false) | tr -d \"\\n\"";
 	info.isInternet = execute_commands(session, ping);
 
