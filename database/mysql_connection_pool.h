@@ -1,4 +1,4 @@
-#ifndef MYSQL_CONNECTION_POOL_H
+ï»¿#ifndef MYSQL_CONNECTION_POOL_H
 #define MYSQL_CONNECTION_POOL_H
 
 #include <mysqlx/xdevapi.h>
@@ -8,7 +8,7 @@
 #include <chrono>
 #include <stdexcept>
 
-// Êı¾İ¿âÅäÖÃ½á¹¹Ìå
+// ï¿½ï¿½ï¿½İ¿ï¿½ï¿½ï¿½ï¿½Ã½á¹¹ï¿½ï¿½
 struct DBConfig {
     std::string host;
     uint16_t port;
@@ -19,9 +19,9 @@ struct DBConfig {
     size_t max_size;
     std::chrono::seconds connection_timeout;
 
-    // ¹¹Ôìº¯Êı£¬Ìá¹©Ä¬ÈÏÖµ
+    // ï¿½ï¿½ï¿½ìº¯ï¿½ï¿½ï¿½ï¿½ï¿½á¹©Ä¬ï¿½ï¿½Öµ
     DBConfig(
-        std::string host_ = "10.9.130.189",
+        std::string host_ = "10.9.130.67",
         uint16_t port_ = 33060,
         std::string user_ = "root",
         std::string password_ = "123456",
@@ -36,17 +36,17 @@ struct DBConfig {
 
 class ConnectionPool {
 public:
-    // ĞŞ¸Ä¹¹Ôìº¯Êı£¬½ÓÊÜÅäÖÃ²ÎÊı
+    // ï¿½Ş¸Ä¹ï¿½ï¿½ìº¯ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã²ï¿½ï¿½ï¿½
     explicit ConnectionPool(const DBConfig& config)
         : config_(config), currentSize_(0) {
-        // ³õÊ¼»¯Á¬½Ó³Ø
+        // ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½Ó³ï¿½
         for (size_t i = 0; i < config_.initial_size; ++i) {
             addConnection();
         }
     }
 
     ~ConnectionPool() {
-        // ÇåÀíËùÓĞÁ¬½Ó
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         std::lock_guard<std::mutex> lock(mutex_);
         while (!connections_.empty()) {
             connections_.pop();
@@ -64,12 +64,12 @@ public:
         auto conn = std::move(connections_.front());
         connections_.pop();
 
-        // ÑéÖ¤Á¬½ÓÊÇ·ñÓĞĞ§
+        // ï¿½ï¿½Ö¤ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½Ğ§
         try {
             conn->sql("SELECT 1").execute();
         }
         catch (...) {
-            // Á¬½ÓÎŞĞ§£¬´´½¨ĞÂÁ¬½Ó
+            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ğ§ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             conn = createConnection();
         }
 
@@ -82,7 +82,7 @@ public:
     }
 
 private:
-    DBConfig config_;  // ´æ´¢ÅäÖÃĞÅÏ¢
+    DBConfig config_;  // å­˜å‚¨é…ç½®ä¿¡æ¯
     std::queue<std::unique_ptr<mysqlx::Session>> connections_;
     std::mutex mutex_;
     size_t currentSize_;
@@ -111,12 +111,12 @@ private:
         if (conn == nullptr) return;
         std::lock_guard<std::mutex> lock(mutex_);
         try {
-            // ÑéÖ¤Á¬½ÓÊÇ·ñ»¹ÓĞĞ§
+            // ï¿½ï¿½Ö¤ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½Ğ§
             conn->sql("SELECT 1").execute();
             connections_.push(std::move(conn));
         }
         catch (...) {
-            // Èç¹ûÁ¬½ÓÎŞĞ§£¬´´½¨ĞÂÁ¬½Ó
+            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ğ§ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             connections_.push(createConnection());
         }
     }

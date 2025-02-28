@@ -1,4 +1,4 @@
-#include "DatabaseManager.h"
+﻿#include "DatabaseManager.h"
 #include <iostream>
 
 
@@ -166,6 +166,7 @@ bool DatabaseManager::updateDataById(int id, const POC& poc) {
         system_logger->error("SQL error: {}", sqlite3_errmsg(db));
         return false;
     }
+    std::cout << "修改成功" << std::endl;
     return true;
 }
 

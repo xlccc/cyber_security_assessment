@@ -1,4 +1,4 @@
-#include "ServerManager.h"
+﻿#include "ServerManager.h"
 
 using namespace web;
 using namespace web::http;
@@ -6,7 +6,7 @@ using namespace web::http::experimental::listener;
 using namespace concurrency::streams;
 
 ServerManager::ServerManager() : dbManager(DB_PATH) {
-    utility::string_t address = U("http://10.9.130.189:8081/");
+    utility::string_t address = U("http://10.9.130.61:8081/");
     uri_builder uri(address);
     auto addr = uri.to_uri().to_string();
     listener = std::make_unique<http_listener>(addr);
