@@ -43,7 +43,8 @@ public:
     void insertAliveHosts2scanHostResult(const std::vector<std::string>& aliveHosts, ConnectionPool& pool);
     //读取scan_host_result表。未到达过期时间的作为存活主机返回
     void readAliveHosts(std::vector<std::string>& aliveHosts, ConnectionPool& pool);
-    
+	//将存活的主机改为不存活
+	void updateAliveHosts(std::string aliveHost, ConnectionPool& pool);
 
 };
 

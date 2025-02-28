@@ -2517,7 +2517,14 @@ void ServerManager::handle_get_alive_hosts(http_request request)
         // 获取存活的主机
         std::vector<std::string> alive_hosts;
         dbHandler_.readAliveHosts(alive_hosts, pool);
-
+		//需要重新ping一下，因为存活的主机可能已经不存活了
+		for (auto& host : alive_hosts) {
+			if (!pingIsAlive(host)) {
+				//更改数据库中的存活状态
+				alive_hosts.erase(std::remove(alive_hosts.begin(), alive_hosts.end(), host), alive_hosts.end());
+                dbHandler_.updateAliveHosts(host, pool);
+			}
+		}
         // 构建响应数据
         json::value host_array = json::value::array();
         for (const auto& host : alive_hosts) {
@@ -2910,6 +2917,16 @@ void ServerManager::sendHostDiscoveryResponse(http_request& request, const std::
 
     // 返回成功响应
     request.reply(status_codes::OK, response);
+}
+bool ServerManager::pingIsAlive(const std::string& network)
+{
+    HostDiscovery hostDiscovery(network);
+    auto aliveHosts = hostDiscovery.scan();
+	if (aliveHosts.size() > 0)
+	{
+		return true;
+	}
+    return false;
 }
 void ServerManager::handle_post_mysql_scan(http_request request)
 {

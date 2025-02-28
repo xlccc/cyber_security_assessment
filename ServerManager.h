@@ -140,6 +140,8 @@ private:
     //返回主机发现的响应
     void sendHostDiscoveryResponse(http_request& request, const std::vector<std::string>& aliveHosts);
 
+	//探测主机是否存活
+	bool pingIsAlive(const std::string& network);
 
     ConnectionPool pool;
     DatabaseHandler dbHandler_;
