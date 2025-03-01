@@ -7,16 +7,16 @@ using namespace concurrency::streams;
 
 ServerManager::ServerManager()
     : localConfig{
-        "10.9.130.189",  // host
+        "192.168.136.128",  // host
         33060,            // port
         "root",           // user
-        "ComplexPassword123!", // password
+        "123456", // password
         "test_db"         // schema
     },
     pool(localConfig),    // 使用 localConfig 初始化 pool
     dbManager(DB_PATH)    // 原有的 dbManager 初始化
 {
-    utility::string_t address = _XPLATSTR("http://10.9.130.189:8081/");
+    utility::string_t address = _XPLATSTR("http://192.168.136.128:8081/");
     uri_builder uri(address);
     auto addr = uri.to_uri().to_string();
     listener = std::make_unique<http_listener>(addr);
@@ -219,12 +219,13 @@ void ServerManager::handle_post_login(http_request request) {
 
         fun(Event, session);
 
+        /*
         for (int i = 0; i < Event.size(); i++) {
             cout << "描述信息：" << Event[i].description << " "
                 << "执行指令:  " << Event[i].command << " 执行结果：" << Event[i].result << " "
                 << "是否符合基线：  " << Event[i].IsComply
                 << endl;
-        }
+        }*/
 
         ServerInfo info;
         ServerInfo_Padding(info, session);

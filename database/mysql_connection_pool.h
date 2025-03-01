@@ -21,7 +21,7 @@ struct DBConfig {
 
     // 构造函数，提供默认值
     DBConfig(
-        std::string host_ = "10.9.130.189",
+        std::string host_ = "192.168.136.128",
         uint16_t port_ = 33060,
         std::string user_ = "root",
         std::string password_ = "123456",
