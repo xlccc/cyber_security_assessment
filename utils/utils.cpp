@@ -145,6 +145,58 @@ std::string exec(const char* cmd) {
     return result;
 }
 
+//std::string exec_hydra(const char* cmd)
+//{
+//    std::array<char, 128> buffer;
+//    std::string result;
+//    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+//    if (!pipe) {
+//        throw std::runtime_error("popen() failed!");
+//    }
+//    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+//        std::string line = buffer.data();
+//        result += line;
+//
+//        // 检查是否包含主机阻塞的错误信息
+//        if (line.find("Host") != std::string::npos &&
+//            line.find("is blocked") != std::string::npos) {
+//            // 发现错误，提前结束循环
+//            break;
+//        }
+//    }
+//    return result;
+//}
+std::string exec_hydra(const char* cmd)
+{
+    std::array<char, 128> buffer;
+    std::string result;
+    // 添加 2>&1 将stderr重定向到stdout
+    std::string command = std::string(cmd) + " 2>&1";
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(command.c_str(), "r"), pclose);
+    if (!pipe) {
+        throw std::runtime_error("popen() failed!");
+    }
+
+    bool connection_error = false; // 标记是否出现连接错误
+    int connection_error_count = 0; // 计数连接错误次数
+
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+        std::string line = buffer.data();
+        std::cout << line + "这是输出" << std::endl;
+        result += line;
+
+        // 检查是否包含主机阻塞的错误信息
+        if (line.find("Host") != std::string::npos &&
+            line.find("is blocked") != std::string::npos) {
+            // 确保所有hydra进程终止
+            exec("pkill -9 hydra");
+            // 稍等片刻让系统完成清理
+            usleep(500000);  // 500毫秒
+            break;
+        }
+    }
+    return result;
+}
 
 // Function to extract login information from hydra output
 std::string extract_login_info(const std::string& output) {

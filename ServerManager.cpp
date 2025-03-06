@@ -168,8 +168,8 @@ void ServerManager::handle_request(http_request request) {
 
 void ServerManager::redis_get_scan(http_request request) {
     
-    std::cout << check_redis_unauthorized("root","12341234","12341234","10.9.130.61") << std::endl;
-    std::cout << check_pgsql_unauthorized("root", "12341234","postgres","12341234" ,"10.9.130.61","5432" ) << std::endl;
+    std::cout << check_redis_unauthorized("root","12341234","12341234","192.168.136.128") << std::endl;
+    std::cout << check_pgsql_unauthorized("root", "12341234","postgres","12341234" ,"192.168.136.128","5432" ) << std::endl;
     request.reply(web::http::status_codes::OK, "result");
 }
 
@@ -1308,7 +1308,16 @@ void ServerManager::handle_post_hydra(http_request request) {
 
             std::string ip = formData.get_field("ip");
             std::string service_name = formData.get_field("service_name");
-            std::string portId_name = formData.get_field("portId");
+            std::string portId = formData.get_field("portId");
+
+            // 检查端口是否为数字
+            int port;
+            try {
+                port = std::stoi(portId);
+            }
+            catch (const std::exception& e) {
+                throw std::runtime_error("Invalid port number");
+            }
 
             // 默认文件路径
             std::string usernameFile = "/home/c/hydra/usernames.txt";
@@ -1349,13 +1358,9 @@ void ServerManager::handle_post_hydra(http_request request) {
                 has_custom_files = true;
             }
 
-            // 验证服务是否存在
-            if (port_services.find(service_name) != port_services.end()) {
-                // 构建并执行hydra命令
-                std::string command = "hydra -L " + usernameFile + " -P " + passwordFile + " -f " + service_name + "://" + ip;
-                std::string output = exec(command.c_str());
 
-                // 清理临时文件
+            // 清理临时文件的函数，以便在任何情况下都能清理
+            auto cleanup_temp_files = [&]() {
                 if (has_custom_files) {
                     if (formData.has_file("usernameFile")) {
                         remove_file(usernameFile);
@@ -1363,6 +1368,94 @@ void ServerManager::handle_post_hydra(http_request request) {
                     if (formData.has_file("passwordFile")) {
                         remove_file(passwordFile);
                     }
+                }
+                };
+
+            // 根据服务类型确定是TCP还是UDP
+            bool is_udp_service = false;
+            // 常见的UDP服务列表
+            std::vector<std::string> udp_services = { "dns", "dhcp", "snmp", "tftp", "ntp" };
+            for (const auto& udp_service : udp_services) {
+                if (service_name == udp_service) {
+                    is_udp_service = true;
+                    break;
+                }
+            }
+
+            // 构建nmap命令，根据服务类型增加相应选项
+            std::string protocol_flag = is_udp_service ? "-sU" : "-sT";
+            std::string nmap_command = "nmap " + protocol_flag + " -p " + portId + " " + ip + " -n -T4";
+
+            // 执行nmap命令
+            std::string nmap_output = exec(nmap_command.c_str());
+            std::cout << "nmap output: " << nmap_output << std::endl;
+
+            // 检查主机是否在线
+            if (nmap_output.find("Host is up") == std::string::npos) {
+                json::value error_response = json::value::object();
+                error_response[_XPLATSTR("error")] = json::value::string(_XPLATSTR("目标主机未开启或不可达"));
+                error_response[_XPLATSTR("message")] = json::value::string(_XPLATSTR(nmap_output));
+
+                http_response response(status_codes::ServiceUnavailable);
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+                response.set_body(error_response);
+                request.reply(response);
+
+                // 清理临时文件
+                cleanup_temp_files();
+                return;
+            }
+
+            // 构建端口状态检查字符串
+            std::string port_status = portId + "/" + (is_udp_service ? "udp" : "tcp") + " open";
+
+            // 检查端口是否开放
+            if (nmap_output.find(port_status) == std::string::npos) {
+                // 没有找到"open"状态，表示端口未开放
+                json::value error_response = json::value::object();
+                error_response[_XPLATSTR("error")] = json::value::string(_XPLATSTR("目标服务未开启"));
+                error_response[_XPLATSTR("message")] = json::value::string(_XPLATSTR("端口 " + portId + " 未开放或服务未运行"));
+
+                http_response response(status_codes::ServiceUnavailable);
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+                response.set_body(error_response);
+                request.reply(response);
+
+                // 清理临时文件
+                cleanup_temp_files();
+                return;
+            }
+
+            // 验证服务是否存在
+            //if (port_services.find(service_name) != port_services.end()) {
+            if (true) {
+                // 构建并执行hydra命令
+                std::string command = "hydra -L " + usernameFile + " -P " + passwordFile + " -f " + service_name + "://" + ip;
+                std::string output = exec_hydra(command.c_str());
+                std::cout << output << endl;
+
+                // 清理临时文件
+                cleanup_temp_files();
+
+                // 检查是否包含主机阻塞的错误信息
+                if (output.find("Host") != std::string::npos &&
+                    output.find("is blocked") != std::string::npos) {
+
+                    json::value error_response = json::value::object();
+                    error_response[_XPLATSTR("error")] = json::value::string(_XPLATSTR("MySQL连接错误"));
+                    error_response[_XPLATSTR("message")] = json::value::string(_XPLATSTR(output));
+
+                    http_response response(status_codes::ServiceUnavailable);
+                    response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+                    response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+                    response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+                    response.set_body(error_response);
+                    request.reply(response);
+                    return;
                 }
 
                 std::string res = extract_login_info(output);
@@ -1414,6 +1507,9 @@ void ServerManager::handle_post_hydra(http_request request) {
                 response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
                 response.set_body(error_response);
                 request.reply(response);
+
+                // 清理临时文件
+                cleanup_temp_files();
             }
         }
         catch (const std::exception& e) {

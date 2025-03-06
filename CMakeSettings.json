@@ -36,11 +36,11 @@
         },
         {
           "name": "VCPKG_ROOT",
-          "value": "/root/vcpkg",
+          "value": "/vcpkg",
           "type": "STRING"
         }
       ],
-      "includePath": [ "/root/vcpkg/installed/x64-linux/include", "${workspaceFolder}/**" ],
+      "includePath": [ "/vcpkg/installed/x64-linux/include", "${workspaceFolder}/**" ],
       "intelliSenseMode": "linux-gcc-x64"
     }
   ]

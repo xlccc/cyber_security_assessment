@@ -321,7 +321,6 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
     }
     else {
         PyErr_Print();
-        system_logger->error("调用 '_verify' 方法失败");
         result += "调用 '_verify' 方法失败\n";
     }
 
@@ -332,7 +331,6 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
         Py_DECREF(output);
     }
     else {
-        system_logger->error("无法从 StringIO 获取输出。");
         result += "无法从 StringIO 获取输出。\n";
     }
 

@@ -7,7 +7,6 @@
 #include <memory>
 #include <chrono>
 #include <stdexcept>
-
 // ���ݿ����ýṹ��
 struct DBConfig {
     std::string host;
