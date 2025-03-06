@@ -1,4 +1,4 @@
-#ifndef SERVERMANAGER_H
+﻿#ifndef SERVERMANAGER_H
 #define SERVERMANAGER_H
 #define _TURN_OFF_PLATFORM_STRING  // 禁用cpprest的U宏
 #include <cpprest/http_listener.h>
@@ -22,7 +22,7 @@
 #include <cpprest/filestream.h>
 #include "Login.h"
 #include "Command_Excute.h"
-#include "Padding.h"
+#include "Padding2.h"
 #include "scan/portScan.h"
 #include "utils_scan.h"
 #include "convert_string_t.h"
@@ -39,6 +39,9 @@
 #include <spdlog/spdlog.h>
 
 
+#include"SSHConnectionPool.h"
+#include"redis_scan.h"
+#include"pgsql_scan.h"
 using namespace web;
 using namespace web::http;
 using namespace web::http::experimental::listener;
@@ -140,6 +143,9 @@ private:
     //返回主机发现的响应
     void sendHostDiscoveryResponse(http_request& request, const std::vector<std::string>& aliveHosts);
 
+	//探测主机是否存活
+	bool pingIsAlive(const std::string& network);
+    void redis_get_scan(http_request request);
 
     ConnectionPool pool;
     DatabaseHandler dbHandler_;

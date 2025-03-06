@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+﻿cmake_minimum_required(VERSION 3.10)
 
 project(MyCppProject)
 
@@ -7,11 +7,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # 设置 vcpkg 的工具链文件，用于集成 vcpkg 管理的库
 if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-    set(CMAKE_TOOLCHAIN_FILE "/home/c/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
+    set(CMAKE_TOOLCHAIN_FILE "/root/vcpkg/scripts/buildsystems/vcpkg.cmake")
 endif()
 
 # 设置 vcpkg 的路径
-set(VCPKG_DIR "/home/c/vcpkg")
+set(VCPKG_DIR "/root/vcpkg")
 
 # 添加 vcpkg 的 include 和 library 路径
 include_directories(${VCPKG_DIR}/installed/x64-linux/include)
@@ -72,15 +72,18 @@ set(SOURCES
     main_1.cpp
     main.cpp
     Padding.cpp
+    # dd
+    Padding2.cpp
+    redis_scan.cpp
     utils/utils.cpp
     scan/portScan.cpp
     scan/utils_scan.cpp
     ServerManager.cpp
     scan/poc_check.cpp
     database/db_config.cpp
-    "database/DatabaseHandler.cpp"
     "run/mysql_scan.cpp"
     scan/hostDiscovery.cpp
+ "database/DatabaseHandler.cpp" "pgsql_scan.cpp"
     utils/threadPool.cpp "log/log.cpp")
 
 set(HEADERS
@@ -93,21 +96,26 @@ set(HEADERS
     Event_h.h
     Login.h
     Padding.h
+    #dd
+    Padding2.h 
+    redis_scan.h
+    SSHConnectionPool.h
+    EventChecker.h
+    ThreadPool.h
     utils/utils.h
     scan/portScan.h
     scan/scan_struct.h
     scan/utils_scan.h
     ServerManager.h
     scan/poc_check.h
-    "scan/config.h"
-    "database/DatabaseHandler.h" "database/mysql_connection_pool.h"
     scan/config.h 
     scan/hostDiscovery.h
     utils/threadPool.h
     scan/config.h
- "database/DatabaseHandler.h" "database/mysql_connection_pool.h"
     multipart_form_data.h "run/mysql_scan.h"
-    "log/log.h")
+    "log/log.h"
+    pgsql_scan.h
+ "database/DatabaseHandler.h" "database/mysql_connection_pool.h")
 
 # 添加可执行文件
 add_executable(MyCppProject ${SOURCES} ${HEADERS} "log/log.h" "log/log.cpp")

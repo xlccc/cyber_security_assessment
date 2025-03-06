@@ -1,4 +1,4 @@
-#include "ServerManager.h"
+﻿#include "ServerManager.h"
 
 using namespace web;
 using namespace web::http;
@@ -74,7 +74,7 @@ void ServerManager::handle_request(http_request request) {
     auto first_segment = path[0];
     auto second_segment = (path.size() > 1) ? path[1] : "";
     //用于HTTP LOG回显，在无回显的POC中得到有效验证信息
-    if (first_segment == _XPLATSTR("poc_callback")){
+    if (first_segment == _XPLATSTR("poc_callback")) {
         log_poc_callback(request);
     }
     //返回基线检测的结果
@@ -162,9 +162,19 @@ void ServerManager::handle_request(http_request request) {
     else if (first_segment == _XPLATSTR("getAliveHosts") && request.method() == methods::GET) {
 		handle_get_alive_hosts(request);
 	}
-	else {
-		request.reply(status_codes::NotFound, _XPLATSTR("Path not found"));
-	}
+    else if (first_segment == _XPLATSTR("redisScan") && request.method() == methods::GET) {
+        redis_get_scan(request);
+    }
+    else {
+        request.reply(status_codes::NotFound, _XPLATSTR("Path not found"));
+    }
+}
+
+void ServerManager::redis_get_scan(http_request request) {
+    
+    std::cout << check_redis_unauthorized("root","12341234","12341234","10.9.130.61") << std::endl;
+    std::cout << check_pgsql_unauthorized("root", "12341234","postgres","12341234" ,"10.9.130.61","5432" ) << std::endl;
+    request.reply(web::http::status_codes::OK, "result");
 }
 
 void ServerManager::handle_get_userinfo(http_request request) {
@@ -179,8 +189,34 @@ void ServerManager::handle_get_userinfo(http_request request) {
     ServerInfo[_XPLATSTR("isInternet")] = json::value::string(info_new.isInternet);
     ServerInfo[_XPLATSTR("ProductName")] = json::value::string(info_new.ProductName);
     ServerInfo[_XPLATSTR("version")] = json::value::string(info_new.version);
-    json::value response_data = json::value::array();
+    
+    // 对 Event 根据 description 去重，保留最后一个
+    map<string, event> lastEventMap;
+    for (const auto& event : Event) {
+        lastEventMap[event.description] = event;
+    }
 
+    // 将 map 中的值转换回 vector
+    vector<event> uniqueEvent;
+    for (const auto& pair : lastEventMap) {
+        uniqueEvent.push_back(pair.second);
+    }
+
+    json::value response_data = json::value::array();
+    for (size_t i = 0; i < uniqueEvent.size(); ++i) {
+        json::value user_data;
+        user_data[_XPLATSTR("basis")] = json::value::string(utility::conversions::to_string_t(uniqueEvent[i].basis));
+        user_data[_XPLATSTR("command")] = json::value::string(utility::conversions::to_string_t(uniqueEvent[i].command));
+        user_data[_XPLATSTR("description")] = json::value::string(utility::conversions::to_string_t(uniqueEvent[i].description));
+        user_data[_XPLATSTR("IsComply")] = json::value::string(utility::conversions::to_string_t(uniqueEvent[i].IsComply));
+        user_data[_XPLATSTR("recommend")] = json::value::string(utility::conversions::to_string_t(uniqueEvent[i].recommend));
+        user_data[_XPLATSTR("result")] = json::value::string(utility::conversions::to_string_t(uniqueEvent[i].result));
+        user_data[_XPLATSTR("importantLevel")] = json::value::string(utility::conversions::to_string_t(uniqueEvent[i].importantLevel));
+        response_data[i] = user_data;
+    }
+
+    /*
+    json::value response_data = json::value::array();
     for (size_t i = 0; i < Event.size(); ++i) {
         json::value user_data;
 
@@ -193,6 +229,7 @@ void ServerManager::handle_get_userinfo(http_request request) {
         user_data[_XPLATSTR("importantLevel")] = json::value::string(utility::conversions::to_string_t(Event[i].importantLevel));
         response_data[i] = user_data;
     }
+    */
     main_body[_XPLATSTR("ServerInfo")] = ServerInfo;
     main_body[_XPLATSTR("Event_result")] = response_data;
     http_response response(status_codes::OK);
@@ -210,14 +247,29 @@ void ServerManager::handle_post_login(http_request request) {
         string ip = (global_ip);
         string pd = (global_pd);
 
-        ssh_session session = initialize_ssh_session(ip.c_str(), "root", pd.c_str());
-        if (session == NULL) {
-            request.reply(status_codes::InternalError, _XPLATSTR("SSH session failed to start."));
-            return;
+        // 从请求体获取 ids
+        vector<int> selectedIds;
+        if (jsonReq.has_field(_XPLATSTR("ids"))) {
+            const json::array& ids = jsonReq[_XPLATSTR("ids")].as_array();
+            for (const auto& id : ids) {
+                selectedIds.push_back(id.as_integer());
+            }
         }
 
+        /*
+        vector<int> selectedIds = {
+        1,  // 密码生命周期检查
+        4,  // 密码复杂度检查
+        5   // 空密码检查
+        };
+        */
 
-        fun(Event, session);
+        fun2(Event, ip, "root", pd, selectedIds);
+        // Create connection pool for ServerInfo
+        SSHConnectionPool pool(ip, "root", pd, 1); // Single connection is enough for sequential operations
+        ServerInfo info;
+        ServerInfo_Padding2(info, pool);
+        info_new = convert(info);
 
         /*
         for (int i = 0; i < Event.size(); i++) {
@@ -226,13 +278,6 @@ void ServerManager::handle_post_login(http_request request) {
                 << "是否符合基线：  " << Event[i].IsComply
                 << endl;
         }*/
-
-        ServerInfo info;
-        ServerInfo_Padding(info, session);
-        info_new = convert(info);
-
-        ssh_disconnect(session);
-        ssh_free(session);
 
         http_response response(status_codes::OK);
         response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
@@ -971,7 +1016,7 @@ void ServerManager::handle_delete_data_by_id(http_request request) {
                         }
                     }
                 }
-            }  
+            }
 
         }
 
@@ -1017,7 +1062,7 @@ void ServerManager::handle_post_get_Nmap(http_request request)
 
         // 解析XML文件以获取扫描结果（多个主机）
         scan_host_result = parseXmlFile(outputPath);
-            
+
         // 获取当前时间并记录到每个扫描结果中
         auto start = std::chrono::high_resolution_clock::now();
 
@@ -1792,7 +1837,7 @@ json::value ServerManager::ScanHostResult_to_json(const ScanHostResult& scan_hos
     json::value os_vuln_result_json = json::value::array();
     int index_os_vuln = 0;
     for (const auto& vuln : scan_host_result.vuln_result) {
-        os_vuln_result_json[index_os_vuln++] = Vuln_to_json (vuln);
+        os_vuln_result_json[index_os_vuln++] = Vuln_to_json(vuln);
     }
     result[_XPLATSTR("os_vuln_result")] = os_vuln_result_json;
 
@@ -1904,7 +1949,7 @@ bool ServerManager::check_and_get_filename(const std::string& body, const std::s
 
                     // 解析并返回文件内容
                     data = part.substr(header_end_pos + 4, part.length() - header_end_pos - 6);  // Exclude trailing CRLF
-                    
+
                     // 检查文件是否已经存在
                     std::ifstream infile(path);
                     if (infile.good() && filename != "") {
@@ -2138,7 +2183,7 @@ void ServerManager::update_poc_by_cve(http_request request) {
         // 将请求体保存到临时文件
         save_request_to_temp_file(request);
 
-        std::string cve_id, vul_name , affected_infra,mode, edit_filename, poc_content;
+        std::string cve_id, vul_name, affected_infra, mode, edit_filename, poc_content;
         std::string filename = "";  // 初始化 filename
         std::ifstream temp_file(TEMP_FILENAME, std::ios::binary);
         std::string body((std::istreambuf_iterator<char>(temp_file)), std::istreambuf_iterator<char>());
@@ -2474,7 +2519,7 @@ void ServerManager::handle_post_poc_excute(http_request request)
         std::string ip = scan_host_result[0].ip;
         std::string url = scan_host_result[0].url;
 
-        std::string result = runPythonWithOutput(script, url,ip, std::stoi(portId));
+        std::string result = runPythonWithOutput(script, url, ip, std::stoi(portId));
 
         // 创建响应
         http_response response(status_codes::OK);
@@ -2487,7 +2532,7 @@ void ServerManager::handle_post_poc_excute(http_request request)
         response.set_body(response_data);
         request.reply(response);
 
-    }).wait();
+        }).wait();
 }
 
 // 记录 /poc_callback 路径的请求（待修改）
@@ -2518,7 +2563,14 @@ void ServerManager::handle_get_alive_hosts(http_request request)
         // 获取存活的主机
         std::vector<std::string> alive_hosts;
         dbHandler_.readAliveHosts(alive_hosts, pool);
-
+		//需要重新ping一下，因为存活的主机可能已经不存活了
+		for (auto& host : alive_hosts) {
+			if (!pingIsAlive(host)) {
+				//更改数据库中的存活状态
+				alive_hosts.erase(std::remove(alive_hosts.begin(), alive_hosts.end(), host), alive_hosts.end());
+                dbHandler_.updateAliveHosts(host, pool);
+			}
+		}
         // 构建响应数据
         json::value host_array = json::value::array();
         for (const auto& host : alive_hosts) {
@@ -2555,7 +2607,7 @@ void ServerManager::handle_post_poc_scan(http_request request) {
             user_logger->info("IP：{} 开始插件化漏洞扫描", ip);
             //测试所用
             //std::vector<POC> poc_list = dbManager.getAllData();
-            
+
 
              //获取要执行的POC的id
             std::vector<int> ids;
@@ -2911,6 +2963,16 @@ void ServerManager::sendHostDiscoveryResponse(http_request& request, const std::
 
     // 返回成功响应
     request.reply(status_codes::OK, response);
+}
+bool ServerManager::pingIsAlive(const std::string& network)
+{
+    HostDiscovery hostDiscovery(network);
+    auto aliveHosts = hostDiscovery.scan();
+	if (aliveHosts.size() > 0)
+	{
+		return true;
+	}
+    return false;
 }
 void ServerManager::handle_post_mysql_scan(http_request request)
 {

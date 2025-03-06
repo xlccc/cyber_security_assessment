@@ -1,19 +1,20 @@
-#ifndef CONFIG_H
+ï»¿#ifndef CONFIG_H
 #define CONFIG_H
 
 
-// ÉÏ´«POCÎÄ¼şËùĞèÒªµÄ¹Ì¶¨µÄÁÙÊ±ÎÄ¼şÃû
+// ï¿½Ï´ï¿½POCï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½Ä¹Ì¶ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½Ä¼ï¿½ï¿½ï¿½
 const std::string TEMP_FILENAME = "/tmp/uploaded_body_temp";
 
 
-// POC´úÂëÎÄ¼ş±£´æÂ·¾¶
-const std::string POC_DIRECTORY = "/home/c/.vs/cyber_security_assessment/8e509499-79aa-4583-a94f-9ac2aefdaefd/src/scan/scripts/";
+// POCä»£ç æ–‡ä»¶ä¿å­˜è·¯å¾„
+const std::string POC_DIRECTORY = "/root/.vs/cyber_seproject2/8cf44de5-c72a-44b7-b30d-6effcd345537/src/scan/scripts/";
 
-//²å¼ş»¯É¨ÃèÏà¹Ø²ÎÊı
-constexpr int max_threads = 20; // ×î´óÏß³ÌÊı
-constexpr int task_timeout_seconds = 5; // ÈÎÎñ³¬Ê±Ê±¼ä
 
-//Ïß³Ì¸öÊı
+//æ’ä»¶åŒ–æ‰«æç›¸å…³å‚æ•°
+constexpr int max_threads = 20; // æœ€å¤§çº¿ç¨‹æ•°
+constexpr int task_timeout_seconds = 5; // ä»»åŠ¡è¶…æ—¶æ—¶é—´
+
+//çº¿ç¨‹ä¸ªæ•°
 const int threadCount = 4;
 
 #endif // CONFIG_H

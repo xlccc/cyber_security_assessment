@@ -1,4 +1,4 @@
-{
+﻿{
   "configurations": [
     {
       "name": "Linux-GCC-Debug",
@@ -36,11 +36,11 @@
         },
         {
           "name": "VCPKG_ROOT",
-          "value": "/vcpkg",
+          "value": "/root/vcpkg",
           "type": "STRING"
         }
       ],
-      "includePath": [ "/vcpkg/installed/x64-linux/include", "${workspaceFolder}/**" ],
+      "includePath": [ "/root/vcpkg/installed/x64-linux/include", "${workspaceFolder}/**" ],
       "intelliSenseMode": "linux-gcc-x64"
     }
   ]

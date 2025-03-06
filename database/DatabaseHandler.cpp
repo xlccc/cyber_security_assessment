@@ -1,4 +1,4 @@
-// DatabaseHandler.cpp
+﻿// DatabaseHandler.cpp
 #include "DatabaseHandler.h"
 using namespace mysqlx;
 // 插入执行函数的实现
@@ -811,6 +811,24 @@ void DatabaseHandler::readAliveHosts(std::vector<std::string>& aliveHosts, Conne
 	}
 	catch (...) {
 		std::cerr << "未知错误发生" << std::endl;
+	}
+}
+
+void DatabaseHandler::updateAliveHosts(std::string aliveHost, ConnectionPool& pool)
+{
+	try {
+		auto conn = pool.getConnection();  // 获取连接
+		conn->sql(
+			"UPDATE scan_host_result SET "
+			"alive = 'false' "
+			"WHERE ip = ?"
+		)
+			.bind(aliveHost)
+			.execute();
+		std::cout << "成功更新存活主机: " << aliveHost << std::endl;
+	}
+	catch (const mysqlx::Error& err) {
+		std::cerr << "数据库错误: " << err.what() << std::endl;
 	}
 }
 
