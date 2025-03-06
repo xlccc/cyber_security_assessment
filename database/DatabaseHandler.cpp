@@ -831,4 +831,3 @@ void DatabaseHandler::updateAliveHosts(std::string aliveHost, ConnectionPool& po
 		std::cerr << "数据库错误: " << err.what() << std::endl;
 	}
 }
-

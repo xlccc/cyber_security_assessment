@@ -241,6 +241,7 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
     PyObject* poc_module = PyImport_ImportModule(scriptPath.c_str());
     if (!poc_module) {
         PyErr_Print();
+        system_logger->error("无法加载脚本：{}",scriptPath);
         result += "无法加载脚本：" + scriptPath + "\n";
         Py_DECREF(string_io);
         return result;
@@ -252,6 +253,7 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
         PyObject* reloaded_module = PyObject_CallFunctionObjArgs(reload_func, poc_module, NULL);
         if (!reloaded_module) {
             PyErr_Print();
+            system_logger->error("无法重新加载模块：{}", scriptPath);
             result += "无法重新加载模块：" + scriptPath + "\n";
         }
         Py_XDECREF(reloaded_module);
@@ -263,6 +265,7 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
     PyObject* poc_class = PyObject_GetAttrString(poc_module, "DemoPOC");
     if (!poc_class || !PyCallable_Check(poc_class)) {
         PyErr_Print();
+        system_logger->error("找不到类 'DemoPOC");
         result += "找不到类 'DemoPOC'\n";
         Py_DECREF(poc_module);
         Py_DECREF(string_io);
@@ -273,6 +276,7 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
     PyObject* poc_instance = PyObject_CallFunction(poc_class, "ssi", url.c_str(), ip.c_str(), port);
     if (!poc_instance) {
         PyErr_Print();
+        system_logger->error("无法实例化 'DemoPOC'");
         result += "无法实例化 'DemoPOC'\n";
         Py_DECREF(poc_class);
         Py_DECREF(poc_module);
@@ -284,6 +288,7 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
     PyObject* verify_func = PyObject_GetAttrString(poc_instance, "_verify");
     if (!verify_func || !PyCallable_Check(verify_func)) {
         PyErr_Print();
+        system_logger->error("找不到 '_verify' 方法");
         result += "找不到 '_verify' 方法\n";
         Py_DECREF(poc_instance);
         Py_DECREF(poc_class);
@@ -316,6 +321,7 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
     }
     else {
         PyErr_Print();
+        system_logger->error("调用 '_verify' 方法失败");
         result += "调用 '_verify' 方法失败\n";
     }
 
@@ -326,6 +332,7 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
         Py_DECREF(output);
     }
     else {
+        system_logger->error("无法从 StringIO 获取输出。");
         result += "无法从 StringIO 获取输出。\n";
     }
 

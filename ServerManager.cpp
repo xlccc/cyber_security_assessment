@@ -37,10 +37,6 @@ ServerManager::ServerManager()
         temp_file.close();
     }
 
-    //获取日志
-    system_logger = spdlog::get("system_logger");
-    user_logger = spdlog::get("user_logger");
-    console = spdlog::get("console");
 }
 
 void ServerManager::open_listener() {
@@ -1054,8 +1050,8 @@ void ServerManager::handle_post_get_Nmap(http_request request)
         user_logger->info("IP：{} 开始CVE-search漏洞扫描", ip);
 
         // 获取前端传来的 all_ports 参数，判断是否扫描全部端口
-        //bool allPorts = body.has_field(_XPLATSTR("all_ports")) ? body[_XPLATSTR("all_ports")].as_bool() : false;
-        bool allPorts = false;
+        bool allPorts = body.has_field(_XPLATSTR("all_ports")) ? body[_XPLATSTR("all_ports")].as_bool() : false;
+        //bool allPorts = false;
 
         // 根据前端的选择，传递是否扫描所有端口的参数
         std::string outputPath = performPortScan(ip, allPorts);
@@ -1315,8 +1311,8 @@ void ServerManager::handle_post_hydra(http_request request) {
             std::string portId_name = formData.get_field("portId");
 
             // 默认文件路径
-            std::string usernameFile = "/hydra/usernames.txt";
-            std::string passwordFile = "/hydra/passwords.txt";
+            std::string usernameFile = "/home/c/hydra/usernames.txt";
+            std::string passwordFile = "/home/c/hydra/passwords.txt";
 
             // 检查文件扩展名函数
             auto is_txt_file = [](const std::string& filename) -> bool {

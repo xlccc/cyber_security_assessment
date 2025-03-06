@@ -46,6 +46,10 @@ public:
 	//将存活的主机改为不存活
 	void updateAliveHosts(std::string aliveHost, ConnectionPool& pool);
 
+    
+    //获取ip对应的ScanHostResult
+    //ScanHostResult DatabaseHandler::getScanHostResult(const std::string& ip, ConnectionPool& pool);
+
 };
 
 #endif // DATABASEHANDLER_H

@@ -3,10 +3,6 @@
 
 
 DatabaseManager::DatabaseManager(const std::string& dbPath) {
-    //获取日志
-    system_logger = spdlog::get("system_logger");
-    user_logger = spdlog::get("user_logger");
-    console = spdlog::get("console");
 
     // 打开数据库，如果不存在则创建，参数1：db的文件路径，参数2：返回的sqlite3*对象
     db = nullptr;
@@ -265,7 +261,7 @@ bool DatabaseManager::isExistCVE(const std::string& vuln_id)
     return false;
 }
 
-//依据id搜索POC路径，用于删除对应POC
+//依据id搜索POC路径，用于删除对应POC代码文件
 std::string DatabaseManager::searchPOCById(const int & id) {
     std::vector<POC> records;
     std::string POC_filename = "";
@@ -279,9 +275,11 @@ std::string DatabaseManager::searchPOCById(const int & id) {
         system_logger->error("SQL error: {}", errMsg);
         sqlite3_free(errMsg);
     }
-    if (records.empty())
+    if (records.empty())        //没有对应POC，直接返回空
         return POC_filename;
     POC_filename = records[0].script;
+    if (POC_filename.empty())   //如果没有POC代码文件，也直接返回空。
+        return POC_filename;
     POC_filename = "../../../src/scan/scripts/" + POC_filename;
     return POC_filename;
 }
