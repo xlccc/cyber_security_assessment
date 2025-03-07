@@ -116,5 +116,23 @@ struct IpVulnerabilities {
     std::vector<PortVulnerabilityInfo> port_vulnerabilities;
 };
 
+struct PortInfo {
+    std::string ip;
+    int port;
+    std::string protocol;
+    std::string status;
+    std::string service_name;
+    std::string product;
+    std::string version;
+    std::string software_type;
+};
+
+// 定义一个新的结构体，包含IP的所有资产信息
+struct AssetInfo {
+    std::string ip;
+    std::vector<PortInfo> ports;                          // 端口信息
+    std::vector<VulnerabilityInfo> host_vulnerabilities;  // 主机漏洞
+    std::vector<PortVulnerabilityInfo> port_vulnerabilities; // 端口漏洞
+};
 
 #endif

@@ -10,7 +10,7 @@ ServerManager::ServerManager()
         "10.9.130.37",  // host
         33060,            // port
         "root",           // user
-        "Navicat822!", // password
+        "ComplexPassword123!", // password
         "test_db"         // schema
     },
     pool(localConfig),    // 使用 localConfig 初始化 pool
@@ -165,6 +165,12 @@ void ServerManager::handle_request(http_request request) {
     else if (first_segment == _XPLATSTR("redisScan") && request.method() == methods::GET) {
         redis_get_scan(request);
     }
+    else if (first_segment == _XPLATSTR("printTest") && request.method() == methods::GET) {
+        handle_get_test(request);
+    }
+    else if (first_segment == _XPLATSTR("getAllAssetInfo") && request.method() == methods::GET) {
+        handle_get_all_assets_info(request);
+    }
     else {
         request.reply(status_codes::NotFound, _XPLATSTR("Path not found"));
     }
@@ -175,6 +181,226 @@ void ServerManager::redis_get_scan(http_request request) {
     std::cout << check_redis_unauthorized("root","12341234","12341234","10.9.130.37") << std::endl;
     std::cout << check_pgsql_unauthorized("root", "12341234","postgres","12341234" ,"10.9.130.37","5432" ) << std::endl;
     request.reply(web::http::status_codes::OK, "result");
+}
+
+void ServerManager::handle_get_test(http_request request)
+{
+    std::string ip = "10.9.130.189";
+    ScanHostResult result = dbHandler_.getScanHostResult(ip, pool);
+
+    // 打印结果
+    printScanHostResult(result);
+    return;
+}
+
+
+
+void ServerManager::printScanHostResult(const ScanHostResult& result)
+{
+    
+        std::cout << "========= 主机扫描结果 =========" << std::endl;
+        std::cout << "IP地址: " << result.ip << std::endl;
+        std::cout << "URL: " << result.url << std::endl;
+        std::cout << "扫描时间: " << result.scan_time << std::endl;
+
+        // 打印操作系统信息
+        std::cout << "\n-- 操作系统信息 --" << std::endl;
+        std::cout << "操作系统类型: " << result.os_type << std::endl;
+        std::cout << "检测到的操作系统版本: ";
+        for (const auto& os : result.os_matches) {
+            std::cout << os << "  ";
+        }
+        std::cout << std::endl;
+
+        // 打印主机CPE信息
+        std::cout << "\n-- 主机CPE信息 --" << std::endl;
+        std::cout << "CPE数量: " << result.cpes.size() << std::endl;
+        for (const auto& cpe_entry : result.cpes) {
+            std::cout << "CPE: " << cpe_entry.first << std::endl;
+            std::cout << "  关联漏洞数量: " << cpe_entry.second.size() << std::endl;
+            if (!cpe_entry.second.empty()) {
+                std::cout << "  示例漏洞: " << cpe_entry.second[0].Vuln_id
+                    << " - " << cpe_entry.second[0].vul_name << std::endl;
+            }
+        }
+
+        // 打印主机漏洞信息
+        std::cout << "\n-- 主机漏洞信息 --" << std::endl;
+        std::cout << "漏洞总数: " << result.vuln_result.size() << std::endl;
+        int count = 0;
+        for (const auto& vuln : result.vuln_result) {
+            count++;
+            std::cout << "  漏洞 " << count << ": " << vuln.Vuln_id
+                << " - " << vuln.vul_name << " (CVSS: " << vuln.CVSS << ")" << std::endl;
+            //if (count >= 3) {
+            //    std::cout << "  (显示前3条漏洞，共" << result.vuln_result.size() << "条)" << std::endl;
+            //    break;
+            //}
+        }
+
+        // 打印端口信息
+        std::cout << "\n-- 端口信息 --" << std::endl;
+        std::cout << "开放端口数: " << result.ports.size() << std::endl;
+        for (const auto& port : result.ports) {
+            std::cout << "  端口: " << port.portId << " (" << port.protocol
+                << "/" << port.service_name << ")" << std::endl;
+            std::cout << "    状态: " << port.status << std::endl;
+            if (!port.product.empty())
+                std::cout << "    产品: " << port.product << std::endl;
+            if (!port.version.empty())
+                std::cout << "    版本: " << port.version << std::endl;
+            std::cout << "    漏洞数: " << port.vuln_result.size() << std::endl;
+
+            // 只显示每个端口的前2个漏洞
+            count = 0;
+            for (const auto& vuln : port.vuln_result) {
+                count++;
+                std::cout << "      漏洞 " << count << ": " << vuln.Vuln_id
+                    << " - " << vuln.vul_name << std::endl;
+                //if (count >= 2 && port.vuln_result.size() > 2) {
+                //    std::cout << "      (更多漏洞省略...)" << std::endl;
+                //    break;
+                //}
+            }
+        }
+
+        std::cout << "\n========= 扫描结果摘要 =========" << std::endl;
+        std::cout << "主机漏洞总数: " << result.vuln_result.size() << std::endl;
+
+        // 计算所有端口漏洞总数
+        int portVulnTotal = 0;
+        for (const auto& port : result.ports) {
+            portVulnTotal += port.vuln_result.size();
+        }
+        std::cout << "端口漏洞总数: " << portVulnTotal << std::endl;
+        std::cout << "漏洞总数(主机+端口): " << (result.vuln_result.size() + portVulnTotal) << std::endl;
+        std::cout << "开放端口数: " << result.ports.size() << std::endl;
+    
+
+}
+
+// 将资产信息转换为JSON格式
+web::json::value ServerManager::convertAssetInfoToJson(const AssetInfo& assetInfo)
+{
+    web::json::value result = web::json::value::object();
+    result["ip"] = web::json::value::string(assetInfo.ip);
+
+    // 添加端口信息
+    web::json::value portsArray = web::json::value::array(assetInfo.ports.size());
+    for (size_t i = 0; i < assetInfo.ports.size(); i++) {
+        web::json::value portObj = web::json::value::object();
+        const PortInfo& port = assetInfo.ports[i];
+
+        portObj["port"] = web::json::value::number(port.port);
+        portObj["protocol"] = web::json::value::string(port.protocol);
+        portObj["status"] = web::json::value::string(port.status);
+        portObj["service_name"] = web::json::value::string(port.service_name);
+        portObj["product"] = web::json::value::string(port.product);
+        portObj["version"] = web::json::value::string(port.version);
+        portObj["software_type"] = web::json::value::string(port.software_type);
+
+        portsArray[i] = portObj;
+    }
+    result["ports"] = portsArray;
+
+    // 添加主机漏洞信息
+    web::json::value hostVulnArray = web::json::value::array(assetInfo.host_vulnerabilities.size());
+    for (size_t i = 0; i < assetInfo.host_vulnerabilities.size(); i++) {
+        web::json::value vulnObj = web::json::value::object();
+        const VulnerabilityInfo& vuln = assetInfo.host_vulnerabilities[i];
+
+        vulnObj["vuln_id"] = web::json::value::string(vuln.vuln_id);
+        vulnObj["vuln_name"] = web::json::value::string(vuln.vuln_name);
+        vulnObj["cvss"] = web::json::value::string(vuln.cvss);
+        vulnObj["summary"] = web::json::value::string(vuln.summary);
+        vulnObj["vulExist"] = web::json::value::string(vuln.vulExist);
+        vulnObj["softwareType"] = web::json::value::string(vuln.softwareType);
+        vulnObj["vulType"] = web::json::value::string(vuln.vulType);
+
+        hostVulnArray[i] = vulnObj;
+    }
+    result["host_vulnerabilities"] = hostVulnArray;
+
+    // 添加端口漏洞信息
+    web::json::value portVulnArray = web::json::value::array(assetInfo.port_vulnerabilities.size());
+    for (size_t i = 0; i < assetInfo.port_vulnerabilities.size(); i++) {
+        web::json::value vulnObj = web::json::value::object();
+        const PortVulnerabilityInfo& vuln = assetInfo.port_vulnerabilities[i];
+
+        vulnObj["port_id"] = web::json::value::number(vuln.port_id);
+        vulnObj["vuln_id"] = web::json::value::string(vuln.vuln_id);
+        vulnObj["vuln_name"] = web::json::value::string(vuln.vuln_name);
+        vulnObj["cvss"] = web::json::value::string(vuln.cvss);
+        vulnObj["summary"] = web::json::value::string(vuln.summary);
+        vulnObj["vulExist"] = web::json::value::string(vuln.vulExist);
+        vulnObj["softwareType"] = web::json::value::string(vuln.softwareType);
+        vulnObj["vulType"] = web::json::value::string(vuln.vulType);
+        vulnObj["service_name"] = web::json::value::string(vuln.service_name);
+
+        portVulnArray[i] = vulnObj;
+    }
+    result["port_vulnerabilities"] = portVulnArray;
+
+    return result;
+}
+
+// 处理获取所有资产信息的HTTP请求
+void ServerManager::handle_get_all_assets_info(http_request request)
+{
+    try {
+        // 获取所有资产信息
+        std::vector<AssetInfo> allAssets = dbHandler_.getAllAssetsInfo(pool);
+
+        // 转换为JSON格式
+        web::json::value response = web::json::value::array(allAssets.size());
+        for (size_t i = 0; i < allAssets.size(); i++) {
+            response[i] = convertAssetInfoToJson(allAssets[i]);
+        }
+
+        // 返回响应
+        request.reply(status_codes::OK, response);
+    }
+    catch (const std::exception& ex) {
+        std::cerr << "处理获取所有资产信息请求时发生异常: " << ex.what() << std::endl;
+        request.reply(status_codes::InternalError, web::json::value::string("服务器内部错误"));
+    }
+    catch (...) {
+        std::cerr << "处理获取所有资产信息请求时发生未知错误" << std::endl;
+        request.reply(status_codes::InternalError, web::json::value::string("服务器内部错误"));
+    }
+}
+
+// 处理获取单个IP资产信息的HTTP请求
+void ServerManager::handle_get_asset_info(http_request request)
+{
+    try {
+        // 从URL中获取IP参数
+        std::string ip;
+        auto params = uri::split_query(request.request_uri().query());
+        auto it = params.find("ip");
+        if (it != params.end()) {
+            ip = it->second;
+        }
+        else {
+            request.reply(status_codes::BadRequest, web::json::value::string("缺少IP参数"));
+            return;
+        }
+
+        // 获取该IP的资产信息
+        AssetInfo assetInfo = dbHandler_.getCompleteAssetInfo(ip, pool);
+
+        // 转换为JSON格式并返回
+        web::json::value response = convertAssetInfoToJson(assetInfo);
+        request.reply(status_codes::OK, response);
+    }
+    catch (const std::exception& ex) {
+        std::cerr << "处理获取单个资产信息请求时发生异常: " << ex.what() << std::endl;
+        request.reply(status_codes::InternalError, web::json::value::string("服务器内部错误"));
+    }
+    catch (...) {
+        std::cerr << "处理获取单个资产信息请求时发生未知错误" << std::endl;
+        request.reply(status_codes::InternalError, web::json::value::string("服务器内部错误"));
+    }
 }
 
 void ServerManager::handle_get_userinfo(http_request request) {
@@ -1138,137 +1364,7 @@ void ServerManager::handle_post_get_Nmap(http_request request)
         }).wait();
 }
 
-//1月7日版本。
-//void ServerManager::handle_post_hydra(http_request request) {
-//    auto content_type = request.headers().content_type();
-//    if (content_type.find("multipart/form-data") == std::string::npos) {
-//        json::value error_response = json::value::object();
-//        error_response[_XPLATSTR("error")] = json::value::string(_XPLATSTR("Content type must be multipart/form-data"));
-//        http_response response(status_codes::BadRequest);
-//        response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
-//        response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
-//        response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
-//        response.set_body(error_response);
-//        request.reply(response);
-//        return;
-//    }
-//
-//    request.extract_vector().then([this, &request](std::vector<unsigned char> body) {
-//        try {
-//            MultipartFormData formData(body);
-//
-//            // 获取基本参数
-//            if (!formData.has_field("ip") || !formData.has_field("service_name") || !formData.has_field("portId")) {
-//                throw std::runtime_error("Missing required fields");
-//            }
-//
-//            std::string ip = formData.get_field("ip");
-//            std::string service_name = formData.get_field("service_name");
-//            std::string portId_name = formData.get_field("portId");
-//
-//            // 默认文件路径
-//            std::string usernameFile = "/hydra/usernames.txt";
-//            std::string passwordFile = "/hydra/passwords.txt";
-//
-//            // 处理上传的文件
-//            bool has_custom_files = false;
-//            if (formData.has_file("usernameFile")) {
-//                auto file = formData.get_file("usernameFile");
-//                std::string temp_path = "/tmp/usernames_" + generate_random_string() + ".txt";
-//                save_uploaded_file(temp_path, file.data);
-//                usernameFile = temp_path;
-//                has_custom_files = true;
-//            }
-//
-//            if (formData.has_file("passwordFile")) {
-//                auto file = formData.get_file("passwordFile");
-//                std::string temp_path = "/tmp/passwords_" + generate_random_string() + ".txt";
-//                save_uploaded_file(temp_path, file.data);
-//                passwordFile = temp_path;
-//                has_custom_files = true;
-//            }
-//
-//            //说明有这个服务
-//            if (port_services.find(service_name) != port_services.end()) {
-//                // 构建并执行hydra命令
-//                std::string command = "hydra -L " + usernameFile + " -P " + passwordFile + " -f " + service_name + "://" + ip;
-//                std::string output = exec(command.c_str());
-//
-//                // 清理临时文件
-//                if (has_custom_files) {
-//                    if (formData.has_file("usernameFile")) {
-//                        remove_file(usernameFile);
-//                    }
-//                    if (formData.has_file("passwordFile")) {
-//                        remove_file(passwordFile);
-//                    }
-//                }
-//
-//                std::string res = extract_login_info(output);
-//
-//                std::regex pattern(R"(\[(\d+)\]\[([^\]]+)\] host:\s*([^\s]+)\s+login:\s*([^\s]+)\s+password:\s*([^\s]+))");
-//                std::smatch match;
-//                int port = 0;
-//                std::string service = "";
-//                std::string host = "";
-//                std::string login = "";
-//                std::string password = "";
-//
-//                if (std::regex_search(res, match, pattern)) {
-//                    port = std::stoi(match[1].str());
-//                    service = match[2].str();
-//                    host = match[3].str();
-//                    login = match[4].str();
-//                    password = match[5].str();
-//                }
-//                else {
-//                    throw std::runtime_error("No matching info found");
-//                }
-//
-//                json::value json_obj = json::value::object();
-//                json_obj[_XPLATSTR("port")] = json::value::number(port);
-//                json_obj[_XPLATSTR("service")] = json::value::string(service);
-//                json_obj[_XPLATSTR("host")] = json::value::string(host);
-//                json_obj[_XPLATSTR("login")] = json::value::string(login);
-//                json_obj[_XPLATSTR("password")] = json::value::string(password);
-//
-//                json::value json_array = json::value::array();
-//                json_array[0] = json_obj;
-//
-//                http_response response(status_codes::OK);
-//                response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
-//                response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
-//                response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
-//                response.set_body(json_array);
-//                request.reply(response);
-//            }
-//            else {
-//                json::value error_response = json::value::object();
-//                error_response[_XPLATSTR("error")] = json::value::string(_XPLATSTR("Service not found"));
-//                error_response[_XPLATSTR("service_name")] = json::value::string(service_name);
-//
-//                http_response response(status_codes::NotFound);
-//                response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
-//                response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
-//                response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
-//                response.set_body(error_response);
-//                request.reply(response);
-//            }
-//        }
-//        catch (const std::exception& e) {
-//            std::cerr << "An error occurred: " << e.what() << std::endl;
-//            http_response response(status_codes::InternalError);
-//            response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
-//            response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
-//            response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
-//            json::value error_response = json::value::object();
-//            error_response[_XPLATSTR("error")] = json::value::string(_XPLATSTR("Internal server error"));
-//            error_response[_XPLATSTR("details")] = json::value::string(_XPLATSTR(e.what()));
-//            response.set_body(error_response);
-//            request.reply(response);
-//        }
-//        }).wait();
-//}
+
 
 //1.12日版本添加文件大小和文件后缀的检查
 void ServerManager::handle_post_hydra(http_request request) {
@@ -1312,7 +1408,16 @@ void ServerManager::handle_post_hydra(http_request request) {
 
             std::string ip = formData.get_field("ip");
             std::string service_name = formData.get_field("service_name");
-            std::string portId_name = formData.get_field("portId");
+            std::string portId = formData.get_field("portId");
+
+            // 检查端口是否为数字
+            int port;
+            try {
+                port = std::stoi(portId);
+            }
+            catch (const std::exception& e) {
+                throw std::runtime_error("Invalid port number");
+            }
 
             // 默认文件路径
             std::string usernameFile = "/hydra/usernames.txt";
@@ -1353,13 +1458,9 @@ void ServerManager::handle_post_hydra(http_request request) {
                 has_custom_files = true;
             }
 
-            // 验证服务是否存在
-            if (port_services.find(service_name) != port_services.end()) {
-                // 构建并执行hydra命令
-                std::string command = "hydra -L " + usernameFile + " -P " + passwordFile + " -f " + service_name + "://" + ip;
-                std::string output = exec(command.c_str());
 
-                // 清理临时文件
+            // 清理临时文件的函数，以便在任何情况下都能清理
+            auto cleanup_temp_files = [&]() {
                 if (has_custom_files) {
                     if (formData.has_file("usernameFile")) {
                         remove_file(usernameFile);
@@ -1367,6 +1468,94 @@ void ServerManager::handle_post_hydra(http_request request) {
                     if (formData.has_file("passwordFile")) {
                         remove_file(passwordFile);
                     }
+                }
+                };
+
+            // 根据服务类型确定是TCP还是UDP
+            bool is_udp_service = false;
+            // 常见的UDP服务列表
+            std::vector<std::string> udp_services = { "dns", "dhcp", "snmp", "tftp", "ntp" };
+            for (const auto& udp_service : udp_services) {
+                if (service_name == udp_service) {
+                    is_udp_service = true;
+                    break;
+                }
+            }
+
+            // 构建nmap命令，根据服务类型增加相应选项
+            std::string protocol_flag = is_udp_service ? "-sU" : "-sT";
+            std::string nmap_command = "nmap " + protocol_flag + " -p " + portId + " " + ip + " -n -T4";
+
+            // 执行nmap命令
+            std::string nmap_output = exec(nmap_command.c_str());
+            std::cout << "nmap output: " << nmap_output << std::endl;
+
+            // 检查主机是否在线
+            if (nmap_output.find("Host is up") == std::string::npos) {
+                json::value error_response = json::value::object();
+                error_response[_XPLATSTR("error")] = json::value::string(_XPLATSTR("目标主机未开启或不可达"));
+                error_response[_XPLATSTR("message")] = json::value::string(_XPLATSTR(nmap_output));
+
+                http_response response(status_codes::ServiceUnavailable);
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+                response.set_body(error_response);
+                request.reply(response);
+
+                // 清理临时文件
+                cleanup_temp_files();
+                return;
+            }
+
+            // 构建端口状态检查字符串
+            std::string port_status = portId + "/" + (is_udp_service ? "udp" : "tcp") + " open";
+
+            // 检查端口是否开放
+            if (nmap_output.find(port_status) == std::string::npos) {
+                // 没有找到"open"状态，表示端口未开放
+                json::value error_response = json::value::object();
+                error_response[_XPLATSTR("error")] = json::value::string(_XPLATSTR("目标服务未开启"));
+                error_response[_XPLATSTR("message")] = json::value::string(_XPLATSTR("端口 " + portId + " 未开放或服务未运行"));
+
+                http_response response(status_codes::ServiceUnavailable);
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+                response.set_body(error_response);
+                request.reply(response);
+
+                // 清理临时文件
+                cleanup_temp_files();
+                return;
+            }
+
+            // 验证服务是否存在
+            //if (port_services.find(service_name) != port_services.end()) {
+            if (true) {
+                // 构建并执行hydra命令
+                std::string command = "hydra -L " + usernameFile + " -P " + passwordFile + " -f " + service_name + "://" + ip;
+                std::string output = exec_hydra(command.c_str());
+                std::cout << output << endl;
+
+                // 清理临时文件
+                cleanup_temp_files();
+
+                // 检查是否包含主机阻塞的错误信息
+                if (output.find("Host") != std::string::npos &&
+                    output.find("is blocked") != std::string::npos) {
+
+                    json::value error_response = json::value::object();
+                    error_response[_XPLATSTR("error")] = json::value::string(_XPLATSTR("MySQL连接错误"));
+                    error_response[_XPLATSTR("message")] = json::value::string(_XPLATSTR(output));
+
+                    http_response response(status_codes::ServiceUnavailable);
+                    response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+                    response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+                    response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+                    response.set_body(error_response);
+                    request.reply(response);
+                    return;
                 }
 
                 std::string res = extract_login_info(output);
@@ -1418,6 +1607,9 @@ void ServerManager::handle_post_hydra(http_request request) {
                 response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
                 response.set_body(error_response);
                 request.reply(response);
+
+                // 清理临时文件
+                cleanup_temp_files();
             }
         }
         catch (const std::exception& e) {

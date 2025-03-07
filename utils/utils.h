@@ -20,6 +20,8 @@
 #include <random>
 #include <fstream>
 #include<iostream>
+#include <signal.h>  // 用于 SIGTERM, SIGKILL 和 kill 函数
+#include <unistd.h>  // 用于 usleep 函数和 pid_t 类型
 extern PyObject* global_importlib; // 仅声明，不定义
 extern PyObject* global_io;         // 仅声明，不定义
 
@@ -37,6 +39,7 @@ std::string autoConvertToUTF8(const std::string& input);
 // Function to execute a command and get the output
 std::string exec(const char* cmd);
 
+std::string exec_hydra(const char* cmd);
 // Function to extract login information from hydra output
 
 std::string extract_login_info(const std::string& output);

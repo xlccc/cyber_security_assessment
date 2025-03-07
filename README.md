@@ -73,7 +73,29 @@ sudo apt-get install -y autoconf automake autoconf-archive ninja-build
 #在localhost登入mysql后，更改 “mysql” 数据库里的 “user” 表里的 “host” 项，将"localhost"改称"%（代表允许远程）
 update user set host = '%' where user = 'root';
 select host, user from user;
+
 ```
+
+#### 5.Hydra
+
+弱口令检测需要的工具
+
+```bash
+sudo apt update
+sudo apt install hydra
+#安装完成后，可以通过以下命令验证安装：
+hydra -h
+```
+
+然后在Linux根目录下创建/hydra路径
+
+```bash
+sudo mkdir /hydra
+```
+
+然后将项目中的usernames.txt和passwords.txt放到这个目录下 /hydra/
+
+
 
 ### 前端
 
@@ -88,6 +110,8 @@ select host, user from user;
 3. 配置运行/调试任务：
    - 点击右上角的运行配置下拉菜单，选择 `Edit Configurations`。
    - 添加 `npm` 任务，设置 `serve` 为默认任务。
+
+
 
 ## 现阶段进度
 | 总览 | | | | |
