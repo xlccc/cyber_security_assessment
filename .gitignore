@@ -17,3 +17,4 @@
 /build
 /out/build/x64-Debug
 /out/build/x64-Debug/CMakeCache.txt
+/database/db_config.h

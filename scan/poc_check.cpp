@@ -51,7 +51,8 @@ void verifyPOCs(std::vector<ScanHostResult>& scanHostResults, DatabaseHandler& d
         // 操作系统级别漏洞进行POC验证
         for (auto& cpeEntry : hostResult.cpes) {
             for (auto& cve : cpeEntry.second) {
-                if (cve.pocExist && cve.ifCheck && cve.vulExist == "未验证") {
+                if (cve.pocExist && cve.ifCheck) {
+//                if (cve.pocExist && cve.ifCheck && cve.vulExist == "未验证") {
                     std::string result = runPythonWithOutput(cve.script, hostResult.url, hostResult.ip, 0);
                     // 检查result中是否包含[!]来判断漏洞是否存在
                     if (result.find("[!]") != std::string::npos) {

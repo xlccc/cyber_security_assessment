@@ -2702,30 +2702,96 @@ void ServerManager::update_poc_by_cve(http_request request) {
 
 
 
+//void ServerManager::handle_post_poc_excute(http_request request)
+//{
+//    request.extract_json().then([this, &request](json::value body) {
+//        std::string CVE_id = body[_XPLATSTR("CVE_id")].as_string();
+//        std::string script = findScriptByCveId(scan_host_result, CVE_id);
+//        std::string portId = findPortIdByCveId(scan_host_result, CVE_id);
+//        std::string ip = scan_host_result[0].ip;
+//        std::string url = scan_host_result[0].url;
+//
+//        std::string result = runPythonWithOutput(script, url, ip, std::stoi(portId));
+//
+//        // 创建响应
+//        http_response response(status_codes::OK);
+//        response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+//        response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+//        response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+//
+//        json::value response_data;
+//        response_data[_XPLATSTR("message")] = json::value::string(result);
+//        response.set_body(response_data);
+//        request.reply(response);
+//
+//        }).wait();
+//}
+
 void ServerManager::handle_post_poc_excute(http_request request)
 {
     request.extract_json().then([this, &request](json::value body) {
-        std::string CVE_id = body[_XPLATSTR("CVE_id")].as_string();
-        std::string script = findScriptByCveId(scan_host_result, CVE_id);
-        std::string portId = findPortIdByCveId(scan_host_result, CVE_id);
-        std::string ip = scan_host_result[0].ip;
-        std::string url = scan_host_result[0].url;
+        try {
+            std::string CVE_id = body[_XPLATSTR("CVE_id")].as_string();
 
-        std::string result = runPythonWithOutput(script, url, ip, std::stoi(portId));
+            // 使用新的函数获取CVE引用
+            Vuln& cve = findCveByCveId(scan_host_result, CVE_id);
 
-        // 创建响应
-        http_response response(status_codes::OK);
-        response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
-        response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
-        response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+            // 从找到的CVE直接获取script
+            std::string script = cve.script;
+            std::string portId = findPortIdByCveId(scan_host_result, CVE_id);
+            std::string ip = scan_host_result[0].ip;
+            std::string url = scan_host_result[0].url;
 
-        json::value response_data;
-        response_data[_XPLATSTR("message")] = json::value::string(result);
-        response.set_body(response_data);
-        request.reply(response);
+            // 执行脚本
+            std::string result = runPythonWithOutput(script, url, ip, std::stoi(portId));
 
+            if (result.find("[!]") != std::string::npos) {
+                cve.vulExist = "存在";
+            }
+            else if (result.find("[SAFE]") != std::string::npos) {
+                cve.vulExist = "不存在";
+            }
+            else
+            {
+                cve.vulExist = "未验证";
+            }
+            dbHandler_.alterPortVulnResultAfterPocVerify(pool, cve, ip, portId);
+            // 创建响应
+            http_response response(status_codes::OK);
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+            json::value response_data;
+            response_data[_XPLATSTR("message")] = json::value::string(result);
+            response.set_body(response_data);
+            request.reply(response);
+        }
+        catch (const std::runtime_error& e) {
+            // 处理未找到CVE的情况
+            http_response response(status_codes::BadRequest);
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+            json::value error_data;
+            error_data[_XPLATSTR("error")] = json::value::string(e.what());
+            response.set_body(error_data);
+            request.reply(response);
+        }
+        catch (const std::exception& e) {
+            // 处理其他可能的异常
+            http_response response(status_codes::InternalError);
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+            json::value error_data;
+            error_data[_XPLATSTR("error")] = json::value::string(e.what());
+            response.set_body(error_data);
+            request.reply(response);
+        }
         }).wait();
 }
+
+
 
 // 记录 /poc_callback 路径的请求（待修改）
 void ServerManager::log_poc_callback(const http_request& request) {

@@ -208,7 +208,7 @@ void DatabaseHandler::alterPortVulnResultAfterPocVerify(ConnectionPool& pool, co
             "JOIN scan_host_result shr ON pvr.shr_id = shr.id "
             "JOIN open_ports op ON pvr.port_id = op.id AND op.shr_id = pvr.shr_id "  // 增加 shr_id 匹配
             "JOIN vuln v ON pvr.vuln_id = v.id "
-            "WHERE shr.ip = ? AND v.vuln_id = ? AND op.id = ?"
+            "WHERE shr.ip = ? AND v.vuln_id = ? AND op.port = ?"
         ).bind(ip, vuln_id, portId).execute();
 
         // 获取查询结果
