@@ -10,7 +10,7 @@ ServerManager::ServerManager()
         "10.9.130.37",  // host
         33060,            // port
         "root",           // user
-        "ComplexPassword123!", // password
+        "Navicat822!", // password
         "test_db"         // schema
     },
     pool(localConfig),    // 使用 localConfig 初始化 pool
