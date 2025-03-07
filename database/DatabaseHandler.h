@@ -67,6 +67,9 @@ public:
 
     // 获取所有存活主机的完整资产信息
     std::vector<AssetInfo> getAllAssetsInfo(ConnectionPool& pool);
+
+    //获取ip对应的ScanHostResult
+   //ScanHostResult DatabaseHandler::getScanHostResult(const std::string& ip, ConnectionPool& pool);
 };
 
 #endif // DATABASEHANDLER_H

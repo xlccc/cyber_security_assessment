@@ -18,7 +18,7 @@ struct DBConfig {
     size_t max_size;
     std::chrono::seconds connection_timeout;
 
-    // ���캯�����ṩĬ��ֵ
+    // 构造函数，提供默认值
     DBConfig(
         std::string host_ = "10.9.130.37",
         uint16_t port_ = 33060,

@@ -8,6 +8,7 @@
 #include"poc.h"
 #include"../utils/utils.h"
 #include <spdlog/spdlog.h>
+#include"log/log.h"
 
 
 // DatabaseManager类，封装数据库操作
@@ -52,10 +53,10 @@ public:
     //获取所有数据
     std::vector<POC> getAllData();
 
+    // (新增）获取有效POC，即搜索 Script 字段不为空的记录
+    std::vector<POC> getVaildPOCData();
+
 private:
-    std::shared_ptr<spdlog::logger> system_logger; // 系统日志
-    std::shared_ptr<spdlog::logger> user_logger; // 用户日志
-    std::shared_ptr<spdlog::logger> console;    //控制台日志
 
     sqlite3* db; // SQLite数据库连接对象 
     int size;    //记录个数

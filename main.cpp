@@ -21,8 +21,6 @@ int main()
     // 初始化日志系统
     init_logs();
 
-    auto system_logger = spdlog::get("system_logger");
-
     // 初始化Python解释器
     initializePython();
 
@@ -30,7 +28,7 @@ int main()
 	if (getcwd(cwd, sizeof(cwd)) != nullptr) {
 		std::cout << "Current working directory: " << cwd << std::endl;
 
-        system_logger->info("System started. Current working directory: {}", cwd);
+        //system_logger->info("System started. Current working directory: {}", cwd);
 	}
 	else {
 		std::cerr << "Error getting current working directory" << std::endl;
