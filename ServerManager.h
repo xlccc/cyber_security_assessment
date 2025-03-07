@@ -144,6 +144,10 @@ private:
 	bool pingIsAlive(const std::string& network);
     void redis_get_scan(http_request request);
 
+	void handle_get_test(http_request request);
+    // 辅助函数：打印扫描结果详情
+    void printScanHostResult(const ScanHostResult& result);
+
     ConnectionPool pool;
     DatabaseHandler dbHandler_;
     DatabaseManager dbManager;
@@ -164,6 +168,15 @@ private:
     vector<ScanHostResult> scan_host_result;
     //历史扫描结果
     HistoricalScanData historicalData;
+
+    // 将资产信息转换为JSON格式
+    web::json::value convertAssetInfoToJson(const AssetInfo& assetInfo);
+
+    // 处理获取所有资产信息的HTTP请求
+    void handle_get_all_assets_info(http_request request);
+
+    // 处理获取单个IP资产信息的HTTP请求
+    void handle_get_asset_info(http_request request);
 
 };
 

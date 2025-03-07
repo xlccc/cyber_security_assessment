@@ -517,6 +517,34 @@ std::string findPortIdByCveId(std::vector<ScanHostResult>& scan_host_result, con
     return ""; // 如果没有找到，返回空字符串
 }
 
+Vuln& findCveByCveId(std::vector<ScanHostResult>& scan_host_result, const std::string& cve_id)
+{
+	// 遍历所有的 ScanHostResult
+	for (auto& hostResult : scan_host_result) {
+		// 遍历主机的CPES
+		for (auto& cpe : hostResult.cpes) {
+			for (auto& cve : cpe.second) {
+				if (cve.Vuln_id == cve_id) {
+					return cve; // 找到匹配的CVE，返回引用
+				}
+			}
+		}
+
+		// 遍历主机的端口
+		for (auto& port : hostResult.ports) {
+			for (auto& cpe : port.cpes) {
+				for (auto& cve : cpe.second) {
+					if (cve.Vuln_id == cve_id) {
+						return cve; // 找到匹配的CVE，返回引用
+					}
+				}
+			}
+		}
+	}
+
+	throw std::runtime_error("CVE ID not found: " + cve_id); // 如果没有找到，抛出异常
+}
+
 // 判断 CPE 是否一致，返回不一致的 CPE
 std::vector<std::string> compareCPEs(const std::map<std::string, std::vector<Vuln>>& newCPEs, const std::map<std::string, std::vector<Vuln>>& oldCPEs) {
     std::vector<std::string> changedCPEs;

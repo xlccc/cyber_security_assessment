@@ -51,6 +51,8 @@ std::string findScriptByCveId(std::vector<ScanHostResult>& scan_host_result, con
 
 std::string findPortIdByCveId(std::vector<ScanHostResult>& scan_host_result, const std::string& cve_id);
 
+Vuln& findCveByCveId(std::vector<ScanHostResult>& scan_host_result, const std::string& cve_id);
+
 // 判断 CPE 是否一致，返回不一致的 CPE
 std::vector<std::string> compareCPEs(const std::map<std::string, std::vector<Vuln>>& newCPEs, const std::map<std::string, std::vector<Vuln>>& oldCPEs);
 
