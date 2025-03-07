@@ -383,3 +383,17 @@ std::vector<POC> DatabaseManager::getAllData() {
     return records;
 }
 
+// (新增）获取有效POC，即搜索 Script 字段不为空的记录
+std::vector<POC> DatabaseManager::getVaildPOCData() {
+    std::vector<POC> records;
+    std::string sql = "SELECT * FROM POC WHERE Script IS NOT NULL AND Script != '';";
+    char* errMsg = nullptr;
+    int rc = sqlite3_exec(db, sql.c_str(), callback, &records, &errMsg);
+    if (rc != SQLITE_OK) {
+        system_logger->error("SQL error: " + std::string(errMsg));
+        sqlite3_free(errMsg);
+        exit(1);            // 执行失败必须退出，其他功能依赖于此函数的成功调用
+    }
+    return records;
+}
+

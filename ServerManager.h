@@ -73,6 +73,7 @@ private:
     void handle_get_cve_scan(http_request request);
 
     void handle_get_all_data(http_request request);
+    void handle_get_vaild_poc_data(http_request request);    //获取POC代码存在的POC数据
     void handle_search_data(http_request request);
     void handle_post_insert_data(http_request request);
     void handle_put_update_data_by_id(http_request request);

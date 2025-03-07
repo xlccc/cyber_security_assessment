@@ -92,6 +92,9 @@ void ServerManager::handle_request(http_request request) {
     else if (first_segment == _XPLATSTR("getAllData") && request.method() == methods::GET) {
         handle_get_all_data(request);
     }
+    else if (first_segment == _XPLATSTR("getVaildPOCData") && request.method() == methods::GET) {
+        handle_get_vaild_poc_data(request);
+    }
     else if (first_segment == _XPLATSTR("searchData") && request.method() == methods::GET) {
         handle_search_data(request);
     }
@@ -523,6 +526,17 @@ void ServerManager::handle_get_cve_scan(http_request request) {
 
 void ServerManager::handle_get_all_data(http_request request) {
     poc_list = dbManager.getAllData();
+    json::value all_data = poc_list_to_json(poc_list);
+
+    http_response response(status_codes::OK);
+    response.headers().add(_XPLATSTR("Content-Type"), _XPLATSTR("application/json; charset=utf-8"));
+    response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+    response.set_body(all_data);
+    request.reply(response);
+}
+
+void ServerManager::handle_get_vaild_poc_data(http_request request) {
+    poc_list = dbManager.getVaildPOCData();
     json::value all_data = poc_list_to_json(poc_list);
 
     http_response response(status_codes::OK);
