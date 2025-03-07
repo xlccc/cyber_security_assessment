@@ -237,18 +237,61 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
     PyObject_SetAttrString(sys, "stderr", string_io);
     Py_DECREF(sys); // 使用完毕后释放 sys
 
+    
     // 导入 POC 模块
     PyObject* poc_module = PyImport_ImportModule(scriptPath.c_str());
+    if (!poc_module) {
+        PyObject* type, * value, * traceback;
+        PyErr_Fetch(&type, &value, &traceback);
+        PyErr_NormalizeException(&type, &value, &traceback);
+
+        if (value) {
+            PyObject* str_value = PyObject_Str(value);
+            if (str_value) {
+                result += "无法加载脚本：" + scriptPath + "，错误信息：" + std::string(PyUnicode_AsUTF8(str_value));
+                Py_DECREF(str_value);
+            }
+        }
+        Py_XDECREF(type);
+        Py_XDECREF(value);
+        Py_XDECREF(traceback);
+        Py_DECREF(string_io);
+        return result;
+    }
+    
+    /*旧版：错误信息不完整
     if (!poc_module) {
         PyErr_Print();
         system_logger->error("无法加载脚本：{}",scriptPath);
         result += "无法加载脚本：" + scriptPath + "\n";
         Py_DECREF(string_io);
         return result;
-    }
+    }*/
+
 
     // 重新加载模块
     PyObject* reload_func = PyObject_GetAttrString(global_importlib, "reload");
+    if (reload_func && PyCallable_Check(reload_func)) {
+        PyObject* reloaded_module = PyObject_CallFunctionObjArgs(reload_func, poc_module, NULL);
+        if (!reloaded_module) {
+            PyObject* type, * value, * traceback;
+            PyErr_Fetch(&type, &value, &traceback);
+            PyErr_NormalizeException(&type, &value, &traceback);
+
+            if (value) {
+                PyObject* str_value = PyObject_Str(value);
+                if (str_value) {
+                    result += "无法重新加载模块：" + scriptPath + "，错误信息：" + std::string(PyUnicode_AsUTF8(str_value));
+                    Py_DECREF(str_value);
+                }
+            }
+            Py_XDECREF(type);
+            Py_XDECREF(value);
+            Py_XDECREF(traceback);
+        }
+        Py_XDECREF(reloaded_module);
+    }
+    /*旧版：错误信息不完整
     if (reload_func && PyCallable_Check(reload_func)) {
         PyObject* reloaded_module = PyObject_CallFunctionObjArgs(reload_func, poc_module, NULL);
         if (!reloaded_module) {
@@ -258,8 +301,11 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
         }
         Py_XDECREF(reloaded_module);
     }
+    */
+
     Py_XDECREF(reload_func);
     system_logger->info("Module successfully loaded or refreshed.");
+    
 
     // 获取类对象 DemoPOC
     PyObject* poc_class = PyObject_GetAttrString(poc_module, "DemoPOC");
