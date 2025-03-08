@@ -125,6 +125,10 @@ struct PortInfo {
     std::string product;
     std::string version;
     std::string software_type;
+    std::string weak_username;        // 弱口令用户名
+    std::string weak_password;        // 弱口令密码
+    bool password_verified;           // 密码是否已验证
+    std::string verify_time;          // 验证时间
 };
 
 // 定义一个新的结构体，包含IP的所有资产信息

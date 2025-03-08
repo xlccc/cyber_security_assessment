@@ -181,6 +181,9 @@ private:
     // 处理获取单个IP资产信息的HTTP请求
     void handle_get_asset_info(http_request request);
 
+    //判断特定ip的服务是否存在
+    bool isServiceExistByIp(const std::string& ip, const std::string& service_name, ConnectionPool& pool);
+
 };
 
 #endif // SERVERMANAGER_H
