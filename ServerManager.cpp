@@ -7,16 +7,16 @@ using namespace concurrency::streams;
 
 ServerManager::ServerManager()
     : localConfig{
-        "192.168.136.128",  // host
+        "10.9.130.189",  // host
         33060,            // port
         "root",           // user
-        "123456", // password
+        "ComplexPassword123!", // password
         "test_db"         // schema
     },
     pool(localConfig),    // 使用 localConfig 初始化 pool
     dbManager(DB_PATH)    // 原有的 dbManager 初始化
 {
-    utility::string_t address = _XPLATSTR("http://192.168.136.128:8081/");
+    utility::string_t address = _XPLATSTR("http://10.9.130.189:8081/");
     uri_builder uri(address);
     auto addr = uri.to_uri().to_string();
     listener = std::make_unique<http_listener>(addr);
@@ -177,8 +177,8 @@ void ServerManager::handle_request(http_request request) {
 
 void ServerManager::redis_get_scan(http_request request) {
     
-    std::cout << check_redis_unauthorized("root","12341234","12341234","192.168.136.128") << std::endl;
-    std::cout << check_pgsql_unauthorized("root", "12341234","postgres","12341234" ,"192.168.136.128","5432" ) << std::endl;
+    std::cout << check_redis_unauthorized("root","12341234","12341234","10.9.130.189") << std::endl;
+    std::cout << check_pgsql_unauthorized("root", "12341234","postgres","12341234" ,"10.9.130.189","5432" ) << std::endl;
     request.reply(web::http::status_codes::OK, "result");
 }
 
@@ -278,6 +278,70 @@ void ServerManager::printScanHostResult(const ScanHostResult& result)
 
 }
 
+//// 将资产信息转换为JSON格式
+//web::json::value ServerManager::convertAssetInfoToJson(const AssetInfo& assetInfo)
+//{
+//    web::json::value result = web::json::value::object();
+//    result["ip"] = web::json::value::string(assetInfo.ip);
+//
+//    // 添加端口信息
+//    web::json::value portsArray = web::json::value::array(assetInfo.ports.size());
+//    for (size_t i = 0; i < assetInfo.ports.size(); i++) {
+//        web::json::value portObj = web::json::value::object();
+//        const PortInfo& port = assetInfo.ports[i];
+//
+//        portObj["port"] = web::json::value::number(port.port);
+//        portObj["protocol"] = web::json::value::string(port.protocol);
+//        portObj["status"] = web::json::value::string(port.status);
+//        portObj["service_name"] = web::json::value::string(port.service_name);
+//        portObj["product"] = web::json::value::string(port.product);
+//        portObj["version"] = web::json::value::string(port.version);
+//        portObj["software_type"] = web::json::value::string(port.software_type);
+//
+//        portsArray[i] = portObj;
+//    }
+//    result["ports"] = portsArray;
+//
+//    // 添加主机漏洞信息
+//    web::json::value hostVulnArray = web::json::value::array(assetInfo.host_vulnerabilities.size());
+//    for (size_t i = 0; i < assetInfo.host_vulnerabilities.size(); i++) {
+//        web::json::value vulnObj = web::json::value::object();
+//        const VulnerabilityInfo& vuln = assetInfo.host_vulnerabilities[i];
+//
+//        vulnObj["vuln_id"] = web::json::value::string(vuln.vuln_id);
+//        vulnObj["vuln_name"] = web::json::value::string(vuln.vuln_name);
+//        vulnObj["cvss"] = web::json::value::string(vuln.cvss);
+//        vulnObj["summary"] = web::json::value::string(vuln.summary);
+//        vulnObj["vulExist"] = web::json::value::string(vuln.vulExist);
+//        vulnObj["softwareType"] = web::json::value::string(vuln.softwareType);
+//        vulnObj["vulType"] = web::json::value::string(vuln.vulType);
+//
+//        hostVulnArray[i] = vulnObj;
+//    }
+//    result["host_vulnerabilities"] = hostVulnArray;
+//
+//    // 添加端口漏洞信息
+//    web::json::value portVulnArray = web::json::value::array(assetInfo.port_vulnerabilities.size());
+//    for (size_t i = 0; i < assetInfo.port_vulnerabilities.size(); i++) {
+//        web::json::value vulnObj = web::json::value::object();
+//        const PortVulnerabilityInfo& vuln = assetInfo.port_vulnerabilities[i];
+//
+//        vulnObj["port_id"] = web::json::value::number(vuln.port_id);
+//        vulnObj["vuln_id"] = web::json::value::string(vuln.vuln_id);
+//        vulnObj["vuln_name"] = web::json::value::string(vuln.vuln_name);
+//        vulnObj["cvss"] = web::json::value::string(vuln.cvss);
+//        vulnObj["summary"] = web::json::value::string(vuln.summary);
+//        vulnObj["vulExist"] = web::json::value::string(vuln.vulExist);
+//        vulnObj["softwareType"] = web::json::value::string(vuln.softwareType);
+//        vulnObj["vulType"] = web::json::value::string(vuln.vulType);
+//        vulnObj["service_name"] = web::json::value::string(vuln.service_name);
+//
+//        portVulnArray[i] = vulnObj;
+//    }
+//    result["port_vulnerabilities"] = portVulnArray;
+//
+//    return result;
+//}
 // 将资产信息转换为JSON格式
 web::json::value ServerManager::convertAssetInfoToJson(const AssetInfo& assetInfo)
 {
@@ -298,6 +362,16 @@ web::json::value ServerManager::convertAssetInfoToJson(const AssetInfo& assetInf
         portObj["version"] = web::json::value::string(port.version);
         portObj["software_type"] = web::json::value::string(port.software_type);
 
+        // 添加弱口令相关信息
+        portObj["weak_username"] = web::json::value::string(port.weak_username);
+        portObj["weak_password"] = web::json::value::string(port.weak_password);
+        portObj["password_verified"] = web::json::value::boolean(port.password_verified);
+
+        // 仅当验证时间不为空时添加
+        if (!port.verify_time.empty()) {
+            portObj["verify_time"] = web::json::value::string(port.verify_time);
+        }
+
         portsArray[i] = portObj;
     }
     result["ports"] = portsArray;
@@ -307,7 +381,6 @@ web::json::value ServerManager::convertAssetInfoToJson(const AssetInfo& assetInf
     for (size_t i = 0; i < assetInfo.host_vulnerabilities.size(); i++) {
         web::json::value vulnObj = web::json::value::object();
         const VulnerabilityInfo& vuln = assetInfo.host_vulnerabilities[i];
-
         vulnObj["vuln_id"] = web::json::value::string(vuln.vuln_id);
         vulnObj["vuln_name"] = web::json::value::string(vuln.vuln_name);
         vulnObj["cvss"] = web::json::value::string(vuln.cvss);
@@ -315,7 +388,6 @@ web::json::value ServerManager::convertAssetInfoToJson(const AssetInfo& assetInf
         vulnObj["vulExist"] = web::json::value::string(vuln.vulExist);
         vulnObj["softwareType"] = web::json::value::string(vuln.softwareType);
         vulnObj["vulType"] = web::json::value::string(vuln.vulType);
-
         hostVulnArray[i] = vulnObj;
     }
     result["host_vulnerabilities"] = hostVulnArray;
@@ -325,7 +397,6 @@ web::json::value ServerManager::convertAssetInfoToJson(const AssetInfo& assetInf
     for (size_t i = 0; i < assetInfo.port_vulnerabilities.size(); i++) {
         web::json::value vulnObj = web::json::value::object();
         const PortVulnerabilityInfo& vuln = assetInfo.port_vulnerabilities[i];
-
         vulnObj["port_id"] = web::json::value::number(vuln.port_id);
         vulnObj["vuln_id"] = web::json::value::string(vuln.vuln_id);
         vulnObj["vuln_name"] = web::json::value::string(vuln.vuln_name);
@@ -335,13 +406,13 @@ web::json::value ServerManager::convertAssetInfoToJson(const AssetInfo& assetInf
         vulnObj["softwareType"] = web::json::value::string(vuln.softwareType);
         vulnObj["vulType"] = web::json::value::string(vuln.vulType);
         vulnObj["service_name"] = web::json::value::string(vuln.service_name);
-
         portVulnArray[i] = vulnObj;
     }
     result["port_vulnerabilities"] = portVulnArray;
 
     return result;
 }
+
 
 // 处理获取所有资产信息的HTTP请求
 void ServerManager::handle_get_all_assets_info(http_request request)
@@ -400,6 +471,21 @@ void ServerManager::handle_get_asset_info(http_request request)
         std::cerr << "处理获取单个资产信息请求时发生未知错误" << std::endl;
         request.reply(status_codes::InternalError, web::json::value::string("服务器内部错误"));
     }
+}
+
+bool ServerManager::isServiceExistByIp(const std::string& ip, const std::string& service_name, ConnectionPool& pool)
+{
+    // 使用类的私有成员dbHandler_调用getServiceNameByIp方法
+    std::vector<std::string> serviceNames = dbHandler_.getServiceNameByIp(ip, pool);
+
+    // 遍历服务列表，查找是否存在指定的服务名
+    for (const auto& name : serviceNames) {
+        if (name == service_name) {
+            return true; // 找到匹配的服务名
+        }
+    }
+
+    return false; // 未找到匹配的服务名
 }
 
 void ServerManager::handle_get_userinfo(http_request request) {
@@ -1433,8 +1519,8 @@ void ServerManager::handle_post_hydra(http_request request) {
             }
 
             // 默认文件路径
-            std::string usernameFile = "/home/c/hydra/usernames.txt";
-            std::string passwordFile = "/home/c/hydra/passwords.txt";
+            std::string usernameFile = "/hydra/usernames.txt";
+            std::string passwordFile = "/hydra/passwords.txt";
 
             // 检查文件扩展名函数
             auto is_txt_file = [](const std::string& filename) -> bool {
@@ -1544,8 +1630,10 @@ void ServerManager::handle_post_hydra(http_request request) {
             }
 
             // 验证服务是否存在
+			// 服务名是否在服务列表中
             //if (port_services.find(service_name) != port_services.end()) {
-            if (true) {
+            bool exists = isServiceExistByIp(ip, service_name, pool);
+            if (exists) {
                 // 构建并执行hydra命令
                 std::string command = "hydra -L " + usernameFile + " -P " + passwordFile + " -f " + service_name + "://" + ip;
                 std::string output = exec_hydra(command.c_str());
@@ -1587,27 +1675,40 @@ void ServerManager::handle_post_hydra(http_request request) {
                     host = match[3].str();
                     login = match[4].str();
                     password = match[5].str();
+                    // 保存弱口令结果到数据库
+                    dbHandler_.saveWeakPasswordResult(host, port, service, login, password, pool);
+
+                    // 构建返回对象，包含找到的弱口令信息
+                    json::value json_obj = json::value::object();
+                    json_obj[_XPLATSTR("port")] = json::value::number(port);
+                    json_obj[_XPLATSTR("service")] = json::value::string(service);
+                    json_obj[_XPLATSTR("host")] = json::value::string(host);
+                    json_obj[_XPLATSTR("login")] = json::value::string(login);
+                    json_obj[_XPLATSTR("password")] = json::value::string(password);
+
+                    json::value json_array = json::value::array();
+                    json_array[0] = json_obj;
+
+                    http_response response(status_codes::OK);
+                    response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+                    response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+                    response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+                    response.set_body(json_array);
+                    request.reply(response);
                 }
                 else {
-                    throw std::runtime_error("No matching info found");
+                    // 没有找到弱口令，返回相应的提示信息
+                    json::value response_obj = json::value::object();
+                    response_obj[_XPLATSTR("status")] = json::value::string(_XPLATSTR("no_weak_password"));
+                    response_obj[_XPLATSTR("message")] = json::value::string(_XPLATSTR("未发现弱口令"));
+
+                    http_response response(status_codes::OK); // 使用200状态码，表示请求成功但没有发现弱口令
+                    response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+                    response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+                    response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+                    response.set_body(response_obj);
+                    request.reply(response);
                 }
-
-                json::value json_obj = json::value::object();
-                json_obj[_XPLATSTR("port")] = json::value::number(port);
-                json_obj[_XPLATSTR("service")] = json::value::string(service);
-                json_obj[_XPLATSTR("host")] = json::value::string(host);
-                json_obj[_XPLATSTR("login")] = json::value::string(login);
-                json_obj[_XPLATSTR("password")] = json::value::string(password);
-
-                json::value json_array = json::value::array();
-                json_array[0] = json_obj;
-
-                http_response response(status_codes::OK);
-                response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
-                response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
-                response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
-                response.set_body(json_array);
-                request.reply(response);
             }
             else {
                 json::value error_response = json::value::object();
@@ -1640,100 +1741,6 @@ void ServerManager::handle_post_hydra(http_request request) {
         }).wait();
 }
 
-//void ServerManager::handle_post_hydra(http_request request){
-//    request.extract_json().then([this, &request](json::value body) {
-//        try {
-//            if (!body.has_field(_XPLATSTR("ip")) || !body.has_field(_XPLATSTR("service_name")) || !body.has_field(_XPLATSTR("portId"))) {
-//                throw std::runtime_error("Invalid input JSON");
-//            }
-//
-//            std::string ip = body[_XPLATSTR("ip")].as_string();
-//            std::string service_name = body[_XPLATSTR("service_name")].as_string();
-//            std::string portId_name = body[_XPLATSTR("portId")].as_string();
-//
-//            std::string usernameFile = "/hydra/usernames.txt";
-//            std::string passwordFile = "/hydra/passwords.txt";
-//
-//            //说明有这个服务
-//            if (port_services.find(service_name) != port_services.end()) {
-//                // Construct the hydra command
-//                std::string command = "hydra -L " + usernameFile + " -P " + passwordFile + " -f " + service_name + "://" + ip;
-//
-//                // Execute the command and get the output
-//                std::string output = exec(command.c_str());
-//
-//                std::string res = extract_login_info(output);
-//
-//                std::regex pattern(R"(\[(\d+)\]\[([^\]]+)\] host:\s*([^\s]+)\s+login:\s*([^\s]+)\s+password:\s*([^\s]+))");
-//                std::smatch match;
-//                int port = 0;
-//                std::string service = "";
-//                std::string host = "";
-//                std::string login = "";
-//                std::string password = "";
-//
-//                // Search for the pattern in the input string
-//                if (std::regex_search(res, match, pattern)) {
-//                    port = std::stoi(match[1].str());
-//                    service = match[2].str();
-//                    host = match[3].str();
-//                    login = match[4].str();
-//                    password = match[5].str();
-//                }
-//                else {
-//                    throw std::runtime_error("No matching info found");
-//                }
-//
-//                json::value json_obj = json::value::object();
-//                json_obj[_XPLATSTR("port")] = json::value::number(port);
-//                json_obj[_XPLATSTR("service")] = json::value::string(service);
-//                json_obj[_XPLATSTR("host")] = json::value::string(host);
-//                json_obj[_XPLATSTR("login")] = json::value::string(login);
-//                json_obj[_XPLATSTR("password")] = json::value::string(password);
-//
-//                // Create a JSON array and add the JSON object to it
-//                json::value json_array = json::value::array();
-//                json_array[0] = json_obj;
-//
-//                // 创建响应
-//                http_response response(status_codes::OK);
-//                response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
-//                response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
-//                response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
-//
-//                response.set_body(json_array);
-//                request.reply(response);
-//            }
-//            else {
-//                // 服务不存在，返回错误信息
-//                json::value error_response = json::value::object();
-//                error_response[_XPLATSTR("error")] = json::value::string(_XPLATSTR("Service not found"));
-//                error_response[_XPLATSTR("service_name")] = json::value::string(service_name);
-//
-//                // 创建响应
-//                http_response response(status_codes::NotFound);
-//                response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
-//                response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
-//                response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
-//
-//                response.set_body(error_response);
-//                request.reply(response);
-//            }
-//        }
-//        catch (const std::exception& e) {
-//            std::cerr << "An error occurred: " << e.what() << std::endl;
-//            http_response response(status_codes::InternalError);
-//            response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
-//            response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
-//            response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
-//            json::value error_response = json::value::object();
-//            error_response[_XPLATSTR("error")] = json::value::string(_XPLATSTR("Internal server error"));
-//            error_response[_XPLATSTR("details")] = json::value::string(_XPLATSTR(e.what()));
-//            response.set_body(error_response);
-//            request.reply(response);
-//        }
-//        }).wait();
-//}
 
 void ServerManager::handle_post_testWeak(http_request request)
 {
