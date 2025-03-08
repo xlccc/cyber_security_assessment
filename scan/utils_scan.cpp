@@ -237,32 +237,81 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
     PyObject_SetAttrString(sys, "stderr", string_io);
     Py_DECREF(sys); // 使用完毕后释放 sys
 
+    
     // 导入 POC 模块
     PyObject* poc_module = PyImport_ImportModule(scriptPath.c_str());
     if (!poc_module) {
-        PyErr_Print();
-        result += "无法加载脚本：" + scriptPath + "\n";
+        PyObject* type, * value, * traceback;
+        PyErr_Fetch(&type, &value, &traceback);
+        PyErr_NormalizeException(&type, &value, &traceback);
+
+        if (value) {
+            PyObject* str_value = PyObject_Str(value);
+            if (str_value) {
+                result += "无法加载脚本：" + scriptPath + "，错误信息：" + std::string(PyUnicode_AsUTF8(str_value));
+                Py_DECREF(str_value);
+            }
+        }
+        Py_XDECREF(type);
+        Py_XDECREF(value);
+        Py_XDECREF(traceback);
         Py_DECREF(string_io);
         return result;
     }
+    
+    /*旧版：错误信息不完整
+    if (!poc_module) {
+        PyErr_Print();
+        system_logger->error("无法加载脚本：{}",scriptPath);
+        result += "无法加载脚本：" + scriptPath + "\n";
+        Py_DECREF(string_io);
+        return result;
+    }*/
+
 
     // 重新加载模块
     PyObject* reload_func = PyObject_GetAttrString(global_importlib, "reload");
     if (reload_func && PyCallable_Check(reload_func)) {
         PyObject* reloaded_module = PyObject_CallFunctionObjArgs(reload_func, poc_module, NULL);
         if (!reloaded_module) {
+            PyObject* type, * value, * traceback;
+            PyErr_Fetch(&type, &value, &traceback);
+            PyErr_NormalizeException(&type, &value, &traceback);
+
+            if (value) {
+                PyObject* str_value = PyObject_Str(value);
+                if (str_value) {
+                    result += "无法重新加载模块：" + scriptPath + "，错误信息：" + std::string(PyUnicode_AsUTF8(str_value));
+                    Py_DECREF(str_value);
+                }
+            }
+            Py_XDECREF(type);
+            Py_XDECREF(value);
+            Py_XDECREF(traceback);
+        }
+        Py_XDECREF(reloaded_module);
+    }
+    /*旧版：错误信息不完整
+    if (reload_func && PyCallable_Check(reload_func)) {
+        PyObject* reloaded_module = PyObject_CallFunctionObjArgs(reload_func, poc_module, NULL);
+        if (!reloaded_module) {
             PyErr_Print();
+            system_logger->error("无法重新加载模块：{}", scriptPath);
             result += "无法重新加载模块：" + scriptPath + "\n";
         }
         Py_XDECREF(reloaded_module);
     }
+    */
+
     Py_XDECREF(reload_func);
     system_logger->info("Module successfully loaded or refreshed.");
+    
 
     // 获取类对象 DemoPOC
     PyObject* poc_class = PyObject_GetAttrString(poc_module, "DemoPOC");
     if (!poc_class || !PyCallable_Check(poc_class)) {
         PyErr_Print();
+        system_logger->error("找不到类 'DemoPOC");
         result += "找不到类 'DemoPOC'\n";
         Py_DECREF(poc_module);
         Py_DECREF(string_io);
@@ -273,6 +322,7 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
     PyObject* poc_instance = PyObject_CallFunction(poc_class, "ssi", url.c_str(), ip.c_str(), port);
     if (!poc_instance) {
         PyErr_Print();
+        system_logger->error("无法实例化 'DemoPOC'");
         result += "无法实例化 'DemoPOC'\n";
         Py_DECREF(poc_class);
         Py_DECREF(poc_module);
@@ -284,6 +334,7 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
     PyObject* verify_func = PyObject_GetAttrString(poc_instance, "_verify");
     if (!verify_func || !PyCallable_Check(verify_func)) {
         PyErr_Print();
+        system_logger->error("找不到 '_verify' 方法");
         result += "找不到 '_verify' 方法\n";
         Py_DECREF(poc_instance);
         Py_DECREF(poc_class);
@@ -604,7 +655,7 @@ void compareAndUpdateResults(const ScanHostResult& oldResult, ScanHostResult& ne
 
 // CVE 查询函数
 void fetch_and_padding_cves(std::map<std::string, std::vector<Vuln>>& cpes, const std::vector<std::string>& cpes_to_query, int limit) {
-    std::string base_url = "http://10.9.130.189:5000/api/cvefor";
+    std::string base_url = "http://192.168.136.128:5000/api/cvefor";
 
     for (const auto& cpe_id : cpes_to_query) {
         auto& vecCVE = cpes[cpe_id];
