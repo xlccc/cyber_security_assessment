@@ -914,34 +914,96 @@ void DatabaseHandler::insertHostVulnResult(const Vuln& vuln, int shr_id, int vul
     }
 }
 
+//std::vector<PortInfo> DatabaseHandler::getAllPortInfoByIp(const std::string& ip, ConnectionPool& pool)
+//{
+//    std::vector<PortInfo> portInfoList;
+//
+//    try {
+//        auto conn = pool.getConnection();
+//
+//        // 首先查询scan_host_result表获取shr_id
+//        mysqlx::SqlResult hostResult = conn->sql("SELECT id FROM scan_host_result WHERE ip = ?")
+//            .bind(ip)
+//            .execute();
+//
+//        mysqlx::Row hostRow = hostResult.fetchOne();
+//        if (!hostRow) {
+//            std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
+//            return portInfoList;
+//        }
+//
+//        int shr_id = hostRow[0]; // 获取shr_id
+//
+//        // 查询open_ports表获取该IP的所有端口信息
+//        mysqlx::SqlResult portResult = conn->sql(
+//            "SELECT port, protocol, status, service_name, product, version, software_type "
+//            "FROM open_ports "
+//            "WHERE shr_id = ?")
+//            .bind(shr_id)
+//            .execute();
+//
+//        while (mysqlx::Row portRow = portResult.fetchOne()) {
+//            PortInfo portInfo;
+//            portInfo.ip = ip;
+//            portInfo.port = static_cast<int>(portRow[0]);
+//            portInfo.protocol = static_cast<std::string>(portRow[1]);
+//            portInfo.status = static_cast<std::string>(portRow[2]);
+//            portInfo.service_name = static_cast<std::string>(portRow[3]);
+//            portInfo.product = portRow[4].isNull() ? "" : static_cast<std::string>(portRow[4]);
+//            portInfo.version = portRow[5].isNull() ? "" : static_cast<std::string>(portRow[5]);
+//            portInfo.software_type = portRow[6].isNull() ? "" : static_cast<std::string>(portRow[6]);
+//
+//            portInfoList.push_back(portInfo);
+//        }
+//
+//        if (portInfoList.empty()) {
+//            std::cerr << "IP: " << ip << " 没有关联的端口信息" << std::endl;
+//        }
+//    }
+//    catch (const mysqlx::Error& err) {
+//        std::cerr << "获取端口信息时数据库错误: " << err.what() << std::endl;
+//    }
+//    catch (std::exception& ex) {
+//        std::cerr << "异常: " << ex.what() << std::endl;
+//    }
+//    catch (...) {
+//        std::cerr << "未知错误发生" << std::endl;
+//    }
+//
+//    return portInfoList;
+//}
+
 std::vector<PortInfo> DatabaseHandler::getAllPortInfoByIp(const std::string& ip, ConnectionPool& pool)
 {
     std::vector<PortInfo> portInfoList;
-
     try {
         auto conn = pool.getConnection();
-
         // 首先查询scan_host_result表获取shr_id
         mysqlx::SqlResult hostResult = conn->sql("SELECT id FROM scan_host_result WHERE ip = ?")
             .bind(ip)
             .execute();
-
         mysqlx::Row hostRow = hostResult.fetchOne();
         if (!hostRow) {
             std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
             return portInfoList;
         }
-
         int shr_id = hostRow[0]; // 获取shr_id
-
-        // 查询open_ports表获取该IP的所有端口信息
+        // 查询open_ports表获取该IP的所有端口信息，包括弱口令相关字段
+        //mysqlx::SqlResult portResult = conn->sql(
+        //    "SELECT port, protocol, status, service_name, product, version, software_type, "
+        //    "weak_username, weak_password, password_verified, verify_time "
+        //    "FROM open_ports "
+        //    "WHERE shr_id = ?")
+        //    .bind(shr_id)
+        //    .execute();
         mysqlx::SqlResult portResult = conn->sql(
-            "SELECT port, protocol, status, service_name, product, version, software_type "
+            "SELECT port, protocol, status, service_name, product, version, software_type, "
+            "weak_username, weak_password, password_verified, "
+            "DATE_FORMAT(verify_time, '%Y-%m-%d %H:%i:%s') as formatted_verify_time "
             "FROM open_ports "
             "WHERE shr_id = ?")
             .bind(shr_id)
             .execute();
-
         while (mysqlx::Row portRow = portResult.fetchOne()) {
             PortInfo portInfo;
             portInfo.ip = ip;
@@ -953,9 +1015,15 @@ std::vector<PortInfo> DatabaseHandler::getAllPortInfoByIp(const std::string& ip,
             portInfo.version = portRow[5].isNull() ? "" : static_cast<std::string>(portRow[5]);
             portInfo.software_type = portRow[6].isNull() ? "" : static_cast<std::string>(portRow[6]);
 
+            // 添加弱口令相关信息
+            portInfo.weak_username = portRow[7].isNull() ? "" : static_cast<std::string>(portRow[7]);
+            portInfo.weak_password = portRow[8].isNull() ? "" : static_cast<std::string>(portRow[8]);
+            portInfo.password_verified = portRow[9].isNull() ? false :
+                (static_cast<std::string>(portRow[9]) == "true");
+            portInfo.verify_time = portRow[10].isNull() ? "" : static_cast<std::string>(portRow[10]);
+
             portInfoList.push_back(portInfo);
         }
-
         if (portInfoList.empty()) {
             std::cerr << "IP: " << ip << " 没有关联的端口信息" << std::endl;
         }
@@ -969,7 +1037,6 @@ std::vector<PortInfo> DatabaseHandler::getAllPortInfoByIp(const std::string& ip,
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
     }
-
     return portInfoList;
 }
 
@@ -1315,5 +1382,105 @@ std::vector<AssetInfo> DatabaseHandler::getAllAssetsInfo(ConnectionPool& pool)
     }
 
     return allAssets;
+}
+
+std::vector<std::string> DatabaseHandler::getServiceNameByIp(const std::string& ip, ConnectionPool& pool)
+{
+    std::vector<std::string> serviceNames;
+
+    try {
+        auto conn = pool.getConnection();
+
+        // 首先获取scan_host_result表中的id
+        mysqlx::SqlResult hostResult = conn->sql("SELECT id FROM scan_host_result WHERE ip = ?")
+            .bind(ip)
+            .execute();
+
+        mysqlx::Row hostRow = hostResult.fetchOne();
+        if (!hostRow) {
+            std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
+            return serviceNames;
+        }
+
+        int shr_id = hostRow[0]; // 获取shr_id
+
+        // 查询此IP地址对应的所有服务名称
+        mysqlx::SqlResult serviceResult = conn->sql(
+            "SELECT service_name FROM open_ports WHERE shr_id = ?")
+            .bind(shr_id)
+            .execute();
+
+        while (mysqlx::Row serviceRow = serviceResult.fetchOne()) {
+            std::string serviceName = static_cast<std::string>(serviceRow[0]);
+            serviceNames.push_back(serviceName);
+        }
+    }
+    catch (const mysqlx::Error& err) {
+        std::cerr << "获取服务名称时数据库错误: " << err.what() << std::endl;
+    }
+    catch (std::exception& ex) {
+        std::cerr << "异常: " << ex.what() << std::endl;
+    }
+    catch (...) {
+        std::cerr << "未知错误发生" << std::endl;
+    }
+
+    return serviceNames;
+}
+
+void DatabaseHandler::saveWeakPasswordResult(
+    const std::string& ip,
+    int port,
+    const std::string& service,
+    const std::string& login,
+    const std::string& password,
+    ConnectionPool& pool)
+{
+    try {
+        auto conn = pool.getConnection();
+
+        // 首先获取scan_host_result表中的id
+        mysqlx::SqlResult hostResult = conn->sql("SELECT id FROM scan_host_result WHERE ip = ?")
+            .bind(ip)
+            .execute();
+
+        mysqlx::Row hostRow = hostResult.fetchOne();
+        if (!hostRow) {
+            std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
+            return;
+        }
+
+        int shr_id = hostRow[0]; // 获取shr_id
+
+        // 查找对应的端口记录
+        mysqlx::SqlResult portResult = conn->sql("SELECT id FROM open_ports WHERE shr_id = ? AND port = ?")
+            .bind(shr_id)
+            .bind(port)
+            .execute();
+
+        mysqlx::Row portRow = portResult.fetchOne();
+        if (!portRow) {
+            std::cerr << "未找到对应的端口记录: " << ip << ":" << port << std::endl;
+            return;
+        }
+
+        int port_id = portRow[0];
+
+        // 更新端口表中的弱口令信息
+        conn->sql("UPDATE open_ports SET weak_username = ?, weak_password = ?, password_verified = 'true', verify_time = CURRENT_TIMESTAMP WHERE id = ?")
+            .bind(login)
+            .bind(password)
+            .bind(port_id)
+            .execute();
+    }
+    catch (const mysqlx::Error& err) {
+        std::cerr << "保存弱口令结果时数据库错误: " << err.what() << std::endl;
+    }
+    catch (std::exception& ex) {
+        std::cerr << "异常: " << ex.what() << std::endl;
+    }
+    catch (...) {
+        std::cerr << "未知错误发生" << std::endl;
+    }
 }
 

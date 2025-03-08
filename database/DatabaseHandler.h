@@ -68,8 +68,11 @@ public:
     // 获取所有存活主机的完整资产信息
     std::vector<AssetInfo> getAllAssetsInfo(ConnectionPool& pool);
 
-    //获取ip对应的ScanHostResult
-   //ScanHostResult DatabaseHandler::getScanHostResult(const std::string& ip, ConnectionPool& pool);
+    //获取特定主机ip的所有service_name信息
+	std::vector<std::string> getServiceNameByIp(const std::string& ip, ConnectionPool& pool);
+
+	void saveWeakPasswordResult(const std::string& ip, int port, const std::string& service, const std::string& login, const std::string& password, ConnectionPool& pool);
+
 };
 
 #endif // DATABASEHANDLER_H
