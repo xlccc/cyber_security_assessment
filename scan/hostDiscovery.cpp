@@ -62,7 +62,7 @@ std::vector<std::string> HostDiscovery::scan() {
             }
         }
         catch (const std::exception& e) {
-            system_logger->error("Exception during scanning: {}", e.what());;
+            system_logger->error("Exception during scanning: {}", e.what());
         }
     }
     else {

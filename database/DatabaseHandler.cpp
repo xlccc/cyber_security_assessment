@@ -53,7 +53,7 @@ void DatabaseHandler::executeUpdateOrInsert(const ScanHostResult& scanHostResult
                 "INSERT INTO os_info (shr_id, os_version) VALUES (?, ?) "
                 "ON DUPLICATE KEY UPDATE os_version = os_version"
             ).bind(shr_id, os_version).execute();
-            std::cout << "尝试插入或更新操作系统信息: " << os_version << std::endl;
+            //std::cout << "尝试插入或更新操作系统信息: " << os_version << std::endl;
         }
 
         //(2). 插入open_ports表
@@ -74,8 +74,8 @@ void DatabaseHandler::executeUpdateOrInsert(const ScanHostResult& scanHostResult
                 )
                 .execute();
 
-            std::cout << "成功插入或更新端口信息: 端口 " << port.portId
-                << ", 协议 " << port.protocol << std::endl;
+            //std::cout << "成功插入或更新端口信息: 端口 " << port.portId
+                //<< ", 协议 " << port.protocol << std::endl;
         }
 		//修改为先插入cpe，这样就可以获取cpe_id。剩下三个表与cpe_id有关联
         //(3)插入cpe表
@@ -118,9 +118,9 @@ void DatabaseHandler::processPortVulns(const ScanHostResult& hostResult, const i
 {
     // 遍历每个端口，并从端口的 cpes 中提取漏洞
     for (const auto& port : hostResult.ports) {
-        std::cout << "处理端口: " << port.portId << std::endl;
+        //std::cout << "处理端口: " << port.portId << std::endl;
         for (const auto& [cpe, vulns] : port.cpes) {
-            std::cout << "处理 CPE: " << cpe << " (端口 " << port.portId << ")" << std::endl;
+            //std::cout << "处理 CPE: " << cpe << " (端口 " << port.portId << ")" << std::endl;
 
             //由端口号去得到open_port的主键
             insertPortVulnResult(vulns, shr_id, port.portId, pool);
@@ -310,7 +310,7 @@ std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPoo
         auto conn = pool.getConnection();
 
         // 1. 先查询主机漏洞
-        std::cout << "正在查询主机漏洞..." << std::endl;
+        //std::cout << "正在查询主机漏洞..." << std::endl;
         mysqlx::SqlResult hostResult = conn->sql(R"(
             SELECT 
                 shr.ip,
@@ -352,10 +352,10 @@ std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPoo
             vuln.vulType = row[9].get<std::string>();
             ip_vulns_map[ip].host_vulnerabilities.push_back(vuln);
         }
-        std::cout << "主机漏洞查询完成，找到 " << hostVulnCount << " 个结果" << std::endl;
+       // std::cout << "主机漏洞查询完成，找到 " << hostVulnCount << " 个结果" << std::endl;
 
         // 2. 再查询端口漏洞
-        std::cout << "正在查询端口漏洞..." << std::endl;
+        //std::cout << "正在查询端口漏洞..." << std::endl;
         mysqlx::SqlResult portResult = conn->sql(R"(
             SELECT 
                 shr.ip,
@@ -400,7 +400,7 @@ std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPoo
             port_vuln.service_name = row[10].get<std::string>();
             ip_vulns_map[ip].port_vulnerabilities.push_back(port_vuln);
         }
-        std::cout << "端口漏洞查询完成，找到 " << portVulnCount << " 个结果" << std::endl;
+        //std::cout << "端口漏洞查询完成，找到 " << portVulnCount << " 个结果" << std::endl;
 
         // 统计总结果
         int totalIPs = ip_vulns_map.size();
@@ -411,9 +411,9 @@ std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPoo
             totalPortVulns += pair.second.port_vulnerabilities.size();
         }
 
-        std::cout << "总IP数: " << totalIPs << std::endl;
-        std::cout << "总主机漏洞数: " << totalHostVulns << std::endl;
-        std::cout << "总端口漏洞数: " << totalPortVulns << std::endl;
+        //std::cout << "总IP数: " << totalIPs << std::endl;
+        //std::cout << "总主机漏洞数: " << totalHostVulns << std::endl;
+        //std::cout << "总端口漏洞数: " << totalPortVulns << std::endl;
 
         // 将map转换为vector返回
         std::vector<IpVulnerabilities> result_vector;
@@ -549,14 +549,14 @@ std::set<std::string> DatabaseHandler::extractAllCPEs(const ScanHostResult& host
     // 1. 遍历主机级别的 cpes
     for (const auto& [cpe, vulns] : hostResult.cpes) {
         all_cpes.insert(cpe);
-        std::cout << "找到主机级 CPE: " << cpe << std::endl;
+        //std::cout << "找到主机级 CPE: " << cpe << std::endl;
     }
 
     // 2. 遍历每个端口的 cpes
     for (const auto& port : hostResult.ports) {
         for (const auto& [cpe, vulns] : port.cpes) {
             all_cpes.insert(cpe);
-            std::cout << "找到端口 " << port.portId << " 的 CPE: " << cpe << std::endl;
+            //std::cout << "找到端口 " << port.portId << " 的 CPE: " << cpe << std::endl;
         }
     }
 
@@ -576,7 +576,7 @@ void DatabaseHandler::insertHostCPEs(int shr_id, const std::set<std::string>& cp
                 .bind(shr_id, cpe)
                 .execute();
 
-            std::cout << "成功插入或更新 CPE: " << cpe << std::endl;
+            //std::cout << "成功插入或更新 CPE: " << cpe << std::endl;
         }
     }
     catch (const mysqlx::Error& err) {
@@ -598,7 +598,7 @@ void DatabaseHandler::insertAliveHosts(const std::vector<std::string>& aliveHost
             )
                 .bind(ip)
                 .execute();
-            std::cout << "成功插入或更新存活主机: " << ip << std::endl;
+            //std::cout << "成功插入或更新存活主机: " << ip << std::endl;
         }
     }
     catch (const mysqlx::Error& err) {
@@ -621,7 +621,7 @@ void DatabaseHandler::insertAliveHosts2scanHostResult(const std::vector<std::str
             )
                 .bind(ip)
                 .execute();
-            std::cout << "成功插入或更新存活主机: " << ip << std::endl;
+            //std::cout << "成功插入或更新存活主机: " << ip << std::endl;
         }
     }
     catch (const mysqlx::Error& err) {
@@ -664,7 +664,7 @@ void DatabaseHandler::updateAliveHosts(std::string aliveHost, ConnectionPool& po
 		)
 			.bind(aliveHost)
 			.execute();
-		std::cout << "成功更新存活主机: " << aliveHost << std::endl;
+		//std::cout << "成功更新存活主机: " << aliveHost << std::endl;
 	}
 	catch (const mysqlx::Error& err) {
 		std::cerr << "数据库错误: " << err.what() << std::endl;
@@ -701,7 +701,7 @@ void DatabaseHandler::processVulns(const ScanHostResult& hostResult, ConnectionP
         const std::string& cpe = cpe_entry.first;
         const std::vector<Vuln>& vulns = cpe_entry.second;
 
-        std::cout << "处理 CPE: " << cpe << std::endl;
+        //std::cout << "处理 CPE: " << cpe << std::endl;
 
         // 查询已存在的 CPE 记录
         int cpe_id = getCpeId(shr_id, cpe, pool);
@@ -710,7 +710,7 @@ void DatabaseHandler::processVulns(const ScanHostResult& hostResult, ConnectionP
             insertVulns(vulns, pool, cpe_id);
         }
         else {
-            std::cout << "找不到对应的 CPE 记录: " << cpe << "，跳过相关漏洞" << std::endl;
+            //std::cout << "找不到对应的 CPE 记录: " << cpe << "，跳过相关漏洞" << std::endl;
             // 如果确实需要，可以在没有 cpe_id 的情况下插入漏洞
             insertVulns(vulns, pool, 0);
         }
@@ -724,7 +724,7 @@ void DatabaseHandler::processVulns(const ScanHostResult& hostResult, ConnectionP
             const std::string& cpe = cpe_entry.first;
             const std::vector<Vuln>& vulns = cpe_entry.second;
 
-            std::cout << "处理 CPE: " << cpe << " (端口 " << port.portId << ")" << std::endl;
+            //std::cout << "处理 CPE: " << cpe << " (端口 " << port.portId << ")" << std::endl;
 
             // 查询已存在的 CPE 记录
             int cpe_id = getCpeId(shr_id, cpe, pool);
@@ -733,7 +733,7 @@ void DatabaseHandler::processVulns(const ScanHostResult& hostResult, ConnectionP
                 insertVulns(vulns, pool, cpe_id);
             }
             else {
-                std::cout << "找不到对应的 CPE 记录: " << cpe << "，跳过相关漏洞" << std::endl;
+                //std::cout << "找不到对应的 CPE 记录: " << cpe << "，跳过相关漏洞" << std::endl;
                 // 如果确实需要，可以在没有 cpe_id 的情况下插入漏洞
                 insertVulns(vulns, pool, 0);
             }
@@ -781,7 +781,7 @@ void DatabaseHandler::insertVulns(const std::vector<Vuln>& vulns, ConnectionPool
 
         // 遍历 vuln_result 集合，逐条插入 vuln 表
         for (const auto& vuln : vulns) {
-            std::cout << "插入或更新漏洞: " << vuln.vul_name << std::endl;
+            //std::cout << "插入或更新漏洞: " << vuln.vul_name << std::endl;
 
             // 根据是否有 cpe_id 使用不同的 SQL
             if (cpe_id != 0) {
@@ -855,13 +855,13 @@ void DatabaseHandler::processHostVulns(const ScanHostResult& hostResult, const i
                     insertHostVulnResult(vuln, shr_id, vuln_id, cpe_id, pool);
                 }
                 else {
-                    std::cout << "漏洞 " << vuln.Vuln_id << " 没有关联的cpe_id" << std::endl;
+                    //std::cout << "漏洞 " << vuln.Vuln_id << " 没有关联的cpe_id" << std::endl;
                     // 不关联cpe_id插入漏洞记录
                     insertHostVulnResult(vuln, shr_id, vuln_id, 0, pool);
                 }
             }
             else {
-                std::cout << "找不到漏洞记录: " << vuln.Vuln_id << std::endl;
+                //std::cout << "找不到漏洞记录: " << vuln.Vuln_id << std::endl;
             }
         }
     }

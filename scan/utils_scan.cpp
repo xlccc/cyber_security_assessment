@@ -221,21 +221,48 @@ std::vector<ScanHostResult> parseXmlFile(const std::string& xmlFilePath) {
 std::string runPythonWithOutput(const std::string& scriptPath_extension, const std::string& url, const std::string& ip, int port) {
     std::string result = "";
     system_logger->info("Executing script: {}", scriptPath_extension);
+    console->info("Executing script: {}", scriptPath_extension);
+
+    // 清除 Python 解释器的错误状态
+    PyErr_Clear();
 
     // 去除文件扩展名
     std::string scriptPath = removeExtension(scriptPath_extension);
     system_logger->info("Removed extension: {}", scriptPath);
+    console->info("Removed extension: {}", scriptPath);
+
+    if (!global_io || !PyModule_Check(global_io)) {
+        console->error("global_io is invalid , reloading now");
+        PyObject* io_module = PyImport_ImportModule("io");
+        if (io_module) {
+            global_io = Py_BuildValue("O", io_module);
+            Py_DECREF(io_module);
+            console->error("global_io is reloaded now");
+        }
+        else {
+            system_logger->error("Failed to import 'io' module.");
+            console->error("Failed to import 'io' module.");
+            return "";
+        }
+    }
+    
+    PyObject* sys = PyImport_ImportModule("sys");
+    // 保存原始的 sys.stdout 和 sys.stderr
+    PyObject* original_stdout = PyObject_GetAttrString(sys, "stdout");
+    PyObject* original_stderr = PyObject_GetAttrString(sys, "stderr");
 
     // 重定向 stdout 和 stderr
     PyObject* string_io = PyObject_CallMethod(global_io, "StringIO", NULL);
     if (!string_io) {
         system_logger->error("Failed to create StringIO.");
+        console->error("Failed to create StringIO.");
+        Py_DECREF(sys);
         return result;
     }
-    PyObject* sys = PyImport_ImportModule("sys");
     PyObject_SetAttrString(sys, "stdout", string_io);
     PyObject_SetAttrString(sys, "stderr", string_io);
-    Py_DECREF(sys); // 使用完毕后释放 sys
+    Py_DECREF(sys);
+
 
     
     // 导入 POC 模块
@@ -249,6 +276,7 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
             PyObject* str_value = PyObject_Str(value);
             if (str_value) {
                 result += "无法加载脚本：" + scriptPath + "，错误信息：" + std::string(PyUnicode_AsUTF8(str_value));
+                console->error("无法加载脚本：{} , 错误信息：{} ", scriptPath, std::string(PyUnicode_AsUTF8(str_value)));
                 Py_DECREF(str_value);
             }
         }
@@ -282,6 +310,7 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
                 PyObject* str_value = PyObject_Str(value);
                 if (str_value) {
                     result += "无法重新加载模块：" + scriptPath + "，错误信息：" + std::string(PyUnicode_AsUTF8(str_value));
+                    console->error("无法重新加载模块：{}，错误信息：" , scriptPath,std::string(PyUnicode_AsUTF8(str_value)));
                     Py_DECREF(str_value);
                 }
             }
@@ -305,6 +334,7 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
 
     Py_XDECREF(reload_func);
     system_logger->info("Module successfully loaded or refreshed.");
+    console->info("Module successfully loaded or refreshed.");
     
 
     // 获取类对象 DemoPOC
@@ -312,6 +342,7 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
     if (!poc_class || !PyCallable_Check(poc_class)) {
         PyErr_Print();
         system_logger->error("找不到类 'DemoPOC");
+        console->error("找不到类 'DemoPOC");
         result += "找不到类 'DemoPOC'\n";
         Py_DECREF(poc_module);
         Py_DECREF(string_io);
@@ -323,6 +354,7 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
     if (!poc_instance) {
         PyErr_Print();
         system_logger->error("无法实例化 'DemoPOC'");
+        console->error("无法实例化 'DemoPOC'");
         result += "无法实例化 'DemoPOC'\n";
         Py_DECREF(poc_class);
         Py_DECREF(poc_module);
@@ -335,6 +367,7 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
     if (!verify_func || !PyCallable_Check(verify_func)) {
         PyErr_Print();
         system_logger->error("找不到 '_verify' 方法");
+        console->error("找不到 '_verify' 方法");
         result += "找不到 '_verify' 方法\n";
         Py_DECREF(poc_instance);
         Py_DECREF(poc_class);
@@ -368,6 +401,7 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
     else {
         PyErr_Print();
         result += "调用 '_verify' 方法失败\n";
+        console->error("调用 '_verify' 方法失败");
     }
 
     // 获取所有的 stdout 和 stderr 输出
@@ -377,11 +411,18 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
         Py_DECREF(output);
     }
     else {
+        console->error("无法从 StringIO 获取输出。\n");
         result += "无法从 StringIO 获取输出。\n";
     }
 
+    // 恢复原始的 sys.stdout 和 sys.stderr
+    PyObject_SetAttrString(sys, "stdout", original_stdout);
+    PyObject_SetAttrString(sys, "stderr", original_stderr);
+    Py_DECREF(original_stdout);
+    Py_DECREF(original_stderr);
+
     Py_DECREF(string_io); // 释放 string_io
-    console->info("Execution result:\n{}", result);
+    console->debug("Execution result:\n{}", result);
 
     return result;
 }
@@ -749,6 +790,7 @@ std::map<std::string, std::vector<POCTask>> create_poc_task(const std::vector<PO
                 vuln.vul_name = poc.vul_name;
                 vuln.script = poc.script;
                 vuln.summary = poc.description;
+                vuln.pocExist = true;
                 task.vuln = vuln;
 
                 temp_tasks_by_port[task.port].insert(task);
@@ -774,6 +816,7 @@ std::map<std::string, std::vector<POCTask>> create_poc_task(const std::vector<PO
                 vuln.vul_name = poc.vul_name;
                 vuln.script = poc.script;
                 vuln.summary = poc.description;
+                vuln.pocExist = true;
                 task.vuln = vuln;
 
                 temp_tasks_by_port[task.port].insert(task);
@@ -881,6 +924,9 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
         pid_t pid = fork();
 
         if (pid == 0) {
+
+            //子进程初始化python解释器
+            initializePython();
             // 子进程：重新连接 Redis 并从 Redis 队列中取任务并执行
             redisContext* child_redis_client = get_redis_client();  // 子进程初始化自己的 Redis 连接
 
@@ -907,6 +953,8 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
                 execute_poc_task(key, task.second, child_redis_client, dbHandler, pool);  // 正确传递 key 和任务
 
             }
+            //释放python解释器
+            Py_Finalize();
 
             redisFree(child_redis_client);  // 子进程完成后关闭连接
             _exit(0);  // 子进程完成后退出
@@ -928,9 +976,10 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
         if (terminated_pid > 0) {
             if (WIFEXITED(status)) {
                 system_logger->info("[Parent Process] Child process with PID: {} exited normally with status: {}", terminated_pid, WEXITSTATUS(status));
+                console->debug("[Parent Process] Child process with PID: {} exited normally with status: {}", terminated_pid, WEXITSTATUS(status));
             }
             else if (WIFSIGNALED(status)) {
-                system_logger->error("[Parent Process] Child process with PID: {} was terminated by signal: {}", terminated_pid, WTERMSIG(status));
+                console->debug("[Parent Process] Child process with PID: {} was terminated by signal: {}", terminated_pid, WTERMSIG(status));
             }
         }
         else {
@@ -952,20 +1001,36 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
         console->info("[Parent Process] Received result from port: {}, Vuln ID: {}", portId, vuln.Vuln_id);
 
         if (portId.empty()) {
+            // 查找是否已经存在相同的漏洞信息
+            auto it = scan_host_result.vuln_result.find(vuln);
+
+            if (it != scan_host_result.vuln_result.end()) {
+                // 移除已有的漏洞信息
+                scan_host_result.vuln_result.erase(it);
+            }
+            // 插入新的漏洞信息，实现覆盖效果
             scan_host_result.vuln_result.insert(vuln);
-            console->info("[Parent Process] Inserted OS-level vuln ID: {} into scan_host_result", vuln.Vuln_id);
+            console->info("[Parent Process] Overwritten OS-level vuln ID: {} in scan_host_result", vuln.Vuln_id);
         }
         else {
+
             auto port_it = std::find_if(scan_host_result.ports.begin(), scan_host_result.ports.end(),
                 [&portId](const ScanResult& port) { return port.portId == portId; });
 
             if (port_it != scan_host_result.ports.end()) {
+                // 查找端口的漏洞信息中是否已经存在相同的漏洞
+                auto vuln_it = port_it->vuln_result.find(vuln);
+                if (vuln_it != port_it->vuln_result.end()) {
+                    // 移除已有的漏洞信息
+                    port_it->vuln_result.erase(vuln_it);
+                }
+                // 插入新的漏洞信息，实现覆盖效果
                 port_it->vuln_result.insert(vuln);
-                console->info("[Parent Process] Inserted port-level vuln ID: {} into port: {}", vuln.Vuln_id, portId);
+                console->info("[Parent Process] Overwritten port-level vuln ID: {} into port: {}", vuln.Vuln_id, portId);
             }
             else {
-                console->error("[Parent Process] Error: Port ID {} not found in scan_host_result.", portId);
-                system_logger->error("[Parent Process] Error: Port ID {} not found in scan_host_result.", portId);
+                console->error("[Parent Process]: Port ID {} not found in scan_host_result.", portId);
+                system_logger->error("[Parent Process]: Port ID {} not found in scan_host_result.", portId);
             }
         }
     }
@@ -979,6 +1044,8 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
     system_logger->info("Parallel POC tasks executed in {} seconds.", elapsed.count());
+
+    console->info("[Parent Process] execute pocs task paralelly compelete !");
 }
 
 //多进程版本的单个POC任务执行
@@ -1135,7 +1202,7 @@ void execute_poc_task(const std::string& key, POCTask& task, redisContext* redis
 
 //合并 漏洞库匹配、插件化扫描两种方式的扫描结果
 void merge_vuln_results(ScanHostResult& host_result) {
-    std::cout << "开始合并操作系统漏洞..." << std::endl;
+    console->info("开始合并操作系统漏洞...");
     system_logger->info("IP : {} 开始合并操作系统漏洞...", host_result.ip);
 
     // 合并操作系统漏洞
@@ -1170,10 +1237,12 @@ void merge_vuln_results(ScanHostResult& host_result) {
 
     // 更新操作系统漏洞结果
     host_result.vuln_result = merged_os_vulns;
+    console->info("操作系统漏洞合并完成，漏洞总数: {}", host_result.vuln_result.size());
     system_logger->info("操作系统漏洞合并完成，漏洞总数: {}", host_result.vuln_result.size());
 
     // 合并端口漏洞
     for (auto& port : host_result.ports) {
+        console->info("IP : {} 开始合并端口 {} 的漏洞...", host_result.ip, port.portId);
         system_logger->info("IP : {} 开始合并端口 {} 的漏洞...", host_result.ip,port.portId);
         std::set<Vuln> merged_port_vulns;
 
@@ -1209,7 +1278,7 @@ void merge_vuln_results(ScanHostResult& host_result) {
         // 更新端口漏洞结果
         port.vuln_result = merged_port_vulns;
 
-        //console->info("端口 {} 的漏洞合并完成，漏洞总数: {}", port.portId, port.vuln_result.size());
+        console->info("端口 {} 的漏洞合并完成，漏洞总数: {}", port.portId, port.vuln_result.size());
     }
 
     system_logger->info("IP : {} 所有漏洞合并完成！", host_result.ip);
@@ -1233,18 +1302,33 @@ std::string serialize_task_result(const Vuln& vuln, const std::string& portId) {
 
 // 从 JSON 字符串反序列化为 Vuln 对象，包含完整字段和端口标识
 std::pair<std::string, Vuln> deserialize_task_result(const std::string& data) {
-    json j = json::parse(data);
-    Vuln vuln;
-    vuln.Vuln_id = j["Vuln_id"].get<std::string>();
-    vuln.vul_name = j["vul_name"].get<std::string>();
-    vuln.script = j["script"].get<std::string>();
-    vuln.CVSS = j["CVSS"].get<std::string>();
-    vuln.summary = j["summary"].get<std::string>();
-    vuln.pocExist = j["pocExist"].get<bool>();
-    vuln.ifCheck = j["ifCheck"].get<bool>();
-    vuln.vulExist = j["vulExist"].get<std::string>();
+    try
+    {
+        json j = json::parse(data);
+        std::string portId = j.value("portId", "");
 
-    return std::make_pair(j["portId"].get<std::string>(), vuln);
+        Vuln vuln;
+        // 安全获取各个字段的值
+        vuln.Vuln_id = j.value("Vuln_id", "");
+        vuln.vul_name = j.value("vul_name", "");
+        vuln.script = j.value("script", "");
+        vuln.CVSS = j.value("CVSS", "");
+        vuln.summary = j.value("summary", "");
+        vuln.pocExist = j.value("pocExist", false);
+        vuln.ifCheck = j.value("ifCheck", false);
+        vuln.vulExist = j.value("vulExist", "");
+
+        return std::make_pair(portId, vuln);
+    }
+    catch (const nlohmann::json::parse_error& e) {
+        std::cerr << "JSON parse error: " << e.what() << std::endl;
+        // 返回默认值
+        return std::make_pair("", Vuln());
+    } catch (const std::exception& e) {
+        std::cerr << "Unexpected error: " << e.what() << std::endl;
+        // 返回默认值
+        return std::make_pair("", Vuln());
+    }
 }
 
 // 获取 Redis 客户端连接（如果已经创建过，则复用）
@@ -1399,6 +1483,14 @@ std::string pop_result_from_redis(redisContext* c) {
     // 检查返回的数据是否为空
     if (reply->type == REDIS_REPLY_NIL) {
         console->info("[DEBUG] No result in the Redis queue (RPOP returned NIL).");
+        freeReplyObject(reply);
+        return "";
+    }
+
+    // 这里需要额外检查 reply->str 是否为 nullptr
+    if (reply->type == REDIS_REPLY_STRING && reply->str == nullptr) {
+        console->error("[ERROR] Redis reply string is null although type is REDIS_REPLY_STRING.");
+        system_logger->error("[ERROR] Redis reply string is null although type is REDIS_REPLY_STRING.");
         freeReplyObject(reply);
         return "";
     }

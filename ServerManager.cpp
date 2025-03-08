@@ -1344,9 +1344,12 @@ void ServerManager::handle_post_get_Nmap(http_request request)
             }
 
         }
+
+        //搜索POC代码是否存在并装载。
+        searchPOCs(scan_host_result[0], dbManager, dbHandler_, pool);
+
         // 将新的扫描结果保存为历史数据
         historicalData.data[ip] = scan_host_result[0];  // 目前只支持单个主机，取第一个
-
        
 		scan_host_result[0].ip = ip;
         //getNmap的部分，始终会为存活状态
@@ -2326,6 +2329,11 @@ void ServerManager::handle_post_poc_verify(http_request request) {
                 setIfCheckByIds(scanHostResult, cve_ids, false);
             }
 
+            // 将新的扫描结果保存为历史数据
+            string ip = scan_host_result[0].ip;
+            historicalData.data[ip] = scan_host_result[0];  // 目前只支持单个主机，取第一个string ip = scan_host_result[0].ip;
+            dbHandler_.executeUpdateOrInsert(scan_host_result[0], pool);
+
             // 使用 handle_get_cve_scan 返回验证结果
             handle_get_cve_scan(request);
             }).wait();
@@ -2872,10 +2880,10 @@ void ServerManager::handle_post_poc_scan(http_request request) {
             }
             std::string ip = json_data[_XPLATSTR("ip")].as_string();
 
-            user_logger->info("IP：{} 开始插件化漏洞扫描", ip);
+            //user_logger->info("IP：{} 开始插件化漏洞扫描", ip);
+            console->info("IP：{} 开始插件化漏洞扫描", ip);
             //测试所用
             //std::vector<POC> poc_list = dbManager.getAllData();
-
 
              //获取要执行的POC的id
             std::vector<int> ids;
@@ -2891,27 +2899,6 @@ void ServerManager::handle_post_poc_scan(http_request request) {
 
             // 从数据库中获取指定 ID 的 POC 记录
             std::vector<POC> poc_list = dbManager.searchDataByIds(ids);
-
-            //之前的版本
-            //if (json_data.has_array_field(_XPLATSTR("poc_list"))) {
-            //    auto json_array = json_data[_XPLATSTR("poc_list")].as_array();
-            //    for (auto& poc_json : json_array) {
-            //        POC poc;
-            //        poc.id = poc_json[_XPLATSTR("id")].as_integer();
-            //        poc.vuln_id = poc_json[_XPLATSTR("vuln_id")].as_string();
-            //        poc.vul_name = poc_json[_XPLATSTR("vul_name")].as_string();
-            //        poc.type = poc_json[_XPLATSTR("type")].as_string();
-            //        poc.description = poc_json[_XPLATSTR("description")].as_string();
-            //        poc.affected_infra = poc_json[_XPLATSTR("affected_infra")].as_string();
-            //        poc.script_type = poc_json[_XPLATSTR("script_type")].as_string();
-            //        poc.script = poc_json[_XPLATSTR("script")].as_string();
-            //        poc.timestamp = poc_json[_XPLATSTR("timestamp")].as_string();
-            //        poc_list.push_back(poc);
-            //    }
-            //}
-            //else {
-            //    throw std::runtime_error("Invalid request: Missing 'poc_list' field.");
-            //}
 
             // 定义变量以存储扫描结果
             ScanHostResult scan_host_result;
@@ -2967,6 +2954,7 @@ void ServerManager::handle_post_poc_scan(http_request request) {
             // 将结果转换为 JSON 格式并返回
             json::value result_json = ScanHostResult_to_json(scan_host_result);
             request.reply(status_codes::OK, result_json);
+            cout << " 已经发送回响应了" << endl;
         }
         catch (const std::exception& e) {
             // 记录日志
