@@ -7,16 +7,16 @@ using namespace concurrency::streams;
 
 ServerManager::ServerManager()
     : localConfig{
-        "192.168.136.128",  // host
+        "10.9.130.189",  // host
         33060,            // port
         "root",           // user
-        "123456", // password
+        "ComplexPassword123!", // password
         "test_db"         // schema
     },
     pool(localConfig),    // 使用 localConfig 初始化 pool
     dbManager(DB_PATH)    // 原有的 dbManager 初始化
 {
-    utility::string_t address = _XPLATSTR("http://192.168.136.128:8081/");
+    utility::string_t address = _XPLATSTR("http://10.9.130.189:8081/");
     uri_builder uri(address);
     auto addr = uri.to_uri().to_string();
     listener = std::make_unique<http_listener>(addr);
@@ -177,8 +177,8 @@ void ServerManager::handle_request(http_request request) {
 
 void ServerManager::redis_get_scan(http_request request) {
     
-    std::cout << check_redis_unauthorized("root","12341234","12341234","192.168.136.128") << std::endl;
-    std::cout << check_pgsql_unauthorized("root", "12341234","postgres","12341234" ,"192.168.136.128","5432" ) << std::endl;
+    std::cout << check_redis_unauthorized("root","12341234","12341234","10.9.130.189") << std::endl;
+    std::cout << check_pgsql_unauthorized("root", "12341234","postgres","12341234" ,"10.9.130.189","5432" ) << std::endl;
     request.reply(web::http::status_codes::OK, "result");
 }
 
@@ -1516,8 +1516,8 @@ void ServerManager::handle_post_hydra(http_request request) {
             }
 
             // 默认文件路径
-            std::string usernameFile = "/home/c/hydra/usernames.txt";
-            std::string passwordFile = "/home/c/hydra/passwords.txt";
+            std::string usernameFile = "/hydra/usernames.txt";
+            std::string passwordFile = "/hydra/passwords.txt";
 
             // 检查文件扩展名函数
             auto is_txt_file = [](const std::string& filename) -> bool {
