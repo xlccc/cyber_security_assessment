@@ -93,7 +93,7 @@ void DatabaseHandler::executeUpdateOrInsert(const ScanHostResult& scanHostResult
 
     }
     catch (const mysqlx::Error& err) {
-        std::cerr << "数据库错误: " << err.what() << std::endl;
+        std::cerr << "executeUpdateOrInsert时数据库错误: " << err.what() << std::endl;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
@@ -147,7 +147,7 @@ void DatabaseHandler::alterVulnsAfterPocSearch(ConnectionPool& pool, const Vuln 
         .execute();
     }
     catch (const mysqlx::Error& err) {
-        std::cerr << "数据库错误: " << err.what() << std::endl;
+        std::cerr << "alterVulnsAfterPocSearch时数据库错误: " << err.what() << std::endl;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
@@ -184,7 +184,7 @@ void DatabaseHandler::alterHostVulnResultAfterPocVerify(ConnectionPool& pool, co
         }
     }
     catch (const mysqlx::Error& err) {
-        std::cerr << "数据库错误: " << err.what() << std::endl;
+        std::cerr << "alterHostVulnResultAfterPocVerify数据库错误: " << err.what() << std::endl;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
@@ -225,7 +225,7 @@ void DatabaseHandler::alterPortVulnResultAfterPocVerify(ConnectionPool& pool, co
         }
     }
     catch (const mysqlx::Error& err) {
-        std::cerr << "数据库错误: " << err.what() << std::endl;
+        std::cerr << "alterPortVulnResultAfterPocVerify时数据库错误: " << err.what() << std::endl;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
@@ -250,7 +250,7 @@ void DatabaseHandler::alterVulnAfterPocTask(ConnectionPool& pool, const POCTask&
                 "JOIN scan_host_result shr ON pvr.shr_id = shr.id "
                 "JOIN open_ports op ON pvr.port_id = op.id AND op.shr_id = pvr.shr_id "  // 增加 shr_id 匹配
                 "JOIN vuln v ON pvr.vuln_id = v.id "
-                "WHERE shr.ip = ? AND v.vuln_id = ? AND op.id = ?"
+                "WHERE shr.ip = ? AND v.vuln_id = ? AND op.port = ?"
             ).bind(ip, vuln_id, portId).execute();
 
             // 获取查询结果
@@ -288,7 +288,7 @@ void DatabaseHandler::alterVulnAfterPocTask(ConnectionPool& pool, const POCTask&
         }
     }
     catch (const mysqlx::Error& err) {
-        std::cerr << "数据库错误: " << err.what() << std::endl;
+        std::cerr << "alterVulnAfterPocTask时数据库错误: " << err.what() << std::endl;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
@@ -423,7 +423,7 @@ std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPoo
         return result_vector;
     }
     catch (const mysqlx::Error& err) {
-        std::cerr << "数据库错误: " << err.what() << std::endl;
+        std::cerr << "getVulnerabilities时数据库错误: " << err.what() << std::endl;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
@@ -580,7 +580,7 @@ void DatabaseHandler::insertHostCPEs(int shr_id, const std::set<std::string>& cp
         }
     }
     catch (const mysqlx::Error& err) {
-        std::cerr << "数据库错误: " << err.what() << std::endl;
+        std::cerr << "insertHostCPEs时数据库错误: " << err.what() << std::endl;
     }
 }
 
@@ -602,7 +602,7 @@ void DatabaseHandler::insertAliveHosts(const std::vector<std::string>& aliveHost
         }
     }
     catch (const mysqlx::Error& err) {
-        std::cerr << "数据库错误: " << err.what() << std::endl;
+        std::cerr << "insertAliveHosts时数据库错误: " << err.what() << std::endl;
     }
 }
 
@@ -625,7 +625,7 @@ void DatabaseHandler::insertAliveHosts2scanHostResult(const std::vector<std::str
         }
     }
     catch (const mysqlx::Error& err) {
-        std::cerr << "数据库错误: " << err.what() << std::endl;
+        std::cerr << "insertAliveHosts2scanHostResult时数据库错误: " << err.what() << std::endl;
     }
 }
 
@@ -643,7 +643,7 @@ void DatabaseHandler::readAliveHosts(std::vector<std::string>& aliveHosts, Conne
         }
     }
 	catch (const mysqlx::Error& err) {
-		std::cerr << "数据库错误: " << err.what() << std::endl;
+		std::cerr << "readAliveHosts时数据库错误: " << err.what() << std::endl;
 	}
 	catch (std::exception& ex) {
 		std::cerr << "异常: " << ex.what() << std::endl;
@@ -667,7 +667,7 @@ void DatabaseHandler::updateAliveHosts(std::string aliveHost, ConnectionPool& po
 		std::cout << "成功更新存活主机: " << aliveHost << std::endl;
 	}
 	catch (const mysqlx::Error& err) {
-		std::cerr << "数据库错误: " << err.what() << std::endl;
+		std::cerr << "updateAliveHosts时数据库错误: " << err.what() << std::endl;
 	}
 }
 
@@ -826,7 +826,7 @@ void DatabaseHandler::insertVulns(const std::vector<Vuln>& vulns, ConnectionPool
         }
     }
     catch (const mysqlx::Error& err) {
-        std::cerr << "数据库错误: " << err.what() << std::endl;
+        std::cerr << "insertVulns时数据库错误: " << err.what() << std::endl;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
@@ -1121,7 +1121,7 @@ void DatabaseHandler::insertPortVulnResult(const std::vector<Vuln>& vulns, const
         }
     }
     catch (const mysqlx::Error& err) {
-        std::cerr << "数据库错误: " << err.what() << std::endl;
+        std::cerr << "insertPortVulnResult时数据库错误: " << err.what() << std::endl;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;

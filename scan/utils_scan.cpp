@@ -997,12 +997,12 @@ void execute_poc_task(const std::string& key, POCTask& task, redisContext* redis
     else {
         task.vuln.vulExist = "未验证";
     }
-    if(key.empty()){
-        dbHandler.alterHostVulnResultAfterPocVerify(pool, task.vuln, task.ip);
-    }
-    else {
-        dbHandler.alterPortVulnResultAfterPocVerify(pool, task.vuln, task.ip, key);
-    }
+    //if(key.empty()){
+    //    dbHandler.alterHostVulnResultAfterPocVerify(pool, task.vuln, task.ip);
+    //}
+    //else {
+    //    dbHandler.alterPortVulnResultAfterPocVerify(pool, task.vuln, task.ip, key);
+    //}
     
     // 将任务结果序列化为 JSON
     std::string serialized_result = serialize_task_result(task.vuln, key);
