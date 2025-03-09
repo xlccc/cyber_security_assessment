@@ -275,8 +275,10 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
         if (value) {
             PyObject* str_value = PyObject_Str(value);
             if (str_value) {
-                result += "无法加载脚本：" + scriptPath + "，错误信息：" + std::string(PyUnicode_AsUTF8(str_value));
-                console->error("无法加载脚本：{} , 错误信息：{} ", scriptPath, std::string(PyUnicode_AsUTF8(str_value)));
+                const char* utf8_str = PyUnicode_AsUTF8(str_value);
+                std::string error_msg = utf8_str ? utf8_str : "";
+                result += "无法加载脚本：" + scriptPath + "，错误信息：" + error_msg;
+                console->error("无法加载脚本：{} , 错误信息：{} ", scriptPath, error_msg);;
                 Py_DECREF(str_value);
             }
         }
@@ -309,8 +311,10 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
             if (value) {
                 PyObject* str_value = PyObject_Str(value);
                 if (str_value) {
-                    result += "无法重新加载模块：" + scriptPath + "，错误信息：" + std::string(PyUnicode_AsUTF8(str_value));
-                    console->error("无法重新加载模块：{}，错误信息：" , scriptPath,std::string(PyUnicode_AsUTF8(str_value)));
+                    const char* utf8_str = PyUnicode_AsUTF8(str_value);
+                    std::string error_msg = utf8_str ? utf8_str : "";
+                    result += "无法重新加载模块：" + scriptPath + "，错误信息：" + error_msg;
+                    console->error("无法重新加载模块：{}，错误信息：{}", scriptPath, error_msg);
                     Py_DECREF(str_value);
                 }
             }
@@ -390,10 +394,13 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
             PyObject* error_info = PyDict_GetItemString(py_result, "Error");
 
             if (verify_info) {
-                result += PyUnicode_AsUTF8(verify_info);
+                const char* verify_utf8 = PyUnicode_AsUTF8(verify_info);
+                result += verify_utf8 ? verify_utf8 : "";
             }
             if (error_info) {
-                result += "\n" + std::string(PyUnicode_AsUTF8(error_info));
+                const char* error_utf8 = PyUnicode_AsUTF8(error_info);
+                std::string error_msg = error_utf8 ? error_utf8 : "";
+                result += "\n" + error_msg;;
             }
         }
         Py_DECREF(py_result);
@@ -407,7 +414,8 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
     // 获取所有的 stdout 和 stderr 输出
     PyObject* output = PyObject_CallMethod(string_io, "getvalue", NULL);
     if (output) {
-        result += PyUnicode_AsUTF8(output);
+        const char* output_utf8 = PyUnicode_AsUTF8(output);
+        result += output_utf8 ? output_utf8 : "";
         Py_DECREF(output);
     }
     else {
@@ -913,9 +921,11 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
         const std::string& key = entry.first;
         std::vector<POCTask>& tasks = entry.second;
 
+
         for (auto& task : tasks) {
             std::string task_data = serialize_task_data(key, task);  // 将任务序列化为字符串
             push_task_to_redis(redis_client, task_data);  // 发布任务到 Redis 队列
+
         }
     }
 
@@ -1010,6 +1020,7 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
             }
             // 插入新的漏洞信息，实现覆盖效果
             scan_host_result.vuln_result.insert(vuln);
+            //dbHandler.alterHostVulnResultAfterPocVerify(pool, vuln, scan_host_result.ip);
             console->info("[Parent Process] Overwritten OS-level vuln ID: {} in scan_host_result", vuln.Vuln_id);
         }
         else {
@@ -1027,6 +1038,8 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
                 // 插入新的漏洞信息，实现覆盖效果
                 port_it->vuln_result.insert(vuln);
                 console->info("[Parent Process] Overwritten port-level vuln ID: {} into port: {}", vuln.Vuln_id, portId);
+                // 将更新后的漏洞信息同步到数据库
+                dbHandler.alterPortVulnResultAfterPocVerify(pool, vuln, scan_host_result.ip, portId);
             }
             else {
                 console->error("[Parent Process]: Port ID {} not found in scan_host_result.", portId);
@@ -1064,12 +1077,12 @@ void execute_poc_task(const std::string& key, POCTask& task, redisContext* redis
     else {
         task.vuln.vulExist = "未验证";
     }
-    if(key.empty()){
-        dbHandler.alterHostVulnResultAfterPocVerify(pool, task.vuln, task.ip);
-    }
-    else {
-        dbHandler.alterPortVulnResultAfterPocVerify(pool, task.vuln, task.ip, key);
-    }
+    //if(key.empty()){
+    //    dbHandler.alterHostVulnResultAfterPocVerify(pool, task.vuln, task.ip);
+    //}
+    //else {
+    //    dbHandler.alterPortVulnResultAfterPocVerify(pool, task.vuln, task.ip, key);
+    //}
     
     // 将任务结果序列化为 JSON
     std::string serialized_result = serialize_task_result(task.vuln, key);
@@ -1376,34 +1389,42 @@ std::string serialize_task_data(const std::string& key, const POCTask& task) {
     return result.dump();
 }
 
-// 反序列化 POCTask 数据
+/// 反序列化 POCTask 数据
 std::pair<std::string, POCTask> deserialize_task_data(const std::string& task_data) {
     try {
         // 解析 JSON 字符串
         json j = json::parse(task_data);
 
-        // 提取 key 和 POCTask 对象
-        std::string key = j["key"];
+        // 提取 key
+        std::string key = j.value("key", "");
+        if (key.empty()) {
+            console->error("Error deserializing task data: 'key' not found in JSON.");
+            system_logger->error("Error deserializing task data: 'key' not found in JSON.");
+        }
+
         POCTask task;
-        task.url = j["task"]["url"];
-        task.ip = j["task"]["ip"];
-        task.port = j["task"]["port"];
+        // 提取 task 信息
+        auto task_json = j.value("task", json::object());
+        task.url = task_json.value("url", "");
+        task.ip = task_json.value("ip", "");
+        task.port = task_json.value("port", "");
 
         // 反序列化 Vuln 对象
-        json vuln_json = j["task"]["vuln"];
-        task.vuln.Vuln_id = vuln_json["Vuln_id"];
-        task.vuln.vul_name = vuln_json["vul_name"];
-        task.vuln.script = vuln_json["script"];
-        task.vuln.CVSS = vuln_json["CVSS"];
-        task.vuln.summary = vuln_json["summary"];
-        task.vuln.pocExist = vuln_json["pocExist"];
-        task.vuln.ifCheck = vuln_json["ifCheck"];
-        task.vuln.vulExist = vuln_json["vulExist"];
+        auto vuln_json = task_json.value("vuln", json::object());
+        // 直接赋值，无需转换
+        task.vuln.Vuln_id = vuln_json.value("Vuln_id", "");
+        task.vuln.vul_name = vuln_json.value("vul_name", "");
+        task.vuln.script = vuln_json.value("script", "");
+        task.vuln.CVSS = vuln_json.value("CVSS", "");
+        task.vuln.summary = vuln_json.value("summary", "");
+        task.vuln.pocExist = vuln_json.value("pocExist", false);
+        task.vuln.ifCheck = vuln_json.value("ifCheck", false);
+        // 获取字符串类型的值
+        task.vuln.vulExist = vuln_json.value("vulExist", "未验证");
 
         return { key, task };  // 返回 key 和任务
     }
     catch (const std::exception& e) {
-
         console->error("Error deserializing task data: {}", e.what());
         system_logger->error("Error deserializing task data: {}", e.what());
         return { "", POCTask() };  // 处理异常并返回默认值
@@ -1443,6 +1464,42 @@ std::string pop_task_from_redis(redisContext* redis_client) {
         return "";
     }
 
+    // 检查返回的数据是否为空
+    if (reply->type == REDIS_REPLY_NIL) {
+        console->info("[pop_task_from_redis] No task data found (RPOP returned NIL).");
+        freeReplyObject(reply);
+        return "";
+    }
+
+    // 这里需要额外检查 reply->str 是否为 nullptr
+    if (reply->type == REDIS_REPLY_STRING && reply->str == nullptr) {
+        console->error("[pop_task_from_redis] Redis reply string is null although type is REDIS_REPLY_STRING.");
+        system_logger->error("[pop_task_from_redis] Redis reply string is null although type is REDIS_REPLY_STRING.");
+        freeReplyObject(reply);
+        return "";
+    }
+
+    cout << "pop_task : " << (reply->str == nullptr) << endl;
+
+    // 再次检查 reply->str 是否为 nullptr
+    if (reply->str == nullptr) {
+        console->error("[pop_task_from_redis] Redis reply string is null, returning empty string.");
+        system_logger->error("[pop_task_from_redis] Redis reply string is null, returning empty string.");
+        freeReplyObject(reply);
+        return "";
+    }
+
+    // 输出调试信息：打印返回的任务数据
+    console->info("[pop_task_from_redis] Popped task data: {}", reply->str);
+
+    // 获取任务数据并释放 Redis 回复对象
+    std::string task_data(reply->str);
+    freeReplyObject(reply);
+
+    return task_data;
+    
+
+    /* 旧版：测试过
     if (reply->type == REDIS_REPLY_STRING) {
         std::string task_data = reply->str;
         console->info("[pop_task_from_redis] Task data: {}", task_data);
@@ -1453,7 +1510,7 @@ std::string pop_task_from_redis(redisContext* redis_client) {
         console->info("[pop_task_from_redis] No task data found (empty response).");;
         freeReplyObject(reply);
         return "";
-    }
+    }*/
 }
 
 // 将任务结果推送到 Redis 结果队列
@@ -1491,6 +1548,14 @@ std::string pop_result_from_redis(redisContext* c) {
     if (reply->type == REDIS_REPLY_STRING && reply->str == nullptr) {
         console->error("[ERROR] Redis reply string is null although type is REDIS_REPLY_STRING.");
         system_logger->error("[ERROR] Redis reply string is null although type is REDIS_REPLY_STRING.");
+        freeReplyObject(reply);
+        return "";
+    }
+
+    // 再次检查 reply->str 是否为 nullptr
+    if (reply->str == nullptr) {
+        console->error("[ERROR] Redis reply string is null, returning empty string.");
+        system_logger->error("[ERROR] Redis reply string is null, returning empty string.");
         freeReplyObject(reply);
         return "";
     }

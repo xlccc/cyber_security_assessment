@@ -177,14 +177,14 @@ void ServerManager::handle_request(http_request request) {
 
 void ServerManager::redis_get_scan(http_request request) {
     
-    std::cout << check_redis_unauthorized("root","12341234","12341234","10.9.130.189") << std::endl;
-    std::cout << check_pgsql_unauthorized("root", "12341234","postgres","12341234" ,"10.9.130.189","5432" ) << std::endl;
+    std::cout << check_redis_unauthorized("root","12341234","12341234","192.168.136.128") << std::endl;
+    std::cout << check_pgsql_unauthorized("root", "12341234","postgres","12341234" ,"192.168.136.128" ) << std::endl;
     request.reply(web::http::status_codes::OK, "result");
 }
 
 void ServerManager::handle_get_test(http_request request)
 {
-    std::string ip = "10.9.130.189";
+    std::string ip = "192.168.136.128";
     ScanHostResult result = dbHandler_.getScanHostResult(ip, pool);
 
     // 打印结果
@@ -1519,8 +1519,8 @@ void ServerManager::handle_post_hydra(http_request request) {
             }
 
             // 默认文件路径
-            std::string usernameFile = "/hydra/usernames.txt";
-            std::string passwordFile = "/hydra/passwords.txt";
+            std::string usernameFile = "/home/c/hydra/usernames.txt";
+            std::string passwordFile = "/home/c/hydra/passwords.txt";
 
             // 检查文件扩展名函数
             auto is_txt_file = [](const std::string& filename) -> bool {
@@ -2881,6 +2881,7 @@ void ServerManager::handle_get_alive_hosts(http_request request)
 void ServerManager::handle_post_poc_scan(http_request request) {
     request.extract_json().then([=](json::value json_data) {
         try {
+
             // 提取 IP 地址
             if (!json_data.has_field(_XPLATSTR("ip"))) {
                 throw std::runtime_error("Invalid request: Missing 'ip' field.");
@@ -2936,6 +2937,9 @@ void ServerManager::handle_post_poc_scan(http_request request) {
 
                 user_logger->info("IP：{} Nmap 扫描完成，更新历史数据。", ip);
             }
+            
+            //搜索POC代码是否存在并装载。
+            searchPOCs(scan_host_result, dbManager, dbHandler_, pool);
 
             // 选择是否进行基础设施匹配
             bool match_infra = json_data.has_field(_XPLATSTR("match_infra")) ? json_data[_XPLATSTR("match_infra")].as_bool() : true;

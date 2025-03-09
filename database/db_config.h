@@ -1,18 +1,18 @@
-ï»¿#pragma once
+#pragma once
 #ifndef DB_CONFIG_H
 #define DB_CONFIG_H
 
 #include<vector>
 #include<string>
 
-// å®šä¹‰æ•°æ®åº“æ–‡ä»¶è·¯å¾„çš„å…¨å±€å¸¸é‡
+// ¶¨ÒåÊı¾İ¿âÎÄ¼şÂ·¾¶µÄÈ«¾Ö³£Á¿
 //const char* const DB_PATH = "./database/poc.db";
-const char* const DB_PATH = "/root/.vs/cyber_seproject/6731b597-df0c-4866-ab56-292bdcaceae0/src/database/poc.db";
+const char* const DB_PATH = "/home/c/.vs/cyber_security_assessment/8e509499-79aa-4583-a94f-9ac2aefdaefd/src/database/poc.db";
 
 
-                                                                   
 
-//æ”¯æŒçš„pocè„šæœ¬ç±»å‹
+
+//Ö§³ÖµÄpoc½Å±¾ÀàĞÍ
 extern std::vector<std::string> supported_extensions;
 
 

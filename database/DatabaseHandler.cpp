@@ -77,23 +77,23 @@ void DatabaseHandler::executeUpdateOrInsert(const ScanHostResult& scanHostResult
             //std::cout << "成功插入或更新端口信息: 端口 " << port.portId
                 //<< ", 协议 " << port.protocol << std::endl;
         }
-		//修改为先插入cpe，这样就可以获取cpe_id。剩下三个表与cpe_id有关联
+        //修改为先插入cpe，这样就可以获取cpe_id。剩下三个表与cpe_id有关联
         //(3)插入cpe表
         processHostCpe(scanHostResult, shr_id, pool);
-        
+
         //(4)插入vuln表, 添加了cpe_id字段
-        processVulns(scanHostResult,  pool);
+        processVulns(scanHostResult, pool);
         //(5)插入host_vuln_result表
         //目前已有shr_id
-        processHostVulns(scanHostResult, shr_id,  pool);
+        processHostVulns(scanHostResult, shr_id, pool);
         //(6)插入port_vuln_result表
-        processPortVulns(scanHostResult, shr_id,  pool);
+        processPortVulns(scanHostResult, shr_id, pool);
 
-        
+
 
     }
     catch (const mysqlx::Error& err) {
-        std::cerr << "数据库错误: " << err.what() << std::endl;
+        std::cerr << "executeUpdateOrInsert时数据库错误: " << err.what() << std::endl;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
@@ -129,7 +129,7 @@ void DatabaseHandler::processPortVulns(const ScanHostResult& hostResult, const i
 
 }
 
-void DatabaseHandler::alterVulnsAfterPocSearch(ConnectionPool& pool, const Vuln & vuln)
+void DatabaseHandler::alterVulnsAfterPocSearch(ConnectionPool& pool, const Vuln& vuln)
 {
     try {
         auto conn = pool.getConnection();  // 获取连接
@@ -144,10 +144,10 @@ void DatabaseHandler::alterVulnsAfterPocSearch(ConnectionPool& pool, const Vuln 
             vuln.script.empty() ? "" : vuln.script,  // 插入 NULL 或脚本名称
             vuln.Vuln_id
         )
-        .execute();
+            .execute();
     }
     catch (const mysqlx::Error& err) {
-        std::cerr << "数据库错误: " << err.what() << std::endl;
+        std::cerr << "alterVulnsAfterPocSearch时数据库错误: " << err.what() << std::endl;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
@@ -156,6 +156,44 @@ void DatabaseHandler::alterVulnsAfterPocSearch(ConnectionPool& pool, const Vuln 
         std::cerr << "未知错误发生" << std::endl;
     }
 }
+
+//void DatabaseHandler::alterHostVulnResultAfterPocVerify(ConnectionPool& pool, const Vuln& vuln, std::string ip)
+//{
+//    try {
+//        auto conn = pool.getConnection();
+//        std::string vulExist = vuln.vulExist;
+//        std::string vuln_id = vuln.Vuln_id;
+//        // 假设 conn 是 MySQL X DevAPI 连接对象
+//        auto result = conn->sql("SELECT hvr.shr_id, v.id AS vuln_id "
+//            "FROM host_vuln_result hvr "
+//            "JOIN scan_host_result shr ON hvr.shr_id = shr.id "
+//            "JOIN vuln v ON hvr.vuln_id = v.id "
+//            "WHERE shr.ip = ? AND v.vuln_id = ?"
+//        ).bind(ip, vuln_id).execute();
+//
+//        // 获取查询结果
+//        for (auto row : result) {
+//            int shr_id = row[0].get<int>();  // host_vuln_result 表中的 shr_id
+//            int vuln_id_primary = row[1].get<int>();  // vuln 表中的主键 id
+//
+//            // 更新 host_vuln_result 表中的 vulExist 字段
+//            conn->sql("UPDATE host_vuln_result SET "
+//                "vulExist = ? "
+//                "WHERE shr_id = ? AND vuln_id = ?"
+//            ).bind(vulExist, shr_id, vuln_id_primary).execute();
+//        }
+//    }
+//    catch (const mysqlx::Error& err) {
+//        std::cerr << "alterHostVulnResultAfterPocVerify数据库错误: " << err.what() << std::endl;
+//    }
+//    catch (std::exception& ex) {
+//        std::cerr << "异常: " << ex.what() << std::endl;
+//    }
+//    catch (...) {
+//        std::cerr << "未知错误发生" << std::endl;
+//    }
+//
+//}
 
 void DatabaseHandler::alterHostVulnResultAfterPocVerify(ConnectionPool& pool, const Vuln& vuln, std::string ip)
 {
@@ -163,28 +201,75 @@ void DatabaseHandler::alterHostVulnResultAfterPocVerify(ConnectionPool& pool, co
         auto conn = pool.getConnection();
         std::string vulExist = vuln.vulExist;
         std::string vuln_id = vuln.Vuln_id;
-        // 假设 conn 是 MySQL X DevAPI 连接对象
-        auto result = conn->sql("SELECT hvr.shr_id, v.id AS vuln_id "
-            "FROM host_vuln_result hvr "
-            "JOIN scan_host_result shr ON hvr.shr_id = shr.id "
-            "JOIN vuln v ON hvr.vuln_id = v.id "
-            "WHERE shr.ip = ? AND v.vuln_id = ?"
-        ).bind(ip, vuln_id).execute();
+
+        // 先检查vuln表中是否存在该漏洞
+        auto checkResult = conn->sql("SELECT id FROM vuln WHERE vuln_id = ?")
+            .bind(vuln_id).execute();
+
+        int vuln_id_primary = 0;
+
+        // 如果不存在，则插入
+        if (checkResult.count() == 0) {
+            // 插入新漏洞，cpe_id设为0
+            auto insertResult = conn->sql(
+                "INSERT INTO vuln (vuln_id, vul_name, script, CVSS, summary, vuln_type) "
+                "VALUES (?, ?, ?, ?, ?, ?)")
+                .bind(
+                    vuln.Vuln_id,
+                    vuln.vul_name,
+                    vuln.script.empty() ? "" : vuln.script,
+                    vuln.CVSS,
+                    vuln.summary.empty() ? "" : vuln.summary,
+                    vuln.vulnType.empty() ? "" : vuln.vulnType
+                )
+                .execute();
+
+            // 获取新插入的漏洞ID
+            vuln_id_primary = insertResult.getAutoIncrementValue();
+
+        }
+        else {
+            // 获取已存在漏洞的ID
+            mysqlx::Row row = checkResult.fetchOne();
+            vuln_id_primary = row[0].get<int>();
+        }
+
+        // 现在查询对应的host_vuln_result记录
+        auto result = conn->sql("SELECT hvr.shr_id "
+            "FROM scan_host_result shr "
+            "WHERE shr.ip = ?")
+            .bind(ip).execute();
 
         // 获取查询结果
-        for (auto row : result) {
-            int shr_id = row[0].get<int>();  // host_vuln_result 表中的 shr_id
-            int vuln_id_primary = row[1].get<int>();  // vuln 表中的主键 id
+        mysqlx::Row hostRow = result.fetchOne();
+        if (!hostRow) {
+            return;
+        }
 
-            // 更新 host_vuln_result 表中的 vulExist 字段
-            conn->sql("UPDATE host_vuln_result SET "
-                "vulExist = ? "
-                "WHERE shr_id = ? AND vuln_id = ?"
-            ).bind(vulExist, shr_id, vuln_id_primary).execute();
+        int shr_id = hostRow[0].get<int>();
+
+        // 检查host_vuln_result是否已存在该记录
+        auto checkHvrResult = conn->sql("SELECT COUNT(*) FROM host_vuln_result WHERE shr_id = ? AND vuln_id = ?")
+            .bind(shr_id, vuln_id_primary).execute();
+
+        mysqlx::Row countRow = checkHvrResult.fetchOne();
+        int count = countRow[0].get<int>();
+
+        if (count == 0) {
+            // 不存在则插入新记录
+            conn->sql("INSERT INTO host_vuln_result (shr_id, vuln_id, vulExist) VALUES (?, ?, ?)")
+                .bind(shr_id, vuln_id_primary, vulExist).execute();
+
+        }
+        else {
+            // 存在则更新
+            conn->sql("UPDATE host_vuln_result SET vulExist = ? WHERE shr_id = ? AND vuln_id = ?")
+                .bind(vulExist, shr_id, vuln_id_primary).execute();
+
         }
     }
     catch (const mysqlx::Error& err) {
-        std::cerr << "数据库错误: " << err.what() << std::endl;
+        std::cerr << "alterHostVulnResultAfterPocVerify数据库错误: " << err.what() << std::endl;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
@@ -192,8 +277,48 @@ void DatabaseHandler::alterHostVulnResultAfterPocVerify(ConnectionPool& pool, co
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
     }
-
 }
+
+
+//void DatabaseHandler::alterPortVulnResultAfterPocVerify(ConnectionPool& pool, const Vuln& vuln, std::string ip, std::string portId)
+//{
+//    try {
+//        auto conn = pool.getConnection();
+//        std::string vulExist = vuln.vulExist;
+//        std::string vuln_id = vuln.Vuln_id;
+//
+//        // 修改查询语句,添加 open_ports 表中 shr_id 的匹配条件
+//        auto result = conn->sql("SELECT pvr.shr_id, op.id AS port_id, v.id AS vuln_id "
+//            "FROM port_vuln_result pvr "
+//            "JOIN scan_host_result shr ON pvr.shr_id = shr.id "
+//            "JOIN open_ports op ON pvr.port_id = op.id AND op.shr_id = pvr.shr_id "  // 增加 shr_id 匹配
+//            "JOIN vuln v ON pvr.vuln_id = v.id "
+//            "WHERE shr.ip = ? AND v.vuln_id = ? AND op.port = ?"
+//        ).bind(ip, vuln_id, portId).execute();
+//
+//        // 获取查询结果
+//        for (auto row : result) {
+//            int shr_id = row[0].get<int>();          // port_vuln_result 表中的 shr_id
+//            int port_id_primary = row[1].get<int>();  // open_ports 表中的主键 id
+//            int vuln_id_primary = row[2].get<int>();  // vuln 表中的主键 id
+//
+//            // 更新 port_vuln_result 表中的 vulExist 字段
+//            conn->sql("UPDATE port_vuln_result SET "
+//                "vulExist = ? "
+//                "WHERE shr_id = ? AND port_id = ? AND vuln_id = ?"
+//            ).bind(vulExist, shr_id, port_id_primary, vuln_id_primary).execute();
+//        }
+//    }
+//    catch (const mysqlx::Error& err) {
+//        std::cerr << "alterPortVulnResultAfterPocVerify时数据库错误: " << err.what() << std::endl;
+//    }
+//    catch (std::exception& ex) {
+//        std::cerr << "异常: " << ex.what() << std::endl;
+//    }
+//    catch (...) {
+//        std::cerr << "未知错误发生" << std::endl;
+//    }
+//}
 
 void DatabaseHandler::alterPortVulnResultAfterPocVerify(ConnectionPool& pool, const Vuln& vuln, std::string ip, std::string portId)
 {
@@ -202,30 +327,83 @@ void DatabaseHandler::alterPortVulnResultAfterPocVerify(ConnectionPool& pool, co
         std::string vulExist = vuln.vulExist;
         std::string vuln_id = vuln.Vuln_id;
 
-        // 修改查询语句,添加 open_ports 表中 shr_id 的匹配条件
-        auto result = conn->sql("SELECT pvr.shr_id, op.id AS port_id, v.id AS vuln_id "
-            "FROM port_vuln_result pvr "
-            "JOIN scan_host_result shr ON pvr.shr_id = shr.id "
-            "JOIN open_ports op ON pvr.port_id = op.id AND op.shr_id = pvr.shr_id "  // 增加 shr_id 匹配
-            "JOIN vuln v ON pvr.vuln_id = v.id "
-            "WHERE shr.ip = ? AND v.vuln_id = ? AND op.port = ?"
-        ).bind(ip, vuln_id, portId).execute();
+        // 1. 先检查vuln表中是否存在该漏洞
+        auto checkResult = conn->sql("SELECT id FROM vuln WHERE vuln_id = ?")
+            .bind(vuln_id).execute();
+
+        int vuln_id_primary = 0;
+
+        // 如果不存在，则插入
+        if (checkResult.count() == 0) {
+            // 插入新漏洞，cpe_id设为0
+            auto insertResult = conn->sql(
+                "INSERT INTO vuln (vuln_id, vul_name, script, CVSS, summary, vuln_type) "
+                "VALUES (?, ?, ?, ?, ?, ?)")
+                .bind(
+                    vuln.Vuln_id,
+                    vuln.vul_name,
+                    vuln.script.empty() ? "" : vuln.script,
+                    vuln.CVSS,
+                    vuln.summary.empty() ? "" : vuln.summary,
+                    vuln.vulnType.empty() ? "" : vuln.vulnType
+                )
+                .execute();
+
+            // 获取新插入的漏洞ID
+            vuln_id_primary = insertResult.getAutoIncrementValue();
+
+
+        }
+        else {
+            // 获取已存在漏洞的ID
+            mysqlx::Row row = checkResult.fetchOne();
+            vuln_id_primary = row[0].get<int>();
+        }
+
+        // 2. 获取主机和端口信息
+        auto hostPortResult = conn->sql(
+            "SELECT shr.id AS shr_id, op.id AS port_id "
+            "FROM scan_host_result shr "
+            "JOIN open_ports op ON shr.id = op.shr_id "
+            "WHERE shr.ip = ? AND op.port = ?")
+            .bind(ip, portId).execute();
 
         // 获取查询结果
-        for (auto row : result) {
-            int shr_id = row[0].get<int>();          // port_vuln_result 表中的 shr_id
-            int port_id_primary = row[1].get<int>();  // open_ports 表中的主键 id
-            int vuln_id_primary = row[2].get<int>();  // vuln 表中的主键 id
+        mysqlx::Row hostPortRow = hostPortResult.fetchOne();
+        if (!hostPortRow) {
+            return;
+        }
 
-            // 更新 port_vuln_result 表中的 vulExist 字段
-            conn->sql("UPDATE port_vuln_result SET "
-                "vulExist = ? "
-                "WHERE shr_id = ? AND port_id = ? AND vuln_id = ?"
-            ).bind(vulExist, shr_id, port_id_primary, vuln_id_primary).execute();
+        int shr_id = hostPortRow[0].get<int>();
+        int port_id_primary = hostPortRow[1].get<int>();
+
+        // 3. 检查port_vuln_result是否已存在该记录
+        auto checkPvrResult = conn->sql(
+            "SELECT COUNT(*) FROM port_vuln_result "
+            "WHERE shr_id = ? AND port_id = ? AND vuln_id = ?")
+            .bind(shr_id, port_id_primary, vuln_id_primary).execute();
+
+        mysqlx::Row countRow = checkPvrResult.fetchOne();
+        int count = countRow[0].get<int>();
+
+        if (count == 0) {
+            // 不存在则插入新记录
+            conn->sql(
+                "INSERT INTO port_vuln_result (shr_id, port_id, vuln_id, vulExist) "
+                "VALUES (?, ?, ?, ?)")
+                .bind(shr_id, port_id_primary, vuln_id_primary, vulExist).execute();
+        }
+        else {
+            // 存在则更新
+            conn->sql(
+                "UPDATE port_vuln_result SET vulExist = ? "
+                "WHERE shr_id = ? AND port_id = ? AND vuln_id = ?")
+                .bind(vulExist, shr_id, port_id_primary, vuln_id_primary).execute();
+
         }
     }
     catch (const mysqlx::Error& err) {
-        std::cerr << "数据库错误: " << err.what() << std::endl;
+        std::cerr << "alterPortVulnResultAfterPocVerify时数据库错误: " << err.what() << std::endl;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
@@ -234,7 +412,6 @@ void DatabaseHandler::alterPortVulnResultAfterPocVerify(ConnectionPool& pool, co
         std::cerr << "未知错误发生" << std::endl;
     }
 }
-
 void DatabaseHandler::alterVulnAfterPocTask(ConnectionPool& pool, const POCTask& task)
 {
     try {
@@ -250,7 +427,7 @@ void DatabaseHandler::alterVulnAfterPocTask(ConnectionPool& pool, const POCTask&
                 "JOIN scan_host_result shr ON pvr.shr_id = shr.id "
                 "JOIN open_ports op ON pvr.port_id = op.id AND op.shr_id = pvr.shr_id "  // 增加 shr_id 匹配
                 "JOIN vuln v ON pvr.vuln_id = v.id "
-                "WHERE shr.ip = ? AND v.vuln_id = ? AND op.id = ?"
+                "WHERE shr.ip = ? AND v.vuln_id = ? AND op.port = ?"
             ).bind(ip, vuln_id, portId).execute();
 
             // 获取查询结果
@@ -288,7 +465,7 @@ void DatabaseHandler::alterVulnAfterPocTask(ConnectionPool& pool, const POCTask&
         }
     }
     catch (const mysqlx::Error& err) {
-        std::cerr << "数据库错误: " << err.what() << std::endl;
+        std::cerr << "alterVulnAfterPocTask时数据库错误: " << err.what() << std::endl;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
@@ -300,11 +477,11 @@ void DatabaseHandler::alterVulnAfterPocTask(ConnectionPool& pool, const POCTask&
 std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPool& pool, std::vector<std::string> alive_hosts)
 {
     std::map<std::string, IpVulnerabilities> ip_vulns_map;
-	for (auto ip : alive_hosts) {
-		if (ip_vulns_map.find(ip) == ip_vulns_map.end()) {
-			ip_vulns_map[ip] = IpVulnerabilities{ ip };
-		}
-	}
+    for (auto ip : alive_hosts) {
+        if (ip_vulns_map.find(ip) == ip_vulns_map.end()) {
+            ip_vulns_map[ip] = IpVulnerabilities{ ip };
+        }
+    }
 
     try {
         auto conn = pool.getConnection();
@@ -352,10 +529,10 @@ std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPoo
             vuln.vulType = row[9].get<std::string>();
             ip_vulns_map[ip].host_vulnerabilities.push_back(vuln);
         }
-       // std::cout << "主机漏洞查询完成，找到 " << hostVulnCount << " 个结果" << std::endl;
+        // std::cout << "主机漏洞查询完成，找到 " << hostVulnCount << " 个结果" << std::endl;
 
-        // 2. 再查询端口漏洞
-        //std::cout << "正在查询端口漏洞..." << std::endl;
+         // 2. 再查询端口漏洞
+         //std::cout << "正在查询端口漏洞..." << std::endl;
         mysqlx::SqlResult portResult = conn->sql(R"(
             SELECT 
                 shr.ip,
@@ -423,7 +600,7 @@ std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPoo
         return result_vector;
     }
     catch (const mysqlx::Error& err) {
-        std::cerr << "数据库错误: " << err.what() << std::endl;
+        std::cerr << "getVulnerabilities时数据库错误: " << err.what() << std::endl;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
@@ -580,7 +757,7 @@ void DatabaseHandler::insertHostCPEs(int shr_id, const std::set<std::string>& cp
         }
     }
     catch (const mysqlx::Error& err) {
-        std::cerr << "数据库错误: " << err.what() << std::endl;
+        std::cerr << "insertHostCPEs时数据库错误: " << err.what() << std::endl;
     }
 }
 
@@ -602,7 +779,7 @@ void DatabaseHandler::insertAliveHosts(const std::vector<std::string>& aliveHost
         }
     }
     catch (const mysqlx::Error& err) {
-        std::cerr << "数据库错误: " << err.what() << std::endl;
+        std::cerr << "insertAliveHosts时数据库错误: " << err.what() << std::endl;
     }
 }
 
@@ -625,7 +802,7 @@ void DatabaseHandler::insertAliveHosts2scanHostResult(const std::vector<std::str
         }
     }
     catch (const mysqlx::Error& err) {
-        std::cerr << "数据库错误: " << err.what() << std::endl;
+        std::cerr << "insertAliveHosts2scanHostResult时数据库错误: " << err.what() << std::endl;
     }
 }
 
@@ -642,33 +819,33 @@ void DatabaseHandler::readAliveHosts(std::vector<std::string>& aliveHosts, Conne
             aliveHosts.push_back(row[0].get<std::string>());
         }
     }
-	catch (const mysqlx::Error& err) {
-		std::cerr << "数据库错误: " << err.what() << std::endl;
-	}
-	catch (std::exception& ex) {
-		std::cerr << "异常: " << ex.what() << std::endl;
-	}
-	catch (...) {
-		std::cerr << "未知错误发生" << std::endl;
-	}
+    catch (const mysqlx::Error& err) {
+        std::cerr << "readAliveHosts时数据库错误: " << err.what() << std::endl;
+    }
+    catch (std::exception& ex) {
+        std::cerr << "异常: " << ex.what() << std::endl;
+    }
+    catch (...) {
+        std::cerr << "未知错误发生" << std::endl;
+    }
 }
 
 void DatabaseHandler::updateAliveHosts(std::string aliveHost, ConnectionPool& pool)
 {
-	try {
-		auto conn = pool.getConnection();  // 获取连接
-		conn->sql(
-			"UPDATE scan_host_result SET "
-			"alive = 'false' "
-			"WHERE ip = ?"
-		)
-			.bind(aliveHost)
-			.execute();
-		//std::cout << "成功更新存活主机: " << aliveHost << std::endl;
-	}
-	catch (const mysqlx::Error& err) {
-		std::cerr << "数据库错误: " << err.what() << std::endl;
-	}
+    try {
+        auto conn = pool.getConnection();  // 获取连接
+        conn->sql(
+            "UPDATE scan_host_result SET "
+            "alive = 'false' "
+            "WHERE ip = ?"
+        )
+            .bind(aliveHost)
+            .execute();
+        //std::cout << "成功更新存活主机: " << aliveHost << std::endl;
+    }
+    catch (const mysqlx::Error& err) {
+        std::cerr << "updateAliveHosts时数据库错误: " << err.what() << std::endl;
+    }
 }
 
 void DatabaseHandler::processVulns(const ScanHostResult& hostResult, ConnectionPool& pool)
@@ -826,7 +1003,7 @@ void DatabaseHandler::insertVulns(const std::vector<Vuln>& vulns, ConnectionPool
         }
     }
     catch (const mysqlx::Error& err) {
-        std::cerr << "数据库错误: " << err.what() << std::endl;
+        std::cerr << "insertVulns时数据库错误: " << err.what() << std::endl;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
@@ -1121,7 +1298,7 @@ void DatabaseHandler::insertPortVulnResult(const std::vector<Vuln>& vulns, const
         }
     }
     catch (const mysqlx::Error& err) {
-        std::cerr << "数据库错误: " << err.what() << std::endl;
+        std::cerr << "insertPortVulnResult时数据库错误: " << err.what() << std::endl;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
