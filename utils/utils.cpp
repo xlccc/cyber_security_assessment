@@ -239,7 +239,16 @@ void initializePython()
     // 初始化Python解释器
     Py_Initialize();
     global_importlib = PyImport_ImportModule("importlib");
+    if (!global_importlib) {
+        std::cerr << "Failed to import importlib module." << std::endl;
+        return;
+    }
     global_io = PyImport_ImportModule("io");
+    if (!global_io) {
+        std::cerr << "Failed to import io module." << std::endl;
+        Py_DECREF(global_importlib);
+        return;
+    }
 
 
     // 设置sys.path

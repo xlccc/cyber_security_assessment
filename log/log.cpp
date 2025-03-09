@@ -23,11 +23,11 @@ void init_logs() {
 
         // 配置系统运维日志（轮转日志，每个文件最大5MB，最多保留3个文件）
         system_logger = spdlog::rotating_logger_mt("system_logger", get_log_path("system"), 1024 * 1024 * 5, 3);
-        system_logger->set_pattern("[%Y-%m-%d %H:%M:%S] [%l] %v");
+        system_logger->set_pattern("[%Y-%m-%d %H:%M:%S] [thread %t] [%l] %v");
 
         // 配置用户活动日志（轮转日志）
         user_logger = spdlog::rotating_logger_mt("user_logger", get_log_path("user"), 1024 * 1024 * 5, 3);
-        user_logger->set_pattern("[%Y-%m-%d %H:%M:%S] [%l] %v");
+        user_logger->set_pattern("[%Y-%m-%d %H:%M:%S] [thread %t] [%l] %v");
 
         // 设置日志级别
         spdlog::set_level(spdlog::level::info);
