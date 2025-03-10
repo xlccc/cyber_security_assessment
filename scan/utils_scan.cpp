@@ -275,8 +275,10 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
         if (value) {
             PyObject* str_value = PyObject_Str(value);
             if (str_value) {
-                result += "无法加载脚本：" + scriptPath + "，错误信息：" + std::string(PyUnicode_AsUTF8(str_value));
-                console->error("无法加载脚本：{} , 错误信息：{} ", scriptPath, std::string(PyUnicode_AsUTF8(str_value)));
+                const char* utf8_str = PyUnicode_AsUTF8(str_value);
+                std::string error_msg = utf8_str ? utf8_str : "";
+                result += "无法加载脚本：" + scriptPath + "，错误信息：" + error_msg;
+                console->error("无法加载脚本：{} , 错误信息：{} ", scriptPath, error_msg);;
                 Py_DECREF(str_value);
             }
         }
@@ -309,14 +311,17 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
             if (value) {
                 PyObject* str_value = PyObject_Str(value);
                 if (str_value) {
-                    result += "无法重新加载模块：" + scriptPath + "，错误信息：" + std::string(PyUnicode_AsUTF8(str_value));
-                    console->error("无法重新加载模块：{}，错误信息：" , scriptPath,std::string(PyUnicode_AsUTF8(str_value)));
+                    const char* utf8_str = PyUnicode_AsUTF8(str_value);
+                    std::string error_msg = utf8_str ? utf8_str : "";
+                    result += "无法重新加载模块：" + scriptPath + "，错误信息：" + error_msg;
+                    console->error("无法重新加载模块：{}，错误信息：{}", scriptPath, error_msg);
                     Py_DECREF(str_value);
                 }
             }
             Py_XDECREF(type);
             Py_XDECREF(value);
             Py_XDECREF(traceback);
+            return result;
         }
         Py_XDECREF(reloaded_module);
     }
@@ -390,10 +395,13 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
             PyObject* error_info = PyDict_GetItemString(py_result, "Error");
 
             if (verify_info) {
-                result += PyUnicode_AsUTF8(verify_info);
+                const char* verify_utf8 = PyUnicode_AsUTF8(verify_info);
+                result += verify_utf8 ? verify_utf8 : "";
             }
             if (error_info) {
-                result += "\n" + std::string(PyUnicode_AsUTF8(error_info));
+                const char* error_utf8 = PyUnicode_AsUTF8(error_info);
+                std::string error_msg = error_utf8 ? error_utf8 : "";
+                result += "\n" + error_msg;;
             }
         }
         Py_DECREF(py_result);
@@ -407,7 +415,8 @@ std::string runPythonWithOutput(const std::string& scriptPath_extension, const s
     // 获取所有的 stdout 和 stderr 输出
     PyObject* output = PyObject_CallMethod(string_io, "getvalue", NULL);
     if (output) {
-        result += PyUnicode_AsUTF8(output);
+        const char* output_utf8 = PyUnicode_AsUTF8(output);
+        result += output_utf8 ? output_utf8 : "";
         Py_DECREF(output);
     }
     else {
@@ -913,9 +922,11 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
         const std::string& key = entry.first;
         std::vector<POCTask>& tasks = entry.second;
 
+
         for (auto& task : tasks) {
             std::string task_data = serialize_task_data(key, task);  // 将任务序列化为字符串
             push_task_to_redis(redis_client, task_data);  // 发布任务到 Redis 队列
+
         }
     }
 
@@ -925,24 +936,38 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
 
         if (pid == 0) {
 
+            console->info("process {} start ", getpid());
+
+
+            // 🚀 让子进程独立建立 `Redis` 连接
+            redisContext* child_redis_client = get_redis_client();
+            if (!child_redis_client || child_redis_client->err) {
+                fprintf(stderr, "[ERROR] Child Process %d: Failed to connect to Redis! %s\n", getpid(), child_redis_client ? child_redis_client->errstr : "NULL");
+                _exit(1);
+            }
+
+            console->info("[Child Process {}] Redis connection initialized.", getpid());
+
             //子进程初始化python解释器
             initializePython();
-            // 子进程：重新连接 Redis 并从 Redis 队列中取任务并执行
-            redisContext* child_redis_client = get_redis_client();  // 子进程初始化自己的 Redis 连接
 
-            if (child_redis_client == nullptr || child_redis_client->err) {
-                system_logger->error("[Child Process] Redis connection failed: {}", child_redis_client->errstr);
-                exit(1);  // 如果连接失败，退出
-            }
 
             system_logger->info("[Child Process] Redis connection initialized/get.");
 
             // 执行任务的循环
             while (true) {
                 std::string task_data = pop_task_from_redis(child_redis_client);
+                cout << "process :" << getpid() << " task_data : " << task_data << endl;
+                cout << "task_data.empty: " << task_data.empty() << endl;
                 if (task_data.empty()) {
+                    console->info("[Child Process] No tasks in Redis, exiting. process {}",getpid());
                     system_logger->info("[Child Process] No tasks in Redis, exiting.");
-                    break;  // 如果队列为空，则退出循环
+                    
+                    //释放python解释器
+                    Py_Finalize();
+
+                    redisFree(child_redis_client);  // 子进程完成后关闭连接
+                    _exit(0);  // 子进程完成后退出
                 }
 
                 // 反序列化任务并获取 key
@@ -953,11 +978,6 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
                 execute_poc_task(key, task.second, child_redis_client, dbHandler, pool);  // 正确传递 key 和任务
 
             }
-            //释放python解释器
-            Py_Finalize();
-
-            redisFree(child_redis_client);  // 子进程完成后关闭连接
-            _exit(0);  // 子进程完成后退出
         }
         else if (pid > 0) {
             // 父进程：记录子进程 PID
@@ -969,24 +989,33 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
         }
     }
 
+    sleep(2);
+
     // 等待所有子进程完成
     for (pid_t pid : child_pids) {
         int status;
-        pid_t terminated_pid = waitpid(pid, &status, 0);
-        if (terminated_pid > 0) {
-            if (WIFEXITED(status)) {
-                system_logger->info("[Parent Process] Child process with PID: {} exited normally with status: {}", terminated_pid, WEXITSTATUS(status));
-                console->debug("[Parent Process] Child process with PID: {} exited normally with status: {}", terminated_pid, WEXITSTATUS(status));
+        while (true) {
+            pid_t terminated_pid = waitpid(pid, &status, WNOHANG);
+            if (terminated_pid > 0) {
+                if (WIFEXITED(status)) {
+                    console->info("[Parent Process] Child process {} exited normally with status {}", terminated_pid, WEXITSTATUS(status));
+                }
+                else if (WIFSIGNALED(status)) {
+                    console->error("[Parent Process] Child process {} was terminated by signal {}", terminated_pid, WTERMSIG(status));
+                }
+                break;
             }
-            else if (WIFSIGNALED(status)) {
-                console->debug("[Parent Process] Child process with PID: {} was terminated by signal: {}", terminated_pid, WTERMSIG(status));
+            else if (terminated_pid == 0) {
+                console->info("[Parent Process] Waiting for child process {}...", pid);
+                sleep(1);
             }
-        }
-        else {
-            console->error("[Parent Process] Failed to wait for child process with PID: {}", pid);
-            system_logger->error("[Parent Process] Failed to wait for child process with PID: {}", pid);
+            else if (errno == ECHILD) {
+                console->info("[Parent Process] No more child processes to wait for.");
+                break;
+            }
         }
     }
+
 
 
     // 父进程读取 Redis 中的任务结果
@@ -1367,6 +1396,9 @@ std::string serialize_task_data(const std::string& key, const POCTask& task) {
     vuln_json["ifCheck"] = task.vuln.ifCheck;
     vuln_json["vulExist"] = task.vuln.vulExist;
 
+
+    cout << task.vuln.script << endl;
+
     // 将 Vuln 序列化后的数据嵌入 POCTask
     j["vuln"] = vuln_json;
 
@@ -1379,34 +1411,42 @@ std::string serialize_task_data(const std::string& key, const POCTask& task) {
     return result.dump();
 }
 
-// 反序列化 POCTask 数据
+/// 反序列化 POCTask 数据
 std::pair<std::string, POCTask> deserialize_task_data(const std::string& task_data) {
     try {
         // 解析 JSON 字符串
         json j = json::parse(task_data);
 
-        // 提取 key 和 POCTask 对象
-        std::string key = j["key"];
+        // 提取 key
+        std::string key = j.value("key", "");
+        if (key.empty()) {
+            console->error("Error deserializing task data: 'key' not found in JSON.");
+            system_logger->error("Error deserializing task data: 'key' not found in JSON.");
+        }
+
         POCTask task;
-        task.url = j["task"]["url"];
-        task.ip = j["task"]["ip"];
-        task.port = j["task"]["port"];
+        // 提取 task 信息
+        auto task_json = j.value("task", json::object());
+        task.url = task_json.value("url", "");
+        task.ip = task_json.value("ip", "");
+        task.port = task_json.value("port", "");
 
         // 反序列化 Vuln 对象
-        json vuln_json = j["task"]["vuln"];
-        task.vuln.Vuln_id = vuln_json["Vuln_id"];
-        task.vuln.vul_name = vuln_json["vul_name"];
-        task.vuln.script = vuln_json["script"];
-        task.vuln.CVSS = vuln_json["CVSS"];
-        task.vuln.summary = vuln_json["summary"];
-        task.vuln.pocExist = vuln_json["pocExist"];
-        task.vuln.ifCheck = vuln_json["ifCheck"];
-        task.vuln.vulExist = vuln_json["vulExist"];
+        auto vuln_json = task_json.value("vuln", json::object());
+        // 直接赋值，无需转换
+        task.vuln.Vuln_id = vuln_json.value("Vuln_id", "");
+        task.vuln.vul_name = vuln_json.value("vul_name", "");
+        task.vuln.script = vuln_json.value("script", "");
+        task.vuln.CVSS = vuln_json.value("CVSS", "");
+        task.vuln.summary = vuln_json.value("summary", "");
+        task.vuln.pocExist = vuln_json.value("pocExist", false);
+        task.vuln.ifCheck = vuln_json.value("ifCheck", false);
+        // 获取字符串类型的值
+        task.vuln.vulExist = vuln_json.value("vulExist", "未验证");
 
         return { key, task };  // 返回 key 和任务
     }
     catch (const std::exception& e) {
-
         console->error("Error deserializing task data: {}", e.what());
         system_logger->error("Error deserializing task data: {}", e.what());
         return { "", POCTask() };  // 处理异常并返回默认值
@@ -1428,6 +1468,12 @@ void push_task_to_redis(redisContext* c, const std::string& task_data) {
 
 // 从 Redis 队列获取任务
 std::string pop_task_from_redis(redisContext* redis_client) {
+
+    //确保 RPOP 不会卡死（添加超时）
+    struct timeval timeout = { 5, 0 }; // 5秒超时
+    redisSetTimeout(redis_client, timeout);
+
+    
     // 获取队列长度并打印
     redisReply* length_reply = (redisReply*)redisCommand(redis_client, "LLEN POC_TASK_QUEUE");
     if (length_reply == nullptr) {
@@ -1435,17 +1481,86 @@ std::string pop_task_from_redis(redisContext* redis_client) {
         system_logger->error("[pop_task_from_redis] Failed to get queue length: {}", redis_client->errstr);
         return "";
     }
-    console->info("[pop_task_from_redis] Current queue length: {}", length_reply->integer);
+    long long queue_length = length_reply->integer;
+    console->info("{} [pop_task_from_redis] Current queue length: {}",getpid(), queue_length);
     freeReplyObject(length_reply);
+
+    // 检查队列是否为空
+    if (queue_length == 0) {
+        console->info("[pop_task_from_redis] Queue is empty, no task to pop.{}", getpid());
+        return "";
+    }
+
 
     // 尝试弹出任务
     redisReply* reply = (redisReply*)redisCommand(redis_client, "RPOP POC_TASK_QUEUE");
     if (reply == nullptr) {
-        console->error("[pop_task_from_redis] Redis command failed: {}", redis_client->errstr);
-        system_logger->error("[pop_task_from_redis] Redis command failed: {}", redis_client->errstr);
+        console->error("{}[pop_task_from_redis] Redis command failed: {}", getpid(), redis_client->errstr);
+        system_logger->error("{}[pop_task_from_redis] Redis command failed: {}", getpid(), redis_client->errstr);
         return "";
     }
 
+    // 检查返回的数据是否为空
+    if (reply->type == REDIS_REPLY_NIL) {
+        console->info("{} [pop_task_from_redis] No task data found (RPOP returned NIL).", getpid());
+        freeReplyObject(reply);
+        return "";
+    }
+
+    /*
+    // 这里需要额外检查 reply->str 是否为 nullptr
+    if (reply->type == REDIS_REPLY_STRING && reply->str == nullptr) {
+        console->error("[pop_task_from_redis] Redis reply string is null although type is REDIS_REPLY_STRING.");
+        system_logger->error("[pop_task_from_redis] Redis reply string is null although type is REDIS_REPLY_STRING.");
+        freeReplyObject(reply);
+        return "";
+    }
+        cout << "pop_task : " << (reply->str == nullptr) << endl;
+
+        // 再次检查 reply->str 是否为 nullptr
+        if (reply->str == nullptr) {
+            console->error("[pop_task_from_redis] Redis reply string is null, returning empty string.");
+            system_logger->error("[pop_task_from_redis] Redis reply string is null, returning empty string.");
+            freeReplyObject(reply);
+            return "";
+        }
+
+        // 输出调试信息：打印返回的任务数据
+        console->info("[pop_task_from_redis] Popped task data: {}", reply->str);
+
+        // 获取任务数据并释放 Redis 回复对象
+        std::string task_data(reply->str);
+        freeReplyObject(reply);
+
+        return task_data;
+    */
+
+    //处理 `RPOP` 直接返回字符串的情况
+    if (reply->type == REDIS_REPLY_STRING) {
+        std::string task_data(reply->str);
+        console->info("{} [pop_task_from_redis] Popped task data: {}", getpid(), task_data);
+        freeReplyObject(reply);
+        return task_data;
+    }
+
+    // 处理 `RPOP key count` 返回 `ARRAY` 的情况
+    if (reply->type == REDIS_REPLY_ARRAY && reply->elements > 0) {
+        std::string task_data(reply->element[0]->str);
+        console->info("{} [pop_task_from_redis] Popped task data from ARRAY: {}", getpid(), task_data);
+        freeReplyObject(reply);
+        return task_data;
+    }
+
+
+    // 如果返回的数据格式不对
+    console->error("{} [pop_task_from_redis] Unexpected Redis reply type or structure.", getpid());
+    system_logger->error("{} [pop_task_from_redis] Unexpected Redis reply type or structure.", getpid());
+    freeReplyObject(reply);
+    return "";
+
+
+
+    /* 旧版：测试过
     if (reply->type == REDIS_REPLY_STRING) {
         std::string task_data = reply->str;
         console->info("[pop_task_from_redis] Task data: {}", task_data);
@@ -1456,7 +1571,7 @@ std::string pop_task_from_redis(redisContext* redis_client) {
         console->info("[pop_task_from_redis] No task data found (empty response).");;
         freeReplyObject(reply);
         return "";
-    }
+    }*/
 }
 
 // 将任务结果推送到 Redis 结果队列
@@ -1494,6 +1609,14 @@ std::string pop_result_from_redis(redisContext* c) {
     if (reply->type == REDIS_REPLY_STRING && reply->str == nullptr) {
         console->error("[ERROR] Redis reply string is null although type is REDIS_REPLY_STRING.");
         system_logger->error("[ERROR] Redis reply string is null although type is REDIS_REPLY_STRING.");
+        freeReplyObject(reply);
+        return "";
+    }
+
+    // 再次检查 reply->str 是否为 nullptr
+    if (reply->str == nullptr) {
+        console->error("[ERROR] Redis reply string is null, returning empty string.");
+        system_logger->error("[ERROR] Redis reply string is null, returning empty string.");
         freeReplyObject(reply);
         return "";
     }

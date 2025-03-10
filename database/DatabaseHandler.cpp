@@ -77,19 +77,19 @@ void DatabaseHandler::executeUpdateOrInsert(const ScanHostResult& scanHostResult
             //std::cout << "成功插入或更新端口信息: 端口 " << port.portId
                 //<< ", 协议 " << port.protocol << std::endl;
         }
-		//修改为先插入cpe，这样就可以获取cpe_id。剩下三个表与cpe_id有关联
+        //修改为先插入cpe，这样就可以获取cpe_id。剩下三个表与cpe_id有关联
         //(3)插入cpe表
         processHostCpe(scanHostResult, shr_id, pool);
-        
+
         //(4)插入vuln表, 添加了cpe_id字段
-        processVulns(scanHostResult,  pool);
+        processVulns(scanHostResult, pool);
         //(5)插入host_vuln_result表
         //目前已有shr_id
-        processHostVulns(scanHostResult, shr_id,  pool);
+        processHostVulns(scanHostResult, shr_id, pool);
         //(6)插入port_vuln_result表
-        processPortVulns(scanHostResult, shr_id,  pool);
+        processPortVulns(scanHostResult, shr_id, pool);
 
-        
+
 
     }
     catch (const mysqlx::Error& err) {
@@ -129,7 +129,7 @@ void DatabaseHandler::processPortVulns(const ScanHostResult& hostResult, const i
 
 }
 
-void DatabaseHandler::alterVulnsAfterPocSearch(ConnectionPool& pool, const Vuln & vuln)
+void DatabaseHandler::alterVulnsAfterPocSearch(ConnectionPool& pool, const Vuln& vuln)
 {
     try {
         auto conn = pool.getConnection();  // 获取连接
@@ -144,7 +144,7 @@ void DatabaseHandler::alterVulnsAfterPocSearch(ConnectionPool& pool, const Vuln 
             vuln.script.empty() ? "" : vuln.script,  // 插入 NULL 或脚本名称
             vuln.Vuln_id
         )
-        .execute();
+            .execute();
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "alterVulnsAfterPocSearch时数据库错误: " << err.what() << std::endl;
@@ -477,11 +477,11 @@ void DatabaseHandler::alterVulnAfterPocTask(ConnectionPool& pool, const POCTask&
 std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPool& pool, std::vector<std::string> alive_hosts)
 {
     std::map<std::string, IpVulnerabilities> ip_vulns_map;
-	for (auto ip : alive_hosts) {
-		if (ip_vulns_map.find(ip) == ip_vulns_map.end()) {
-			ip_vulns_map[ip] = IpVulnerabilities{ ip };
-		}
-	}
+    for (auto ip : alive_hosts) {
+        if (ip_vulns_map.find(ip) == ip_vulns_map.end()) {
+            ip_vulns_map[ip] = IpVulnerabilities{ ip };
+        }
+    }
 
     try {
         auto conn = pool.getConnection();
@@ -529,10 +529,10 @@ std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPoo
             vuln.vulType = row[9].get<std::string>();
             ip_vulns_map[ip].host_vulnerabilities.push_back(vuln);
         }
-       // std::cout << "主机漏洞查询完成，找到 " << hostVulnCount << " 个结果" << std::endl;
+        // std::cout << "主机漏洞查询完成，找到 " << hostVulnCount << " 个结果" << std::endl;
 
-        // 2. 再查询端口漏洞
-        //std::cout << "正在查询端口漏洞..." << std::endl;
+         // 2. 再查询端口漏洞
+         //std::cout << "正在查询端口漏洞..." << std::endl;
         mysqlx::SqlResult portResult = conn->sql(R"(
             SELECT 
                 shr.ip,

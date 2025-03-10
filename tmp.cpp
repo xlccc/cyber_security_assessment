@@ -58,3 +58,104 @@ ScanHostResult DatabaseHandler::getScanHostResult(const std::string& ip, Connect
 
     return oldScanResult;
 }
+
+// 从 Redis 队列获取任务
+std::string pop_task_from_redis(redisContext* redis_client) {
+
+    const int timeout_seconds = 1;  // 设置超时时间，单位秒
+
+    // 获取队列长度并打印
+    redisReply* length_reply = (redisReply*)redisCommand(redis_client, "LLEN POC_TASK_QUEUE");
+    if (length_reply == nullptr) {
+        console->error("[pop_task_from_redis] Failed to get queue length: {}", redis_client->errstr);
+        system_logger->error("[pop_task_from_redis] Failed to get queue length: {}", redis_client->errstr);
+        return "";
+    }
+    long long queue_length = length_reply->integer;
+    console->info("[pop_task_from_redis] Current queue length: {}", queue_length);
+    freeReplyObject(length_reply);
+
+    // 检查队列是否为空
+    if (queue_length == 0) {
+        console->info("[pop_task_from_redis] Queue is empty, no task to pop.");
+        return "";
+    }
+
+
+    // 尝试弹出任务
+    redisReply* reply = (redisReply*)redisCommand(redis_client, "BRPOP POC_TASK_QUEUE %d", timeout_seconds);
+    if (reply == nullptr) {
+        console->error("[pop_task_from_redis] Redis command failed: {}", redis_client->errstr);
+        system_logger->error("[pop_task_from_redis] Redis command failed: {}", redis_client->errstr);
+        return "";
+    }
+
+    // 检查返回的数据是否为空
+    if (reply->type == REDIS_REPLY_NIL) {
+        console->info("[pop_task_from_redis] No task data found (RPOP returned NIL).");
+        freeReplyObject(reply);
+        return "";
+    }
+
+    // 这里需要额外检查 reply->str 是否为 nullptr
+    if (reply->type == REDIS_REPLY_STRING && reply->str == nullptr) {
+        console->error("[pop_task_from_redis] Redis reply string is null although type is REDIS_REPLY_STRING.");
+        system_logger->error("[pop_task_from_redis] Redis reply string is null although type is REDIS_REPLY_STRING.");
+        freeReplyObject(reply);
+        return "";
+    }
+
+    cout << "pop_task : " << (reply->str == nullptr) << endl;
+
+    // 再次检查 reply->str 是否为 nullptr
+    if (reply->str == nullptr) {
+        console->error("[pop_task_from_redis] Redis reply string is null, returning empty string.");
+        system_logger->error("[pop_task_from_redis] Redis reply string is null, returning empty string.");
+        freeReplyObject(reply);
+        return "";
+    }
+
+    // 输出调试信息：打印返回的任务数据
+    console->info("[pop_task_from_redis] Popped task data: {}", reply->str);
+
+    // 获取任务数据并释放 Redis 回复对象
+    std::string task_data(reply->str);
+    freeReplyObject(reply);
+
+    return task_data;
+
+
+    /* 旧版：测试过
+    if (reply->type == REDIS_REPLY_STRING) {
+        std::string task_data = reply->str;
+        console->info("[pop_task_from_redis] Task data: {}", task_data);
+        freeReplyObject(reply);
+        return task_data;
+    }
+    else {
+        console->info("[pop_task_from_redis] No task data found (empty response).");;
+        freeReplyObject(reply);
+        return "";
+    }*/
+}
+
+
+// 等待所有子进程完成
+for (pid_t pid : child_pids) {
+    int status;
+    pid_t terminated_pid = waitpid(pid, &status, 0);
+    if (terminated_pid > 0) {
+        if (WIFEXITED(status)) {
+            system_logger->info("[Parent Process] Child process with PID: {} exited normally with status: {}", terminated_pid, WEXITSTATUS(status));
+            console->debug("[Parent Process] Child process with PID: {} exited normally with status: {}", terminated_pid, WEXITSTATUS(status));
+        }
+        else if (WIFSIGNALED(status)) {
+            console->debug("[Parent Process] Child process with PID: {} was terminated by signal: {}", terminated_pid, WTERMSIG(status));
+        }
+    }
+    else {
+        console->error("[Parent Process] Failed to wait for child process with PID: {}", pid);
+        system_logger->error("[Parent Process] Failed to wait for child process with PID: {}", pid);
+    }
+}
+

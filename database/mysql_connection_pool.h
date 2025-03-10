@@ -64,6 +64,11 @@ public:
         }
     }
 
+        if (connections_.empty()) {
+            std::cerr << "警告: 无法初始化任何数据库连接" << std::endl;
+        }
+    }
+
     ~ConnectionPool() {
         // 清理所有连接
         std::lock_guard<std::mutex> lock(mutex_);
@@ -218,7 +223,7 @@ private:
             // 验证连接是否有效
             conn->sql("SELECT 1").execute();
             connections_.push(std::move(conn));
-            std::cout << "连接已返回池中，当前可用连接: " << connections_.size() << std::endl;
+            //std::cout << "连接已返回池中，当前可用连接: " << connections_.size() << std::endl;
         }
         catch (const std::exception& e) {
             std::cerr << "返回无效连接: " << e.what() << std::endl;

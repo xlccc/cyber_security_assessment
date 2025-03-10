@@ -1455,8 +1455,8 @@ void ServerManager::handle_post_hydra(http_request request) {
             }
 
             // 默认文件路径
-            std::string usernameFile = "/hydra/usernames.txt";
-            std::string passwordFile = "/hydra/passwords.txt";
+            std::string usernameFile = "/home/c/hydra/usernames.txt";
+            std::string passwordFile = "/home/c/hydra/passwords.txt";
 
             // 检查文件扩展名函数
             auto is_txt_file = [](const std::string& filename) -> bool {
@@ -2817,6 +2817,7 @@ void ServerManager::handle_get_alive_hosts(http_request request)
 void ServerManager::handle_post_poc_scan(http_request request) {
     request.extract_json().then([=](json::value json_data) {
         try {
+
             // 提取 IP 地址
             if (!json_data.has_field(_XPLATSTR("ip"))) {
                 throw std::runtime_error("Invalid request: Missing 'ip' field.");
@@ -2872,6 +2873,9 @@ void ServerManager::handle_post_poc_scan(http_request request) {
 
                 user_logger->info("IP：{} Nmap 扫描完成，更新历史数据。", ip);
             }
+            
+            //搜索POC代码是否存在并装载。
+            searchPOCs(scan_host_result, dbManager, dbHandler_, pool);
 
             // 选择是否进行基础设施匹配
             bool match_infra = json_data.has_field(_XPLATSTR("match_infra")) ? json_data[_XPLATSTR("match_infra")].as_bool() : true;
