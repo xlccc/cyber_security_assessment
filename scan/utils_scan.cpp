@@ -696,7 +696,7 @@ void compareAndUpdateResults(const ScanHostResult& oldResult, ScanHostResult& ne
 
 // CVE 查询函数
 void fetch_and_padding_cves(std::map<std::string, std::vector<Vuln>>& cpes, const std::vector<std::string>& cpes_to_query, int limit) {
-    std::string base_url = "http://10.9.130.189:5000/api/cvefor";
+    std::string base_url = "http://10.9.130.51:5000/api/cvefor";
 
     for (const auto& cpe_id : cpes_to_query) {
         auto& vecCVE = cpes[cpe_id];
@@ -1010,7 +1010,7 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
             }
             // 插入新的漏洞信息，实现覆盖效果
             scan_host_result.vuln_result.insert(vuln);
-            //dbHandler.alterHostVulnResultAfterPocVerify(pool, vuln, scan_host_result.ip);
+            dbHandler.alterHostVulnResultAfterPocVerify(pool, vuln, scan_host_result.ip);
             console->info("[Parent Process] Overwritten OS-level vuln ID: {} in scan_host_result", vuln.Vuln_id);
         }
         else {
@@ -1029,7 +1029,7 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
                 port_it->vuln_result.insert(vuln);
                 console->info("[Parent Process] Overwritten port-level vuln ID: {} into port: {}", vuln.Vuln_id, portId);
                 // 将更新后的漏洞信息同步到数据库
-            //    dbHandler.alterPortVulnResultAfterPocVerify(pool, vuln, scan_host_result.ip, portId);
+                dbHandler.alterPortVulnResultAfterPocVerify(pool, vuln, scan_host_result.ip, portId);
             }
             else {
                 console->error("[Parent Process]: Port ID {} not found in scan_host_result.", portId);
