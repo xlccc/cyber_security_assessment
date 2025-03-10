@@ -7,16 +7,16 @@ using namespace concurrency::streams;
 
 ServerManager::ServerManager()
     : localConfig{
-        "192.168.136.128",  // host
+        "10.9.130.189",  // host
         33060,            // port
         "root",           // user
-        "123456", // password
+        "ComplexPassword123!", // password
         "test_db"         // schema
     },
     pool(localConfig),    // 使用 localConfig 初始化 pool
     dbManager(DB_PATH)    // 原有的 dbManager 初始化
 {
-    utility::string_t address = _XPLATSTR("http://192.168.136.128:8081/");
+    utility::string_t address = _XPLATSTR("http://10.9.130.189:8081/");
     uri_builder uri(address);
     auto addr = uri.to_uri().to_string();
     listener = std::make_unique<http_listener>(addr);
@@ -278,70 +278,6 @@ void ServerManager::printScanHostResult(const ScanHostResult& result)
 
 }
 
-//// 将资产信息转换为JSON格式
-//web::json::value ServerManager::convertAssetInfoToJson(const AssetInfo& assetInfo)
-//{
-//    web::json::value result = web::json::value::object();
-//    result["ip"] = web::json::value::string(assetInfo.ip);
-//
-//    // 添加端口信息
-//    web::json::value portsArray = web::json::value::array(assetInfo.ports.size());
-//    for (size_t i = 0; i < assetInfo.ports.size(); i++) {
-//        web::json::value portObj = web::json::value::object();
-//        const PortInfo& port = assetInfo.ports[i];
-//
-//        portObj["port"] = web::json::value::number(port.port);
-//        portObj["protocol"] = web::json::value::string(port.protocol);
-//        portObj["status"] = web::json::value::string(port.status);
-//        portObj["service_name"] = web::json::value::string(port.service_name);
-//        portObj["product"] = web::json::value::string(port.product);
-//        portObj["version"] = web::json::value::string(port.version);
-//        portObj["software_type"] = web::json::value::string(port.software_type);
-//
-//        portsArray[i] = portObj;
-//    }
-//    result["ports"] = portsArray;
-//
-//    // 添加主机漏洞信息
-//    web::json::value hostVulnArray = web::json::value::array(assetInfo.host_vulnerabilities.size());
-//    for (size_t i = 0; i < assetInfo.host_vulnerabilities.size(); i++) {
-//        web::json::value vulnObj = web::json::value::object();
-//        const VulnerabilityInfo& vuln = assetInfo.host_vulnerabilities[i];
-//
-//        vulnObj["vuln_id"] = web::json::value::string(vuln.vuln_id);
-//        vulnObj["vuln_name"] = web::json::value::string(vuln.vuln_name);
-//        vulnObj["cvss"] = web::json::value::string(vuln.cvss);
-//        vulnObj["summary"] = web::json::value::string(vuln.summary);
-//        vulnObj["vulExist"] = web::json::value::string(vuln.vulExist);
-//        vulnObj["softwareType"] = web::json::value::string(vuln.softwareType);
-//        vulnObj["vulType"] = web::json::value::string(vuln.vulType);
-//
-//        hostVulnArray[i] = vulnObj;
-//    }
-//    result["host_vulnerabilities"] = hostVulnArray;
-//
-//    // 添加端口漏洞信息
-//    web::json::value portVulnArray = web::json::value::array(assetInfo.port_vulnerabilities.size());
-//    for (size_t i = 0; i < assetInfo.port_vulnerabilities.size(); i++) {
-//        web::json::value vulnObj = web::json::value::object();
-//        const PortVulnerabilityInfo& vuln = assetInfo.port_vulnerabilities[i];
-//
-//        vulnObj["port_id"] = web::json::value::number(vuln.port_id);
-//        vulnObj["vuln_id"] = web::json::value::string(vuln.vuln_id);
-//        vulnObj["vuln_name"] = web::json::value::string(vuln.vuln_name);
-//        vulnObj["cvss"] = web::json::value::string(vuln.cvss);
-//        vulnObj["summary"] = web::json::value::string(vuln.summary);
-//        vulnObj["vulExist"] = web::json::value::string(vuln.vulExist);
-//        vulnObj["softwareType"] = web::json::value::string(vuln.softwareType);
-//        vulnObj["vulType"] = web::json::value::string(vuln.vulType);
-//        vulnObj["service_name"] = web::json::value::string(vuln.service_name);
-//
-//        portVulnArray[i] = vulnObj;
-//    }
-//    result["port_vulnerabilities"] = portVulnArray;
-//
-//    return result;
-//}
 // 将资产信息转换为JSON格式
 web::json::value ServerManager::convertAssetInfoToJson(const AssetInfo& assetInfo)
 {

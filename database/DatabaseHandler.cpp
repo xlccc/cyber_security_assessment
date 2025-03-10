@@ -351,7 +351,7 @@ void DatabaseHandler::alterPortVulnResultAfterPocVerify(ConnectionPool& pool, co
 
             // 获取新插入的漏洞ID
             vuln_id_primary = insertResult.getAutoIncrementValue();
-
+            
 
         }
         else {
@@ -819,33 +819,33 @@ void DatabaseHandler::readAliveHosts(std::vector<std::string>& aliveHosts, Conne
             aliveHosts.push_back(row[0].get<std::string>());
         }
     }
-    catch (const mysqlx::Error& err) {
-        std::cerr << "readAliveHosts时数据库错误: " << err.what() << std::endl;
-    }
-    catch (std::exception& ex) {
-        std::cerr << "异常: " << ex.what() << std::endl;
-    }
-    catch (...) {
-        std::cerr << "未知错误发生" << std::endl;
-    }
+	catch (const mysqlx::Error& err) {
+		std::cerr << "readAliveHosts时数据库错误: " << err.what() << std::endl;
+	}
+	catch (std::exception& ex) {
+		std::cerr << "异常: " << ex.what() << std::endl;
+	}
+	catch (...) {
+		std::cerr << "未知错误发生" << std::endl;
+	}
 }
 
 void DatabaseHandler::updateAliveHosts(std::string aliveHost, ConnectionPool& pool)
 {
-    try {
-        auto conn = pool.getConnection();  // 获取连接
-        conn->sql(
-            "UPDATE scan_host_result SET "
-            "alive = 'false' "
-            "WHERE ip = ?"
-        )
-            .bind(aliveHost)
-            .execute();
-        //std::cout << "成功更新存活主机: " << aliveHost << std::endl;
-    }
-    catch (const mysqlx::Error& err) {
-        std::cerr << "updateAliveHosts时数据库错误: " << err.what() << std::endl;
-    }
+	try {
+		auto conn = pool.getConnection();  // 获取连接
+		conn->sql(
+			"UPDATE scan_host_result SET "
+			"alive = 'false' "
+			"WHERE ip = ?"
+		)
+			.bind(aliveHost)
+			.execute();
+		//std::cout << "成功更新存活主机: " << aliveHost << std::endl;
+	}
+	catch (const mysqlx::Error& err) {
+		std::cerr << "updateAliveHosts时数据库错误: " << err.what() << std::endl;
+	}
 }
 
 void DatabaseHandler::processVulns(const ScanHostResult& hostResult, ConnectionPool& pool)
