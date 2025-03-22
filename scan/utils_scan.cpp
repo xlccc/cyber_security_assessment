@@ -5,8 +5,8 @@
 
 #define MAX_PROCESSES 4;
 
-// 声明一个全局变量来保存 Redis 连接（用于插件化扫描的多进程的进程通信、任务分配）
-redisContext* redis_client = nullptr;
+//// 声明一个全局变量来保存 Redis 连接（用于插件化扫描的多进程的进程通信、任务分配）
+//redisContext* redis_client = nullptr;
 
 // 解析XML文件以获取扫描结果
 std::vector<ScanHostResult> parseXmlFile(const std::string& xmlFilePath) {
@@ -868,6 +868,7 @@ std::map<std::string, std::vector<POCTask>> create_poc_task(const std::vector<PO
             vuln.vul_name = poc.vul_name;
             vuln.script = poc.script;
             vuln.summary = poc.description;
+            vuln.pocExist = true;
             task.vuln = vuln;
 
             temp_tasks_by_port[task.port].insert(task);
@@ -885,6 +886,7 @@ std::map<std::string, std::vector<POCTask>> create_poc_task(const std::vector<PO
             vuln.vul_name = poc.vul_name;
             vuln.script = poc.script;
             vuln.summary = poc.description;
+            vuln.pocExist = true;
             task.vuln = vuln;
 
             temp_tasks_by_port[task.port].insert(task);
@@ -947,6 +949,12 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
     std::vector<pid_t> child_pids;
     redisContext* redis_client = get_redis_client();  // 获取 Redis 客户端（父进程）
 
+    // 加上超时设置
+    struct timeval timeout;
+    timeout.tv_sec = 2;
+    timeout.tv_usec = 0;
+    redisSetTimeout(redis_client, timeout);
+
     //// 在父进程中初始化 Python 环境
     //Py_Initialize();
     system_logger->info("[Parent Process] Python environment initialized.");
@@ -990,13 +998,18 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
 
             console->info("process {} start ", getpid());
 
-
-            // 🚀 让子进程独立建立 `Redis` 连接
+            // 让子进程独立建立 Redis 连接
             redisContext* child_redis_client = get_redis_client();
             if (!child_redis_client || child_redis_client->err) {
                 fprintf(stderr, "[ERROR] Child Process %d: Failed to connect to Redis! %s\n", getpid(), child_redis_client ? child_redis_client->errstr : "NULL");
                 _exit(1);
             }
+
+            // 加上超时设置
+            struct timeval timeout;
+            timeout.tv_sec = 2;
+            timeout.tv_usec = 0;
+            redisSetTimeout(child_redis_client, timeout);
 
             console->info("[Child Process {}] Redis connection initialized.", getpid());
 
@@ -1019,6 +1032,8 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
                     Py_Finalize();
 
                     redisFree(child_redis_client);  // 子进程完成后关闭连接
+
+                    cout << "process :" << getpid() << " 关闭redis链接。。。。 " << endl;
                     _exit(0);  // 子进程完成后退出
                 }
 
@@ -1091,7 +1106,7 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
             }
             // 插入新的漏洞信息，实现覆盖效果
             scan_host_result.vuln_result.insert(vuln);
-            //dbHandler.alterHostVulnResultAfterPocVerify(pool, vuln, scan_host_result.ip);
+            dbHandler.alterHostVulnResultAfterPocVerify(pool, vuln, scan_host_result.ip);
             console->info("[Parent Process] Overwritten OS-level vuln ID: {} in scan_host_result", vuln.Vuln_id);
         }
         else {
@@ -1418,18 +1433,35 @@ std::pair<std::string, Vuln> deserialize_task_result(const std::string& data) {
     }
 }
 
-// 获取 Redis 客户端连接（如果已经创建过，则复用）
 redisContext* get_redis_client() {
-    if (redis_client == nullptr) {
-        // 如果没有连接，则创建新的连接
-        redis_client = redisConnect("127.0.0.1", 6379);
-        if (redis_client == nullptr || redis_client->err) {
-            system_logger->error("Error connecting to Redis: {}", redis_client->errstr);
-            exit(1);
-        }
+    struct timeval timeout;
+    timeout.tv_sec = 2;
+    timeout.tv_usec = 0;
+
+    redisContext* ctx = redisConnectWithTimeout("127.0.0.1", 6379, timeout);
+    if (ctx == nullptr || ctx->err) {
+        std::cerr << "Error connecting to Redis: "
+            << (ctx ? ctx->errstr : "null") << std::endl;
+        exit(1);
     }
-    return redis_client;
+
+    // 设置命令超时
+    redisSetTimeout(ctx, timeout);
+    return ctx;
 }
+
+//// 获取 Redis 客户端连接（如果已经创建过，则复用）
+//redisContext* get_redis_client() {
+//    if (redis_client == nullptr) {
+//        // 如果没有连接，则创建新的连接
+//        redis_client = redisConnect("127.0.0.1", 6379);
+//        if (redis_client == nullptr || redis_client->err) {
+//            system_logger->error("Error connecting to Redis: {}", redis_client->errstr);
+//            exit(1);
+//        }
+//    }
+//    return redis_client;
+//}
 
 // 序列化 POCTask 数据
 std::string serialize_task_data(const std::string& key, const POCTask& task) {
@@ -1540,74 +1572,166 @@ void printReplyType(redisReply* reply) {
     }
     std::cout << "reply->type : " << getRedisReplyType(reply->type) << " process : " << getpid() << std::endl;
 }
+std::string pop_task_from_redis(redisContext* redis_client, const std::string& unique_key) {
+    int pid = getpid();
 
-// 从 Redis 队列获取任务
-std::string pop_task_from_redis(redisContext* redis_client, std::string unique_key) {
-    // 获取列表所有元素
-    /*
-    redisReply* reply = (redisReply*)redisCommand(redis_client, "LRANGE POC_TASK_QUEUE 0 -1");
-    if (reply == NULL) {
-        std::cout << "执行 LRANGE 命令失败" << std::endl;
-        return "";
-    }
-    std::cout << "列表元素: ";
-    for (size_t i = 0; i < reply->elements; i++) {
-        std::cout << reply->element[i]->str << " ";
-    }
-    cout << endl;
-    */
-
-    int pid = getpid(); // 获取当前进程的 PID
-
-    // Lua 脚本，增加 `pid` 作为 `ARGV[1]`
     std::string lua_script = R"(
         local task_count_key = KEYS[1]
         local queue_key = KEYS[2]
-        local pid = ARGV[1]  -- 从参数获取 C++ 进程 PID
+        local pid = ARGV[1]
 
-        redis.log(redis.LOG_NOTICE, "[" .. pid .. "] Executing Lua script")
-        local task_count = redis.call('GET', task_count_key)
-        redis.log(redis.LOG_NOTICE, "[" .. pid .. "] Task count: " .. (task_count or "nil"))
+        redis.log(redis.LOG_NOTICE, "[" .. pid .. "] Start Lua task pop")
 
-        if not task_count or tonumber(task_count) <= 0 then
-            redis.log(redis.LOG_NOTICE, "[" .. pid .. "] Task count is 0 or nil, returning nil")
+        local count = redis.call('GET', task_count_key)
+        redis.log(redis.LOG_NOTICE, "[" .. pid .. "] Task count: " .. (count or "nil"))
+        if not count or tonumber(count) <= 0 then
+            redis.log(redis.LOG_NOTICE, "[" .. pid .. "] No tasks available -- task_count nil or <= 0")
             return nil
-        end
+            end
 
-        local task = redis.call('RPOP', queue_key)
-        redis.log(redis.LOG_NOTICE, "[" .. pid .. "] RPOP task: " .. (task or "nil"))
+            local task = redis.call('RPOP', queue_key)
+            if task then
+                redis.call('DECR', task_count_key)
+                redis.log(redis.LOG_NOTICE, "[" ..pid .. "] Task found and task_count decremented")
+                return task
+            else
+                redis.log(redis.LOG_NOTICE, "[" ..pid .. "] RPOP returned nil, not decrementing")
+                return nil
+                end
+                )";
 
-        if task then
-            redis.call('DECR', task_count_key)
-            redis.log(redis.LOG_NOTICE, "[" .. pid .. "] Decrementing task count")
-            return task
-        end
+        redisReply * reply = (redisReply*)redisCommand(redis_client,
+            "EVAL %s 2 TASK_COUNT_%s POC_TASK_QUEUE %d", lua_script.c_str(), unique_key.c_str(), pid);
 
-        return nil
-    )";
+        cout << "执行完EVAL脚本返回了：" << pid << endl;
 
-    // 传递 `PID` 作为 `ARGV[1]`
-    redisReply* reply = (redisReply*)redisCommand(redis_client,
-        "EVAL %s 2 TASK_COUNT_%s POC_TASK_QUEUE %d", lua_script.c_str(), unique_key.c_str(), pid);
+        
+        if (!reply) {
+            if (redis_client->err == REDIS_ERR_TIMEOUT) {
+                std::cout << "[PID " << getpid() << "] Redis command timeout: " << redis_client->errstr << std::endl;
+            }
+            else {
+                std::cout << "[PID " << getpid() << "] Redis command failed: " << redis_client->errstr << std::endl;
+                //std::cout << "[" << pid << "] Redis command failed (null reply)" << std::endl;
+            }
+            return "";
+        }
 
+        cout << "不是NULL ：" << pid << endl;
 
-    if (!reply || reply->type == REDIS_REPLY_NIL) {
-        console->info("{} [pop_task_from_redis] No task found or task count is 0.", getpid());
-        freeReplyObject(reply);
+        std::string task_data = "";
+
+        if (!reply) {
+        cout << " Popped task failed : " << getpid() << endl;
         return "";
-    }
+        }
 
-    //处理 `RPOP` 直接返回字符串的情况
-    if (reply->type == REDIS_REPLY_STRING && reply->str != nullptr) {
-        std::string task_data(reply->str);
-        console->info("{} [pop_task_from_redis] Popped task data: {}", getpid(), task_data);
+        switch (reply->type) {
+        case REDIS_REPLY_STRING:
+            if (reply->str) {
+                task_data = reply->str;
+                console->info("{} [pop_task_from_redis] Popped task data: {}", pid, task_data);
+            }
+            else {
+                console->warn("{} [pop_task_from_redis] Reply string is null", pid);
+            }
+            break;
+        case REDIS_REPLY_NIL:
+            console->info("{} [pop_task_from_redis] No task in Redis (NIL)", pid);
+            break;
+        default:
+            console->warn("{} [pop_task_from_redis] Unexpected reply type: {}, raw value: {}",
+                pid,
+                reply->type,
+                (reply->type == REDIS_REPLY_INTEGER) ? std::to_string(reply->integer)
+                : (reply->str ? reply->str : "null"));
+            break;
+        }
+
         freeReplyObject(reply);
         return task_data;
-    }
-
-    freeReplyObject(reply);
-    return "";
 }
+
+
+//之前一个半可用的版本
+//// 从 Redis 队列获取任务
+//std::string pop_task_from_redis(redisContext* redis_client, std::string unique_key) {
+//    // 获取列表所有元素
+//    /*
+//    redisReply* reply = (redisReply*)redisCommand(redis_client, "LRANGE POC_TASK_QUEUE 0 -1");
+//    if (reply == NULL) {
+//        std::cout << "执行 LRANGE 命令失败" << std::endl;
+//        return "";
+//    }
+//    std::cout << "列表元素: ";
+//    for (size_t i = 0; i < reply->elements; i++) {
+//        std::cout << reply->element[i]->str << " ";
+//    }
+//    cout << endl;
+//    */
+//
+//    int pid = getpid(); // 获取当前进程的 PID
+//
+//    // Lua 脚本，增加 `pid` 作为 `ARGV[1]`
+//    std::string lua_script = R"(
+//        local task_count_key = KEYS[1]
+//        local queue_key = KEYS[2]
+//        local pid = ARGV[1]  -- 从参数获取 C++ 进程 PID
+//
+//        redis.log(redis.LOG_NOTICE, "[" .. pid .. "] Executing Lua script")
+//        local task_count = redis.call('GET', task_count_key)
+//        redis.log(redis.LOG_NOTICE, "[" .. pid .. "] Task count: " .. (task_count or "nil"))
+//
+//        if not task_count or tonumber(task_count) <= 0 then
+//            redis.log(redis.LOG_NOTICE, "[" .. pid .. "] Task count is 0 or nil, returning nil")
+//            return nil
+//        end
+//
+//        local task = redis.call('RPOP', queue_key)
+//        redis.log(redis.LOG_NOTICE, "[" .. pid .. "] RPOP task: " .. (task or "nil"))
+//
+//        if task then
+//            redis.call('DECR', task_count_key)
+//            redis.log(redis.LOG_NOTICE, "[" .. pid .. "] Decrementing task count")
+//            return task
+//        end
+//
+//        return nil
+//    )";
+//
+//    // 传递 `PID` 作为 `ARGV[1]`
+//    redisReply* reply = (redisReply*)redisCommand(redis_client,
+//        "EVAL %s 2 TASK_COUNT_%s POC_TASK_QUEUE %d", lua_script.c_str(), unique_key.c_str(), pid);
+//
+//
+//    if (!reply || reply->type == REDIS_REPLY_NIL) {
+//        //console->info("{} [pop_task_from_redis] No task found or task count is 0.", getpid());
+//        //system_logger->info("{} [pop_task_from_redis] No task found or task count is 0.", getpid());
+//
+//        cout << " 准备退出 ：" << getpid() << endl;
+//        if(reply)
+//            freeReplyObject(reply);
+//
+//        cout << " 成功退出 ：" << getpid() << endl;
+//        return "";
+//    }
+//
+//    //处理 `RPOP` 直接返回字符串的情况
+//    if (reply->type == REDIS_REPLY_STRING && reply->str != nullptr) {
+//        std::string task_data(reply->str);
+//        console->info("{} [pop_task_from_redis] Popped task data: {}", getpid(), task_data);
+//        freeReplyObject(reply);
+//        return task_data;
+//    }
+//
+//    printReplyType(reply);
+//
+//    if(reply->type == REDIS_REPLY_INTEGER)
+//        cout << "整数类型：" << reply->integer << endl;
+//
+//    freeReplyObject(reply);
+//    return "";
+//}
 
 
 
