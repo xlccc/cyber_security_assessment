@@ -12,10 +12,12 @@ DatabaseManager::DatabaseManager(const std::string& dbPath) {
 
     if (sqlite3_open(dbPath.c_str(), &db) != SQLITE_OK) {
         system_logger->error("Error opening SQLite database: {}", sqlite3_errmsg(db));
+        console->error("Error opening SQLite database: {}", sqlite3_errmsg(db));
     }
     else
     {
         system_logger->info("Opened SQLite database.");
+        console->info("Opened SQLite database.");
     }
 }
 

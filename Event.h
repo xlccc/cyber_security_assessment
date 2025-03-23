@@ -10,6 +10,7 @@ struct event {
     string IsComply = "false";//返回true还是false
 	string recommend; //建议
     string importantLevel;// 重要程度，分为1，2，3
+	int item_id; //检查项id
 };
 struct scoreMeasure {
     string importantLevelJson;//重要程度，分为1，2，3
@@ -26,5 +27,6 @@ struct ServerInfo {
     string free; //目标主机空闲内存
     string ProductName; //硬件型号
     string version;  //目标主机版本信息
+    string osName;   //操作系统名称
     string isInternet; // 联网检测
 };

@@ -39,33 +39,12 @@ public:
 
         
 
-        // Check password lifetime
-        //futures.push_back(threadPool.enqueue(&EventChecker::checkPasswordLifetime, this));
-
-        // Check password min length
-        //futures.push_back(threadPool.enqueue(&EventChecker::checkPasswordMinLength, this));
-
-        // Check password warn days
-        //futures.push_back(threadPool.enqueue(&EventChecker::checkPasswordWarnDays, this));
-
-        // Check password complexity
-        //futures.push_back(threadPool.enqueue(&EventChecker::checkPasswordComplex, this));
-
-        // Check empty password
-        //futures.push_back(threadPool.enqueue(&EventChecker::checkEmptyPassword, this));
-
-        // Check UID 0 except root
-        //futures.push_back(threadPool.enqueue(&EventChecker::checkUID0ExceptRoot, this));
-
-        // Check umask settings
-        //futures.push_back(threadPool.enqueue(&EventChecker::checkUmaskCshrc, this));
-        //futures.push_back(threadPool.enqueue(&EventChecker::checkUmaskBashrc, this));
-        //futures.push_back(threadPool.enqueue(&EventChecker::checkUmaskProfile, this));
-
         // 收集结果
         for (auto& future : futures) {
-            events.push_back(future.get());
+			event eventtest = future.get();
+            events.push_back(eventtest);
         }
+
     }
 
 private:
@@ -80,99 +59,194 @@ private:
     std::map<int, std::function<event()>> checkFunctions;
 
     void initializeCheckFunctions() {
-        // 使用ID映射每个检查函数
         checkFunctions = {
-            {1, std::bind(&EventChecker::checkPasswordLifetime, this)},
-            {2, std::bind(&EventChecker::checkPasswordMinLength, this)},
-            {3, std::bind(&EventChecker::checkPasswordWarnDays, this)},
-            {4, std::bind(&EventChecker::checkPasswordComplex, this)},
-            {5, std::bind(&EventChecker::checkEmptyPassword, this)},
-            {6, std::bind(&EventChecker::checkUID0ExceptRoot, this)},
-            {7, std::bind(&EventChecker::checkUmaskCshrc, this)},
-            {8, std::bind(&EventChecker::checkUmaskBashrc, this)},
-            {9, std::bind(&EventChecker::checkUmaskProfile, this)},
-            {10, std::bind(&EventChecker::checkModXinetd, this)},
-            {11, std::bind(&EventChecker::checkModGroup, this)},
-            {12, std::bind(&EventChecker::checkModShadow, this)},
-            {13, std::bind(&EventChecker::checkModServices, this)},
-            {14, std::bind(&EventChecker::checkModSecurity, this)},
-            {15, std::bind(&EventChecker::checkModPasswd, this)},
-            {16, std::bind(&EventChecker::checkModRc6, this)},
-            {17, std::bind(&EventChecker::checkModRc0, this)},
-            {18, std::bind(&EventChecker::checkModRc1, this)},
-            {19, std::bind(&EventChecker::checkModRc2, this)},
-            {20, std::bind(&EventChecker::checkModEtc, this)},
-            {21, std::bind(&EventChecker::checkModRc4, this)},
-            {22, std::bind(&EventChecker::checkModRc5, this)},
-            {23, std::bind(&EventChecker::checkModRc3, this)},
-            {24, std::bind(&EventChecker::checkModInit, this)},
-            {25, std::bind(&EventChecker::checkModTmp, this)},
-            {26, std::bind(&EventChecker::checkModGrub, this)},
-            {27, std::bind(&EventChecker::checkModGrubGrub, this)},
-            {28, std::bind(&EventChecker::checkModLilo, this)},
-            {29, std::bind(&EventChecker::checkAttributePasswd, this)},
-            {30, std::bind(&EventChecker::checkAttributeShadow, this)},
-            {31, std::bind(&EventChecker::checkAttributeGroup, this)},
-            {32, std::bind(&EventChecker::checkAttributeGshadow, this)},
-            {33, std::bind(&EventChecker::checkUmaskLogin, this)},
-            {34, std::bind(&EventChecker::checkSshBanner, this)},
-            {35, std::bind(&EventChecker::checkeNg, this)},
-            {36, std::bind(&EventChecker::checkRsyslog, this)},
-            {37, std::bind(&EventChecker::checkSyslog, this)},
-            {38, std::bind(&EventChecker::checkSyslogNgSafe, this)},
-            {39, std::bind(&EventChecker::checkRsyslogSafe, this)},
-            {40, std::bind(&EventChecker::checkSyslogSafe, this)},
-            {41, std::bind(&EventChecker::checkCron, this)},
-            {42, std::bind(&EventChecker::checkSecure, this)},
-            {43, std::bind(&EventChecker::checkMessage, this)},
-            {44, std::bind(&EventChecker::checkBootLog, this)},
-            {45, std::bind(&EventChecker::checkMail, this)},
-            {46, std::bind(&EventChecker::checkSpooler, this)},
-            {47, std::bind(&EventChecker::checkLocalMessages, this)},
-            {48, std::bind(&EventChecker::checkMaillog, this)},
-            {49, std::bind(&EventChecker::checkLast, this)},
-            {50, std::bind(&EventChecker::checkSuLog, this)},
-            {51, std::bind(&EventChecker::checkOpensshConfig, this)},
-            {52, std::bind(&EventChecker::checkRunningSnmp, this)},
-            {53, std::bind(&EventChecker::checkSnmpConfig, this)},
-            {54, std::bind(&EventChecker::checkSshConfig, this)},
-            {55, std::bind(&EventChecker::checkTelnetConfig, this)},
-            {56, std::bind(&EventChecker::checkRunningFtp, this)},
-            {57, std::bind(&EventChecker::checkFtpConfig, this)},
-            {58, std::bind(&EventChecker::checkAnonymousFtp, this)},
-            {59, std::bind(&EventChecker::checkCmdTimeout, this)},
-            {60, std::bind(&EventChecker::checkPasswordBootloader, this)},
-            {61, std::bind(&EventChecker::checkCoreDump, this)},
-            {62, std::bind(&EventChecker::checkHistSize, this)},
-            {63, std::bind(&EventChecker::checkGroupWheel, this)},
-            {64, std::bind(&EventChecker::checkInterLogin, this)},
-            {65, std::bind(&EventChecker::checkPasswordRepeatlimit, this)},
-            {66, std::bind(&EventChecker::checkAuthFailtimes, this)},
-            {67, std::bind(&EventChecker::checkMultiIp, this)},
-            {68, std::bind(&EventChecker::checkLoginRemoteIp, this)},
-            {69, std::bind(&EventChecker::checkAliasesUnnecessary, this)},
-            {70, std::bind(&EventChecker::checkPermSuidSgid, this)},
-            {71, std::bind(&EventChecker::checkScreenAutolock, this)},
-            {72, std::bind(&EventChecker::checkTcpSyncookies, this)},
-            {73, std::bind(&EventChecker::checkGroupManage, this)},
-            {74, std::bind(&EventChecker::checkRootPathCheck, this)},
-            {75, std::bind(&EventChecker::checkCtrlAltDelDisabled, this)},
-            {76, std::bind(&EventChecker::checkSysTrustMechanism, this)},
-            {77, std::bind(&EventChecker::checkDiskPartitionUsageRate, this)},
-            {78, std::bind(&EventChecker::checkPotentialRiskFiles, this)},
-            {79, std::bind(&EventChecker::checkUserMinPermission, this)},
-            {80, std::bind(&EventChecker::checkPacketForwardFunc, this)},
-            {81, std::bind(&EventChecker::checkNtpSyncStatus, this)},
-            {82, std::bind(&EventChecker::checkNfsServer, this)},
-            {83, std::bind(&EventChecker::checkSshBanner2, this)},
-            {84, std::bind(&EventChecker::checkUploadFtp, this)},
-            {85, std::bind(&EventChecker::checkFtpBaner, this)},
-            {86, std::bind(&EventChecker::checkBinOwner, this)},
-            {87, std::bind(&EventChecker::checkTelnetBanner, this)},
-            {88, std::bind(&EventChecker::checkFtpDirectory, this)},
-            {89, std::bind(&EventChecker::checkKernel_cve_2021_43267, this)}
+            {1, [this] { event e = checkPasswordLifetime(); e.item_id = 1; return e; }},
+            {2, [this] { event e = checkPasswordMinLength(); e.item_id = 2; return e; }},
+            {3, [this] { event e = checkPasswordWarnDays(); e.item_id = 3; return e; }},
+            {4, [this] { event e = checkPasswordComplex(); e.item_id = 4; return e; }},
+            {5, [this] { event e = checkEmptyPassword(); e.item_id = 5; return e; }},
+            {6, [this] { event e = checkUID0ExceptRoot(); e.item_id = 6; return e; }},
+            {7, [this] { event e = checkUmaskCshrc(); e.item_id = 7; return e; }},
+            {8, [this] { event e = checkUmaskBashrc(); e.item_id = 8; return e; }},
+            {9, [this] { event e = checkUmaskProfile(); e.item_id = 9; return e; }},
+            {10, [this] { event e = checkModXinetd(); e.item_id = 10; return e; }},
+            {11, [this] { event e = checkModGroup(); e.item_id = 11; return e; }},
+            {12, [this] { event e = checkModShadow(); e.item_id = 12; return e; }},
+            {13, [this] { event e = checkModServices(); e.item_id = 13; return e; }},
+            {14, [this] { event e = checkModSecurity(); e.item_id = 14; return e; }},
+            {15, [this] { event e = checkModPasswd(); e.item_id = 15; return e; }},
+            {16, [this] { event e = checkModRc6(); e.item_id = 16; return e; }},
+            {17, [this] { event e = checkModRc0(); e.item_id = 17; return e; }},
+            {18, [this] { event e = checkModRc1(); e.item_id = 18; return e; }},
+            {19, [this] { event e = checkModRc2(); e.item_id = 19; return e; }},
+            {20, [this] { event e = checkModEtc(); e.item_id = 20; return e; }},
+            {21, [this] { event e = checkModRc4(); e.item_id = 21; return e; }},
+            {22, [this] { event e = checkModRc5(); e.item_id = 22; return e; }},
+            {23, [this] { event e = checkModRc3(); e.item_id = 23; return e; }},
+            {24, [this] { event e = checkModInit(); e.item_id = 24; return e; }},
+            {25, [this] { event e = checkModTmp(); e.item_id = 25; return e; }},
+            {26, [this] { event e = checkModGrub(); e.item_id = 26; return e; }},
+            {27, [this] { event e = checkModGrubGrub(); e.item_id = 27; return e; }},
+            {28, [this] { event e = checkModLilo(); e.item_id = 28; return e; }},
+            {29, [this] { event e = checkAttributePasswd(); e.item_id = 29; return e; }},
+            {30, [this] { event e = checkAttributeShadow(); e.item_id = 30; return e; }},
+            {31, [this] { event e = checkAttributeGroup(); e.item_id = 31; return e; }},
+            {32, [this] { event e = checkAttributeGshadow(); e.item_id = 32; return e; }},
+            {33, [this] { event e = checkUmaskLogin(); e.item_id = 33; return e; }},
+            {34, [this] { event e = checkSshBanner(); e.item_id = 34; return e; }},
+            {35, [this] { event e = checkeNg(); e.item_id = 35; return e; }},
+            {36, [this] { event e = checkRsyslog(); e.item_id = 36; return e; }},
+            {37, [this] { event e = checkSyslog(); e.item_id = 37; return e; }},
+            {38, [this] { event e = checkSyslogNgSafe(); e.item_id = 38; return e; }},
+            {39, [this] { event e = checkRsyslogSafe(); e.item_id = 39; return e; }},
+            {40, [this] { event e = checkSyslogSafe(); e.item_id = 40; return e; }},
+            {41, [this] { event e = checkCron(); e.item_id = 41; return e; }},
+            {42, [this] { event e = checkSecure(); e.item_id = 42; return e; }},
+            {43, [this] { event e = checkMessage(); e.item_id = 43; return e; }},
+            {44, [this] { event e = checkBootLog(); e.item_id = 44; return e; }},
+            {45, [this] { event e = checkMail(); e.item_id = 45; return e; }},
+            {46, [this] { event e = checkSpooler(); e.item_id = 46; return e; }},
+            {47, [this] { event e = checkLocalMessages(); e.item_id = 47; return e; }},
+            {48, [this] { event e = checkMaillog(); e.item_id = 48; return e; }},
+            {49, [this] { event e = checkLast(); e.item_id = 49; return e; }},
+            {50, [this] { event e = checkSuLog(); e.item_id = 50; return e; }},
+            {51, [this] { event e = checkOpensshConfig(); e.item_id = 51; return e; }},
+            {52, [this] { event e = checkRunningSnmp(); e.item_id = 52; return e; }},
+            {53, [this] { event e = checkSnmpConfig(); e.item_id = 53; return e; }},
+            {54, [this] { event e = checkSshConfig(); e.item_id = 54; return e; }},
+            {55, [this] { event e = checkTelnetConfig(); e.item_id = 55; return e; }},
+            {56, [this] { event e = checkRunningFtp(); e.item_id = 56; return e; }},
+            {57, [this] { event e = checkFtpConfig(); e.item_id = 57; return e; }},
+            {58, [this] { event e = checkAnonymousFtp(); e.item_id = 58; return e; }},
+            {59, [this] { event e = checkCmdTimeout(); e.item_id = 59; return e; }},
+            {60, [this] { event e = checkPasswordBootloader(); e.item_id = 60; return e; }},
+            {61, [this] { event e = checkCoreDump(); e.item_id = 61; return e; }},
+            {62, [this] { event e = checkHistSize(); e.item_id = 62; return e; }},
+            {63, [this] { event e = checkGroupWheel(); e.item_id = 63; return e; }},
+            {64, [this] { event e = checkInterLogin(); e.item_id = 64; return e; }},
+            {65, [this] { event e = checkPasswordRepeatlimit(); e.item_id = 65; return e; }},
+            {66, [this] { event e = checkAuthFailtimes(); e.item_id = 66; return e; }},
+            {67, [this] { event e = checkMultiIp(); e.item_id = 67; return e; }},
+            {68, [this] { event e = checkLoginRemoteIp(); e.item_id = 68; return e; }},
+            {69, [this] { event e = checkAliasesUnnecessary(); e.item_id = 69; return e; }},
+            {70, [this] { event e = checkPermSuidSgid(); e.item_id = 70; return e; }},
+            {71, [this] { event e = checkScreenAutolock(); e.item_id = 71; return e; }},
+            {72, [this] { event e = checkTcpSyncookies(); e.item_id = 72; return e; }},
+            {73, [this] { event e = checkGroupManage(); e.item_id = 73; return e; }},
+            {74, [this] { event e = checkRootPathCheck(); e.item_id = 74; return e; }},
+            {75, [this] { event e = checkCtrlAltDelDisabled(); e.item_id = 75; return e; }},
+            {76, [this] { event e = checkSysTrustMechanism(); e.item_id = 76; return e; }},
+            {77, [this] { event e = checkDiskPartitionUsageRate(); e.item_id = 77; return e; }},
+            {78, [this] { event e = checkPotentialRiskFiles(); e.item_id = 78; return e; }},
+            {79, [this] { event e = checkUserMinPermission(); e.item_id = 79; return e; }},
+            {80, [this] { event e = checkPacketForwardFunc(); e.item_id = 80; return e; }},
+            {81, [this] { event e = checkNtpSyncStatus(); e.item_id = 81; return e; }},
+            {82, [this] { event e = checkNfsServer(); e.item_id = 82; return e; }},
+            {83, [this] { event e = checkSshBanner2(); e.item_id = 83; return e; }},
+            {84, [this] { event e = checkUploadFtp(); e.item_id = 84; return e; }},
+            {85, [this] { event e = checkFtpBaner(); e.item_id = 85; return e; }},
+            {86, [this] { event e = checkBinOwner(); e.item_id = 86; return e; }},
+            {87, [this] { event e = checkTelnetBanner(); e.item_id = 87; return e; }},
+            {88, [this] { event e = checkFtpDirectory(); e.item_id = 88; return e; }},
+            {89, [this] { event e = checkKernel_cve_2021_43267(); e.item_id = 89; return e; }},
         };
     }
+
+
+    //void initializeCheckFunctions() {
+    //    // 使用ID映射每个检查函数
+    //    checkFunctions = {
+    //        {1, std::bind(&EventChecker::checkPasswordLifetime, this)},
+    //        {2, std::bind(&EventChecker::checkPasswordMinLength, this)},
+    //        {3, std::bind(&EventChecker::checkPasswordWarnDays, this)},
+    //        {4, std::bind(&EventChecker::checkPasswordComplex, this)},
+    //        {5, std::bind(&EventChecker::checkEmptyPassword, this)},
+    //        {6, std::bind(&EventChecker::checkUID0ExceptRoot, this)},
+    //        {7, std::bind(&EventChecker::checkUmaskCshrc, this)},
+    //        {8, std::bind(&EventChecker::checkUmaskBashrc, this)},
+    //        {9, std::bind(&EventChecker::checkUmaskProfile, this)},
+    //        {10, std::bind(&EventChecker::checkModXinetd, this)},
+    //        {11, std::bind(&EventChecker::checkModGroup, this)},
+    //        {12, std::bind(&EventChecker::checkModShadow, this)},
+    //        {13, std::bind(&EventChecker::checkModServices, this)},
+    //        {14, std::bind(&EventChecker::checkModSecurity, this)},
+    //        {15, std::bind(&EventChecker::checkModPasswd, this)},
+    //        {16, std::bind(&EventChecker::checkModRc6, this)},
+    //        {17, std::bind(&EventChecker::checkModRc0, this)},
+    //        {18, std::bind(&EventChecker::checkModRc1, this)},
+    //        {19, std::bind(&EventChecker::checkModRc2, this)},
+    //        {20, std::bind(&EventChecker::checkModEtc, this)},
+    //        {21, std::bind(&EventChecker::checkModRc4, this)},
+    //        {22, std::bind(&EventChecker::checkModRc5, this)},
+    //        {23, std::bind(&EventChecker::checkModRc3, this)},
+    //        {24, std::bind(&EventChecker::checkModInit, this)},
+    //        {25, std::bind(&EventChecker::checkModTmp, this)},
+    //        {26, std::bind(&EventChecker::checkModGrub, this)},
+    //        {27, std::bind(&EventChecker::checkModGrubGrub, this)},
+    //        {28, std::bind(&EventChecker::checkModLilo, this)},
+    //        {29, std::bind(&EventChecker::checkAttributePasswd, this)},
+    //        {30, std::bind(&EventChecker::checkAttributeShadow, this)},
+    //        {31, std::bind(&EventChecker::checkAttributeGroup, this)},
+    //        {32, std::bind(&EventChecker::checkAttributeGshadow, this)},
+    //        {33, std::bind(&EventChecker::checkUmaskLogin, this)},
+    //        {34, std::bind(&EventChecker::checkSshBanner, this)},
+    //        {35, std::bind(&EventChecker::checkeNg, this)},
+    //        {36, std::bind(&EventChecker::checkRsyslog, this)},
+    //        {37, std::bind(&EventChecker::checkSyslog, this)},
+    //        {38, std::bind(&EventChecker::checkSyslogNgSafe, this)},
+    //        {39, std::bind(&EventChecker::checkRsyslogSafe, this)},
+    //        {40, std::bind(&EventChecker::checkSyslogSafe, this)},
+    //        {41, std::bind(&EventChecker::checkCron, this)},
+    //        {42, std::bind(&EventChecker::checkSecure, this)},
+    //        {43, std::bind(&EventChecker::checkMessage, this)},
+    //        {44, std::bind(&EventChecker::checkBootLog, this)},
+    //        {45, std::bind(&EventChecker::checkMail, this)},
+    //        {46, std::bind(&EventChecker::checkSpooler, this)},
+    //        {47, std::bind(&EventChecker::checkLocalMessages, this)},
+    //        {48, std::bind(&EventChecker::checkMaillog, this)},
+    //        {49, std::bind(&EventChecker::checkLast, this)},
+    //        {50, std::bind(&EventChecker::checkSuLog, this)},
+    //        {51, std::bind(&EventChecker::checkOpensshConfig, this)},
+    //        {52, std::bind(&EventChecker::checkRunningSnmp, this)},
+    //        {53, std::bind(&EventChecker::checkSnmpConfig, this)},
+    //        {54, std::bind(&EventChecker::checkSshConfig, this)},
+    //        {55, std::bind(&EventChecker::checkTelnetConfig, this)},
+    //        {56, std::bind(&EventChecker::checkRunningFtp, this)},
+    //        {57, std::bind(&EventChecker::checkFtpConfig, this)},
+    //        {58, std::bind(&EventChecker::checkAnonymousFtp, this)},
+    //        {59, std::bind(&EventChecker::checkCmdTimeout, this)},
+    //        {60, std::bind(&EventChecker::checkPasswordBootloader, this)},
+    //        {61, std::bind(&EventChecker::checkCoreDump, this)},
+    //        {62, std::bind(&EventChecker::checkHistSize, this)},
+    //        {63, std::bind(&EventChecker::checkGroupWheel, this)},
+    //        {64, std::bind(&EventChecker::checkInterLogin, this)},
+    //        {65, std::bind(&EventChecker::checkPasswordRepeatlimit, this)},
+    //        {66, std::bind(&EventChecker::checkAuthFailtimes, this)},
+    //        {67, std::bind(&EventChecker::checkMultiIp, this)},
+    //        {68, std::bind(&EventChecker::checkLoginRemoteIp, this)},
+    //        {69, std::bind(&EventChecker::checkAliasesUnnecessary, this)},
+    //        {70, std::bind(&EventChecker::checkPermSuidSgid, this)},
+    //        {71, std::bind(&EventChecker::checkScreenAutolock, this)},
+    //        {72, std::bind(&EventChecker::checkTcpSyncookies, this)},
+    //        {73, std::bind(&EventChecker::checkGroupManage, this)},
+    //        {74, std::bind(&EventChecker::checkRootPathCheck, this)},
+    //        {75, std::bind(&EventChecker::checkCtrlAltDelDisabled, this)},
+    //        {76, std::bind(&EventChecker::checkSysTrustMechanism, this)},
+    //        {77, std::bind(&EventChecker::checkDiskPartitionUsageRate, this)},
+    //        {78, std::bind(&EventChecker::checkPotentialRiskFiles, this)},
+    //        {79, std::bind(&EventChecker::checkUserMinPermission, this)},
+    //        {80, std::bind(&EventChecker::checkPacketForwardFunc, this)},
+    //        {81, std::bind(&EventChecker::checkNtpSyncStatus, this)},
+    //        {82, std::bind(&EventChecker::checkNfsServer, this)},
+    //        {83, std::bind(&EventChecker::checkSshBanner2, this)},
+    //        {84, std::bind(&EventChecker::checkUploadFtp, this)},
+    //        {85, std::bind(&EventChecker::checkFtpBaner, this)},
+    //        {86, std::bind(&EventChecker::checkBinOwner, this)},
+    //        {87, std::bind(&EventChecker::checkTelnetBanner, this)},
+    //        {88, std::bind(&EventChecker::checkFtpDirectory, this)},
+    //        {89, std::bind(&EventChecker::checkKernel_cve_2021_43267, this)}
+    //    };
+    //}
 
     event checkPasswordLifetime() {
         SSHConnectionGuard guard(sshPool);//guard 从 sshPool 获取一个空闲的 SSH 连接
@@ -183,7 +257,7 @@ private:
         e.result = execute_commands(guard.get(), e.command);//guard.get() 获取 ssh_session 对象，在该对象上执行命令。
         e.recommend = "口令生存周期为不大于3个月的时间";
         e.importantLevel = "3";
-
+		e.item_id = 1;// 设置检查项 ID
         // Rest of the implementation...
         // (Similar to original code but for a single event)
         size_t pos = e.result.find_last_not_of('\n');
@@ -234,6 +308,7 @@ private:
         e.result = execute_commands(guard.get(), e.command);
         e.recommend = "口令最小长度不小于8";
         e.importantLevel = "3";
+		e.item_id = 2;
         int num = atoi(e.result.c_str());
         if (e.result.compare(""))
         {
@@ -264,12 +339,14 @@ private:
     event checkPasswordWarnDays() {
         SSHConnectionGuard guard(sshPool);
         event e;
+
         e.description = "检查口令过期前警告天数";
         e.basis = ">=30";
         e.command = "cat /etc/login.defs | grep PASS_WARN_AGE | grep -v ^#| awk '{print $2}' ";
         e.result = execute_commands(guard.get(), e.command);
         e.recommend = "口令过期前应至少提前30天警告";
         e.importantLevel = "3";
+		e.item_id = 3;
         int num = atoi(e.result.c_str());
         if (e.result.compare(""))
         {
@@ -305,6 +382,7 @@ private:
         e.basis = "至少包含1个大写字母、1个小写字母、1个数字、1个特殊字符";
         e.recommend = "密码至少包含1个大写字母、1个小写字母、1个数字、1个特殊字符";
         e.importantLevel = "3";
+		e.item_id = 4;
         //此部分要求不一，检查/etc/pam.d/system-auth和/etc/security/pwquality.conf
         //先检查/etc/pam.d/system-auth
         //将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
@@ -406,6 +484,7 @@ private:
         //e.command = "cat /etc/shadow";
         e.result = execute_commands(guard.get(), e.command);
         e.recommend = "空口令会让攻击者不需要口令进入系统，存在较大风险。应删除空口令账号或者为其添加口令";
+		e.item_id = 5;
 
         if (e.result.compare("") == 0)
         {
@@ -429,6 +508,7 @@ private:
         e.result = execute_commands(guard.get(), e.command);
         e.recommend = "不可设置除了root之外，第二个具有root权限的账号。root之外的用户其UID应为0。";
         e.importantLevel = "2";
+		e.item_id = 6;
         if (e.result.compare("") == 0)
         {
             e.result= "普通用户的UID全为非0";
@@ -449,6 +529,7 @@ private:
         e.basis = "=027 或 =077";
         e.recommend = "用户权限要求不严格可设置为027，严格可设置为077";
         e.importantLevel = "2";
+		e.item_id = 7;
         //fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
         //将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
         string fileIsExist = "cat /etc/csh.cshrc 2>&1 | grep cat: ";
@@ -492,6 +573,7 @@ private:
         e.basis = "=027 或 =077";
         e.recommend = "用户权限要求不严格可设置为027，严格可设置为077";
         e.importantLevel = "2";
+		e.item_id = 8;
         //fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
         //将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
         string fileIsExist = "cat /etc/bashrc 2>&1 | grep cat: ";
@@ -541,6 +623,7 @@ private:
         e.basis = "=027 或 =077";
         e.recommend = "用户权限要求不严格可设置为027，严格可设置为077";
         e.importantLevel = "2";
+		e.item_id = 9;
         //fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
         //将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
         string fileIsExist = "cat /etc/profile 2>&1 | grep cat: ";
@@ -587,6 +670,7 @@ private:
         e.basis = "<=600";
         e.recommend = "/etc/xinted.conf的权限应该小于等于600";
         e.importantLevel = "2";
+		e.item_id = 10;
         //fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
         //将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
         string fileIsExist = "stat -c %a /etc/xineted.conf 2>&1 | grep stat: ";
@@ -625,6 +709,7 @@ private:
         e.basis = "<=644";
         e.recommend = "/etc/group的权限应该小于等于644";
         e.importantLevel = "2";
+		e.item_id = 11;
         //fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
         //将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
         string fileIsExist = "stat -c %a /etc/group 2>&1 | grep stat: ";
@@ -663,6 +748,7 @@ private:
         e.basis = "<=400";
         e.recommend = "/etc/shadow的权限应该小于等于400";
         e.importantLevel = "2";
+		e.item_id = 12;
         //fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
         //将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
         string fileIsExist = "stat -c %a /etc/shadow 2>&1 | grep stat: ";
@@ -701,6 +787,7 @@ private:
         e.basis = "<=644";
         e.recommend = "/etc/services的权限应该小于等于644";
         e.importantLevel = "2";
+		e.item_id = 13;
         //fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
         //将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
         string fileIsExist = "stat -c %a /etc/services 2>&1 | grep stat: ";

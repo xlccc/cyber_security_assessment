@@ -24,7 +24,7 @@ username ALL=(ALL) NOPASSWD: /usr/bin/nmap
 username ALL=(ALL) NOPASSWD: /bin/chown
 username ALL=(ALL) NOPASSWD: /bin/chmod
 配置 Nmap 扫描结果文件的输出目录：
-
+//在输出目录out/ 下配置：
 mkdir -p output_nmap
 sudo chown username:username output_nmap
 sudo chmod 777 output_nmap

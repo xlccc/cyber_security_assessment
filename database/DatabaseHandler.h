@@ -8,6 +8,8 @@
 #include <iostream>
 #include"mysql_connection_pool.h"
 #include "scan_struct.h"
+#include "../Event.h"
+#include <cmath> // 添加这个标准库头文件
 using namespace std;
 class DatabaseHandler {
 public:
@@ -72,7 +74,20 @@ public:
 	std::vector<std::string> getServiceNameByIp(const std::string& ip, ConnectionPool& pool);
 
 	void saveWeakPasswordResult(const std::string& ip, int port, const std::string& service, const std::string& login, const std::string& password, ConnectionPool& pool);
+    // 在DatabaseHandler类的公共成员函数中添加这个声明
+    void saveSecurityCheckResult(const std::string& ip, const event& checkEvent, ConnectionPool& pool);
 
+    //
+    // 根据IP地址获取安全检查结果
+    std::vector<event> getSecurityCheckResults(const std::string& ip, ConnectionPool& pool);
+
+    // 计算基线检测摘要
+    BaselineCheckSummary calculateBaselineSummary(const std::vector<event>& check_results);
+
+    // 在DatabaseHandler类中添加
+    void insertServerInfo(const ServerInfo& info, const std::string& ip, ConnectionPool& pool);
+
+    ServerInfo getServerInfoByIp(const std::string& ip, ConnectionPool& pool);
 };
 
 #endif // DATABASEHANDLER_H

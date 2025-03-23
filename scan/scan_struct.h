@@ -7,7 +7,7 @@
 #include<unordered_map>
 #include <chrono> 
 #include<set>
-
+#include"../Event.h"
 //漏洞条目（修改）
 struct Vuln
 {
@@ -131,12 +131,38 @@ struct PortInfo {
     std::string verify_time;          // 验证时间
 };
 
-// 定义一个新的结构体，包含IP的所有资产信息
+//// 定义一个新的结构体，包含IP的所有资产信息
+//struct AssetInfo {
+//    std::string ip;
+//    std::vector<PortInfo> ports;                          // 端口信息
+//    std::vector<VulnerabilityInfo> host_vulnerabilities;  // 主机漏洞
+//    std::vector<PortVulnerabilityInfo> port_vulnerabilities; // 端口漏洞
+//};
+
+// 基线检测统计摘要
+struct BaselineCheckSummary {
+    int total_checks = 0;           // 总检测项数
+    int compliant_items = 0;        // 合规项数
+    int non_compliant_items = 0;    // 不合规项数
+    double compliance_rate = 0.0;   // 合规率 (百分比)
+
+    // 按重要程度的统计
+    int critical_items = 0;         // 重要程度为1的项目总数
+    int critical_compliant = 0;     // 重要程度为1的合规项数
+    int high_items = 0;             // 重要程度为2的项目总数
+    int high_compliant = 0;         // 重要程度为2的合规项数
+    int medium_items = 0;           // 重要程度为3的项目总数
+    int medium_compliant = 0;       // 重要程度为3的合规项数
+};
+
+// 更新 AssetInfo 结构体
 struct AssetInfo {
     std::string ip;
-    std::vector<PortInfo> ports;                          // 端口信息
-    std::vector<VulnerabilityInfo> host_vulnerabilities;  // 主机漏洞
+    std::vector<PortInfo> ports;                           // 端口信息
+    ServerInfo serverinfo; //Linux相关信息
+    std::vector<VulnerabilityInfo> host_vulnerabilities;   // 主机漏洞
     std::vector<PortVulnerabilityInfo> port_vulnerabilities; // 端口漏洞
+    BaselineCheckSummary baseline_summary;                 // 基线检测摘要
 };
 
 #endif
