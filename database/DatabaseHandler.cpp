@@ -203,14 +203,14 @@ void DatabaseHandler::alterHostVulnResultAfterPocVerify(ConnectionPool& pool, co
         std::string vuln_id = vuln.Vuln_id;
 
         // 先检查vuln表中是否存在该漏洞
-        auto checkResult = conn->sql("SELECT id FROM vuln WHERE vuln_id = ?")
+        auto checkResult = conn->sql("SELECT id, vuln_type FROM vuln WHERE vuln_id = ?")
             .bind(vuln_id).execute();
 
         int vuln_id_primary = 0;
+        std::string existing_vuln_type;
 
         // 如果不存在，则插入
         if (checkResult.count() == 0) {
-            // 插入新漏洞，cpe_id设为0
             auto insertResult = conn->sql(
                 "INSERT INTO vuln (vuln_id, vul_name, script, CVSS, summary, vuln_type) "
                 "VALUES (?, ?, ?, ?, ?, ?)")
@@ -224,23 +224,25 @@ void DatabaseHandler::alterHostVulnResultAfterPocVerify(ConnectionPool& pool, co
                 )
                 .execute();
 
-            // 获取新插入的漏洞ID
             vuln_id_primary = insertResult.getAutoIncrementValue();
-
         }
         else {
-            // 获取已存在漏洞的ID
+            // 获取已存在漏洞的ID 和 vuln_type
             mysqlx::Row row = checkResult.fetchOne();
             vuln_id_primary = row[0].get<int>();
+            existing_vuln_type = row[1].get<std::string>();
+
+            // **更新漏洞类型**
+            if (!vuln.vulnType.empty() && existing_vuln_type != vuln.vulnType) {
+                conn->sql("UPDATE vuln SET vuln_type = ? WHERE id = ?")
+                    .bind(vuln.vulnType, vuln_id_primary).execute();
+            }
         }
 
         // 现在查询对应的host_vuln_result记录
-        auto result = conn->sql("SELECT hvr.shr_id "
-            "FROM scan_host_result shr "
-            "WHERE shr.ip = ?")
+        auto result = conn->sql("SELECT shr.id FROM scan_host_result shr WHERE shr.ip = ?")
             .bind(ip).execute();
 
-        // 获取查询结果
         mysqlx::Row hostRow = result.fetchOne();
         if (!hostRow) {
             return;
@@ -248,7 +250,7 @@ void DatabaseHandler::alterHostVulnResultAfterPocVerify(ConnectionPool& pool, co
 
         int shr_id = hostRow[0].get<int>();
 
-        // 检查host_vuln_result是否已存在该记录
+        // 检查 host_vuln_result 是否已存在该记录
         auto checkHvrResult = conn->sql("SELECT COUNT(*) FROM host_vuln_result WHERE shr_id = ? AND vuln_id = ?")
             .bind(shr_id, vuln_id_primary).execute();
 
@@ -259,13 +261,11 @@ void DatabaseHandler::alterHostVulnResultAfterPocVerify(ConnectionPool& pool, co
             // 不存在则插入新记录
             conn->sql("INSERT INTO host_vuln_result (shr_id, vuln_id, vulExist) VALUES (?, ?, ?)")
                 .bind(shr_id, vuln_id_primary, vulExist).execute();
-
         }
         else {
-            // 存在则更新
+            // 存在则更新 vulExist
             conn->sql("UPDATE host_vuln_result SET vulExist = ? WHERE shr_id = ? AND vuln_id = ?")
                 .bind(vulExist, shr_id, vuln_id_primary).execute();
-
         }
     }
     catch (const mysqlx::Error& err) {
@@ -278,6 +278,7 @@ void DatabaseHandler::alterHostVulnResultAfterPocVerify(ConnectionPool& pool, co
         std::cerr << "未知错误发生" << std::endl;
     }
 }
+
 
 
 //void DatabaseHandler::alterPortVulnResultAfterPocVerify(ConnectionPool& pool, const Vuln& vuln, std::string ip, std::string portId)
@@ -327,15 +328,15 @@ void DatabaseHandler::alterPortVulnResultAfterPocVerify(ConnectionPool& pool, co
         std::string vulExist = vuln.vulExist;
         std::string vuln_id = vuln.Vuln_id;
 
-        // 1. 先检查vuln表中是否存在该漏洞
-        auto checkResult = conn->sql("SELECT id FROM vuln WHERE vuln_id = ?")
+        // 1. 先检查vuln表中是否存在该漏洞（增加 vuln_type 查询）
+        auto checkResult = conn->sql("SELECT id, vuln_type FROM vuln WHERE vuln_id = ?") // 修改点1：增加 vuln_type
             .bind(vuln_id).execute();
 
         int vuln_id_primary = 0;
+        std::string existing_vuln_type; // 新增变量存储现有类型
 
         // 如果不存在，则插入
         if (checkResult.count() == 0) {
-            // 插入新漏洞，cpe_id设为0
             auto insertResult = conn->sql(
                 "INSERT INTO vuln (vuln_id, vul_name, script, CVSS, summary, vuln_type) "
                 "VALUES (?, ?, ?, ?, ?, ?)")
@@ -349,17 +350,23 @@ void DatabaseHandler::alterPortVulnResultAfterPocVerify(ConnectionPool& pool, co
                 )
                 .execute();
 
-            // 获取新插入的漏洞ID
             vuln_id_primary = insertResult.getAutoIncrementValue();
-            
-
         }
         else {
-            // 获取已存在漏洞的ID
+            // 获取已存在漏洞的ID和类型
             mysqlx::Row row = checkResult.fetchOne();
             vuln_id_primary = row[0].get<int>();
+            existing_vuln_type = row[1].get<std::string>(); // 获取现有漏洞类型
+
+            // 修改点2：新增类型更新逻辑
+            if (!vuln.vulnType.empty() && existing_vuln_type != vuln.vulnType) {
+                conn->sql("UPDATE vuln SET vuln_type = ? WHERE id = ?")
+                    .bind(vuln.vulnType, vuln_id_primary)
+                    .execute();
+            }
         }
 
+        // [保持后续端口漏洞关联逻辑不变...]
         // 2. 获取主机和端口信息
         auto hostPortResult = conn->sql(
             "SELECT shr.id AS shr_id, op.id AS port_id "
@@ -368,7 +375,6 @@ void DatabaseHandler::alterPortVulnResultAfterPocVerify(ConnectionPool& pool, co
             "WHERE shr.ip = ? AND op.port = ?")
             .bind(ip, portId).execute();
 
-        // 获取查询结果
         mysqlx::Row hostPortRow = hostPortResult.fetchOne();
         if (!hostPortRow) {
             return;
@@ -387,21 +393,19 @@ void DatabaseHandler::alterPortVulnResultAfterPocVerify(ConnectionPool& pool, co
         int count = countRow[0].get<int>();
 
         if (count == 0) {
-            // 不存在则插入新记录
             conn->sql(
                 "INSERT INTO port_vuln_result (shr_id, port_id, vuln_id, vulExist) "
                 "VALUES (?, ?, ?, ?)")
                 .bind(shr_id, port_id_primary, vuln_id_primary, vulExist).execute();
         }
         else {
-            // 存在则更新
             conn->sql(
                 "UPDATE port_vuln_result SET vulExist = ? "
                 "WHERE shr_id = ? AND port_id = ? AND vuln_id = ?")
                 .bind(vulExist, shr_id, port_id_primary, vuln_id_primary).execute();
-
         }
     }
+    // [保持异常处理不变...]
     catch (const mysqlx::Error& err) {
         std::cerr << "alterPortVulnResultAfterPocVerify时数据库错误: " << err.what() << std::endl;
     }
@@ -412,6 +416,7 @@ void DatabaseHandler::alterPortVulnResultAfterPocVerify(ConnectionPool& pool, co
         std::cerr << "未知错误发生" << std::endl;
     }
 }
+
 void DatabaseHandler::alterVulnAfterPocTask(ConnectionPool& pool, const POCTask& task)
 {
     try {
@@ -1541,12 +1546,18 @@ std::vector<AssetInfo> DatabaseHandler::getAllAssetsInfo(ConnectionPool& pool)
             // 获取端口信息
             assetInfo.ports = getAllPortInfoByIp(ip, pool);
 
+            // 获取服务器系统信息
+            assetInfo.serverinfo = getServerInfoByIp(ip, pool);
+
             // 如果有该IP的漏洞信息，则填充到assetInfo中
             if (ipToVulnMap.find(ip) != ipToVulnMap.end()) {
                 const IpVulnerabilities& ipVulns = ipToVulnMap[ip];
                 assetInfo.host_vulnerabilities = ipVulns.host_vulnerabilities;
                 assetInfo.port_vulnerabilities = ipVulns.port_vulnerabilities;
             }
+            // 获取该IP的基线检测结果并计算摘要
+            std::vector<event> check_results = getSecurityCheckResults(ip, pool);
+            assetInfo.baseline_summary = calculateBaselineSummary(check_results);
 
             allAssets.push_back(assetInfo);
         }
@@ -1661,3 +1672,420 @@ void DatabaseHandler::saveWeakPasswordResult(
     }
 }
 
+
+//void DatabaseHandler::saveSecurityCheckResult(const std::string& ip, const event& checkEvent, ConnectionPool& pool) {
+//    try {
+//        auto conn = pool.getConnection();  // 获取连接
+//
+//        // 首先获取scan_host_result表中的id
+//        mysqlx::SqlResult hostResult = conn->sql("SELECT id FROM scan_host_result WHERE ip = ?")
+//            .bind(ip)
+//            .execute();
+//
+//        mysqlx::Row hostRow = hostResult.fetchOne();
+//        if (!hostRow) {
+//            std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
+//            return;
+//        }
+//
+//        int shr_id = hostRow[0]; // 获取shr_id
+//
+//        // 检查该项检查是否已存在
+//        mysqlx::SqlResult checkResult = conn->sql(
+//            "SELECT id FROM security_check_results WHERE shr_id = ? AND item_id = ?")
+//            .bind(shr_id)
+//            .bind(checkEvent.item_id)
+//            .execute();
+//
+//        if (checkResult.count() > 0) {
+//            // 已存在记录，进行更新
+//            conn->sql(
+//                "UPDATE security_check_results SET "
+//                "description = ?, "
+//                "result = ?, "
+//                "is_comply = ?, "
+//                "important_level = ?, "
+//                "check_time = CURRENT_TIMESTAMP "
+//                "WHERE shr_id = ? AND item_id = ?"
+//            )
+//                .bind(checkEvent.description)
+//                .bind(checkEvent.result)
+//                .bind(checkEvent.IsComply)
+//                .bind(checkEvent.importantLevel)
+//                .bind(shr_id)
+//                .bind(checkEvent.item_id)
+//                .execute();
+//
+//            std::cout << "成功更新安全检查结果: " << checkEvent.description << std::endl;
+//        }
+//        else {
+//            // 不存在记录，进行插入
+//            conn->sql(
+//                "INSERT INTO security_check_results "
+//                "(shr_id, item_id, description, result, is_comply, important_level, check_time) "
+//                "VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)"
+//            )
+//                .bind(shr_id)
+//                .bind(checkEvent.item_id)
+//                .bind(checkEvent.description)
+//                .bind(checkEvent.result)
+//                .bind(checkEvent.IsComply)
+//                .bind(checkEvent.importantLevel)
+//                .execute();
+//
+//            std::cout << "成功插入安全检查结果: " << checkEvent.description << std::endl;
+//        }
+//    }
+//    catch (const mysqlx::Error& err) {
+//        std::cerr << "saveSecurityCheckResult时数据库错误: " << err.what() << std::endl;
+//    }
+//    catch (std::exception& ex) {
+//        std::cerr << "异常: " << ex.what() << std::endl;
+//    }
+//    catch (...) {
+//        std::cerr << "未知错误发生" << std::endl;
+//    }
+//}
+
+void DatabaseHandler::saveSecurityCheckResult(const std::string& ip, const event& checkEvent, ConnectionPool& pool) {
+    try {
+        auto conn = pool.getConnection();  // 获取连接
+        // 首先获取scan_host_result表中的id
+        mysqlx::SqlResult hostResult = conn->sql("SELECT id FROM scan_host_result WHERE ip = ?")
+            .bind(ip)
+            .execute();
+        mysqlx::Row hostRow = hostResult.fetchOne();
+        if (!hostRow) {
+            std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
+            return;
+        }
+        int shr_id = hostRow[0]; // 获取shr_id
+        // 检查该项检查是否已存在
+        mysqlx::SqlResult checkResult = conn->sql(
+            "SELECT id FROM security_check_results WHERE shr_id = ? AND item_id = ?")
+            .bind(shr_id)
+            .bind(checkEvent.item_id)
+            .execute();
+        if (checkResult.count() > 0) {
+            // 已存在记录，进行更新
+            conn->sql(
+                "UPDATE security_check_results SET "
+                "description = ?, "
+                "basis = ?, "
+                "command = ?, "
+                "result = ?, "
+                "is_comply = ?, "
+                "recommend = ?, "
+                "important_level = ?, "
+                "check_time = CURRENT_TIMESTAMP "
+                "WHERE shr_id = ? AND item_id = ?"
+            )
+                .bind(checkEvent.description)
+                .bind(checkEvent.basis)
+                .bind(checkEvent.command)
+                .bind(checkEvent.result)
+                .bind(checkEvent.IsComply)
+                .bind(checkEvent.recommend)
+                .bind(checkEvent.importantLevel)
+                .bind(shr_id)
+                .bind(checkEvent.item_id)
+                .execute();
+            std::cout << "成功更新安全检查结果: " << checkEvent.description << std::endl;
+        }
+        else {
+            // 不存在记录，进行插入
+            conn->sql(
+                "INSERT INTO security_check_results "
+                "(shr_id, item_id, description, basis, command, result, is_comply, recommend, important_level, check_time) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)"
+            )
+                .bind(shr_id)
+                .bind(checkEvent.item_id)
+                .bind(checkEvent.description)
+                .bind(checkEvent.basis)
+                .bind(checkEvent.command)
+                .bind(checkEvent.result)
+                .bind(checkEvent.IsComply)
+                .bind(checkEvent.recommend)
+                .bind(checkEvent.importantLevel)
+                .execute();
+            std::cout << "成功插入安全检查结果: " << checkEvent.description << std::endl;
+        }
+    }
+    catch (const mysqlx::Error& err) {
+        std::cerr << "saveSecurityCheckResult时数据库错误: " << err.what() << std::endl;
+    }
+    catch (std::exception& ex) {
+        std::cerr << "异常: " << ex.what() << std::endl;
+    }
+    catch (...) {
+        std::cerr << "未知错误发生" << std::endl;
+    }
+}
+
+std::vector<event> DatabaseHandler::getSecurityCheckResults(const std::string& ip, ConnectionPool& pool) {
+    std::vector<event> checkResults;
+
+    try {
+        auto conn = pool.getConnection();  // 获取连接
+
+        // 首先获取scan_host_result表中的id
+        mysqlx::SqlResult hostResult = conn->sql("SELECT id FROM scan_host_result WHERE ip = ?")
+            .bind(ip)
+            .execute();
+
+        mysqlx::Row hostRow = hostResult.fetchOne();
+        if (!hostRow) {
+            std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
+            return checkResults;
+        }
+
+        int shr_id = hostRow[0]; // 获取shr_id
+
+        // 查询安全检查结果
+        mysqlx::SqlResult checkResult = conn->sql(
+            "SELECT item_id, description, basis, command, result, is_comply, recommend, "
+            "important_level, DATE_FORMAT(check_time, '%Y-%m-%d %H:%i:%s') as formatted_check_time "
+            "FROM security_check_results "
+            "WHERE shr_id = ? "
+            "ORDER BY item_id")
+            .bind(shr_id)
+            .execute();
+
+        // 处理查询结果
+        while (mysqlx::Row row = checkResult.fetchOne()) {
+            event checkEvent;
+
+            checkEvent.item_id = row[0].get<int>();
+            checkEvent.description = row[1].get<std::string>();
+            checkEvent.basis = row[2].isNull() ? "" : row[2].get<std::string>();
+            checkEvent.command = row[3].isNull() ? "" : row[3].get<std::string>();
+            checkEvent.result = row[4].get<std::string>();
+            checkEvent.IsComply = row[5].get<std::string>();
+            checkEvent.recommend = row[6].isNull() ? "" : row[6].get<std::string>();
+            checkEvent.importantLevel = row[7].get<std::string>();
+
+            checkResults.push_back(checkEvent);
+        }
+
+        std::cout << "成功获取IP " << ip << " 的安全检查结果，共 " << checkResults.size() << " 条记录" << std::endl;
+    }
+    catch (const mysqlx::Error& err) {
+        std::cerr << "getSecurityCheckResults时数据库错误: " << err.what() << std::endl;
+    }
+    catch (std::exception& ex) {
+        std::cerr << "异常: " << ex.what() << std::endl;
+    }
+    catch (...) {
+        std::cerr << "未知错误发生" << std::endl;
+    }
+
+    return checkResults;
+}
+
+// 计算基线检测摘要信息
+BaselineCheckSummary DatabaseHandler::calculateBaselineSummary(const std::vector<event>& check_results) {
+    BaselineCheckSummary summary = {};  // 初始化所有字段为0
+
+    summary.total_checks = check_results.size();
+
+    for (const auto& result : check_results) {
+        // 统计合规项
+        if (result.IsComply == "true") {
+            summary.compliant_items++;
+
+            // 按重要程度统计合规项
+            if (result.importantLevel == "1") {
+                summary.critical_compliant++;
+            }
+            else if (result.importantLevel == "2") {
+                summary.high_compliant++;
+            }
+            else if (result.importantLevel == "3") {
+                summary.medium_compliant++;
+            }
+        }
+
+        // 统计各重要程度的总项数
+        if (result.importantLevel == "1") {
+            summary.critical_items++;
+        }
+        else if (result.importantLevel == "2") {
+            summary.high_items++;
+        }
+        else if (result.importantLevel == "3") {
+            summary.medium_items++;
+        }
+    }
+
+    // 计算不合规项数
+    summary.non_compliant_items = summary.total_checks - summary.compliant_items;
+
+
+
+    // 计算合规率并保留两位小数(不使用round函数)
+    // 计算合规率并保留两位小数(不使用round函数)
+    summary.compliance_rate = summary.total_checks > 0 ?
+        (round(static_cast<double>(summary.compliant_items) / summary.total_checks * 10000.0) / 100.0) : 0.0;
+    return summary;
+}
+
+void DatabaseHandler::insertServerInfo(const ServerInfo& info, const std::string& ip, ConnectionPool& pool) {
+    try {
+        auto conn = pool.getConnection();  // 获取连接
+
+        // 1. 首先获取scan_host_result表中的id
+        mysqlx::SqlResult hostResult = conn->sql("SELECT id FROM scan_host_result WHERE ip = ?")
+            .bind(ip)
+            .execute();
+
+        mysqlx::Row hostRow = hostResult.fetchOne();
+        if (!hostRow) {
+            std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
+            return;
+        }
+
+        int shr_id = hostRow[0]; // 获取shr_id
+
+        // 2. 检查该IP是否已有服务器信息记录
+        mysqlx::SqlResult checkResult = conn->sql(
+            "SELECT id FROM server_info WHERE shr_id = ?")
+            .bind(shr_id)
+            .execute();
+
+        if (checkResult.count() > 0) {
+            // 已存在记录，进行更新
+            conn->sql(
+                "UPDATE server_info SET "
+                "hostname = ?, "
+                "arch = ?, "
+                "cpu = ?, "
+                "cpu_physical = ?, "
+                "cpu_core = ?, "
+                "free_memory = ?, "
+                "product_name = ?, "
+                "version = ?, "
+                "os_name = ?, "
+                "is_internet = ?, "
+                "update_time = CURRENT_TIMESTAMP "
+                "WHERE shr_id = ?"
+            )
+                .bind(info.hostname)
+                .bind(info.arch)
+                .bind(info.cpu)
+                .bind(info.cpuPhysical)
+                .bind(info.cpuCore)
+                .bind(info.free)
+                .bind(info.ProductName)
+                .bind(info.version)
+                .bind(info.osName)
+                .bind(info.isInternet)
+                .bind(shr_id)
+                .execute();
+
+            std::cout << "成功更新服务器信息: " << ip << std::endl;
+        }
+        else {
+            // 不存在记录，进行插入
+            conn->sql(
+                "INSERT INTO server_info "
+                "(shr_id, hostname, arch, cpu, cpu_physical, cpu_core, free_memory, product_name, version, os_name, is_internet, create_time, update_time) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
+            )
+                .bind(shr_id)
+                .bind(info.hostname)
+                .bind(info.arch)
+                .bind(info.cpu)
+                .bind(info.cpuPhysical)
+                .bind(info.cpuCore)
+                .bind(info.free)
+                .bind(info.ProductName)
+                .bind(info.version)
+                .bind(info.osName)
+                .bind(info.isInternet)
+                .execute();
+
+            std::cout << "成功插入服务器信息: " << ip << std::endl;
+        }
+    }
+    catch (const mysqlx::Error& err) {
+        std::cerr << "insertServerInfo时数据库错误: " << err.what() << std::endl;
+    }
+    catch (std::exception& ex) {
+        std::cerr << "异常: " << ex.what() << std::endl;
+    }
+    catch (...) {
+        std::cerr << "未知错误发生" << std::endl;
+    }
+}
+
+ServerInfo DatabaseHandler::getServerInfoByIp(const std::string& ip, ConnectionPool& pool) {
+    ServerInfo info;
+    // 初始化默认值
+    info.hostname = "";
+    info.arch = "";
+    info.cpu = "";
+    info.cpuPhysical = "";
+    info.cpuCore = "";
+    info.free = "";
+    info.ProductName = "";
+    info.version = "";
+    info.osName = "";
+    info.isInternet = "";
+
+    try {
+        auto conn = pool.getConnection();  // 获取连接
+
+        // 1. 首先获取scan_host_result表中的id
+        mysqlx::SqlResult hostResult = conn->sql("SELECT id FROM scan_host_result WHERE ip = ?")
+            .bind(ip)
+            .execute();
+
+        mysqlx::Row hostRow = hostResult.fetchOne();
+        if (!hostRow) {
+            std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
+            return info;
+        }
+
+        int shr_id = hostRow[0]; // 获取shr_id
+
+        // 2. 查询服务器信息
+        mysqlx::SqlResult infoResult = conn->sql(
+            "SELECT hostname, arch, cpu, cpu_physical, cpu_core, free_memory, "
+            "product_name, version, os_name, is_internet "
+            "FROM server_info WHERE shr_id = ?")
+            .bind(shr_id)
+            .execute();
+
+        mysqlx::Row infoRow = infoResult.fetchOne();
+        if (!infoRow) {
+            std::cerr << "未找到IP: " << ip << " 对应的服务器信息" << std::endl;
+            return info;
+        }
+
+        // 3. 填充ServerInfo结构体
+        info.hostname = infoRow[0].isNull() ? "" : static_cast<std::string>(infoRow[0]);
+        info.arch = infoRow[1].isNull() ? "" : static_cast<std::string>(infoRow[1]);
+        info.cpu = infoRow[2].isNull() ? "" : static_cast<std::string>(infoRow[2]);
+        info.cpuPhysical = infoRow[3].isNull() ? "" : static_cast<std::string>(infoRow[3]);
+        info.cpuCore = infoRow[4].isNull() ? "" : static_cast<std::string>(infoRow[4]);
+        info.free = infoRow[5].isNull() ? "" : static_cast<std::string>(infoRow[5]);
+        info.ProductName = infoRow[6].isNull() ? "" : static_cast<std::string>(infoRow[6]);
+        info.version = infoRow[7].isNull() ? "" : static_cast<std::string>(infoRow[7]);
+        info.osName = infoRow[8].isNull() ? "" : static_cast<std::string>(infoRow[8]);
+        info.isInternet = infoRow[9].isNull() ? "" : static_cast<std::string>(infoRow[9]);
+
+        std::cout << "成功获取IP: " << ip << " 的服务器信息" << std::endl;
+    }
+    catch (const mysqlx::Error& err) {
+        std::cerr << "getServerInfoByIp时数据库错误: " << err.what() << std::endl;
+    }
+    catch (std::exception& ex) {
+        std::cerr << "异常: " << ex.what() << std::endl;
+    }
+    catch (...) {
+        std::cerr << "未知错误发生" << std::endl;
+    }
+
+    return info;
+}

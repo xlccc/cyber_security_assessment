@@ -4,7 +4,7 @@
 #include<libssh/libssh.h>
 #include"Padding2.h"
 void fun2(vector<event>& Event, const string& host, const string& username, const string& password, 
-	const vector<int>& ids) {
+	ConnectionPool& mysqlPool, DatabaseHandler& dbHandler, const vector<int>& ids ) {
 	auto start = std::chrono::high_resolution_clock::now();
 	try {
 		// 创建ssh连接池 数量为4
@@ -15,6 +15,9 @@ void fun2(vector<event>& Event, const string& host, const string& username, cons
 
 		// 运行检测项
 		checker.checkEvents(Event,ids);
+		for (auto& e : Event) {
+			dbHandler.saveSecurityCheckResult(host, e, mysqlPool);
+		}
 
 	}
 	catch (const std::exception& e) {
@@ -29,36 +32,42 @@ void fun2(vector<event>& Event, const string& host, const string& username, cons
 	std::cout << "代码执行时间: " << elapsed.count() << " 毫秒" << std::endl;
 
 }
-void ServerInfo_Padding2(ServerInfo& info, SSHConnectionPool& pool) {
-	SSHConnectionGuard guard(pool);
-	ssh_session session = guard.get();
-	string hostname = "hostname | tr -d \"\\n\"";
-	info.hostname = execute_commands(session, hostname);
-	string Arch = "arch | tr -d \"\\n\"";
-	info.arch = execute_commands(session, Arch);
-	string Cpu = "cat /proc/cpuinfo | grep name | sort | uniq | awk -F \":\" '{print $2}' | xargs | tr -d \"\\n\"";
-	info.cpu = execute_commands(session, Cpu);
-	string CpuPhysical = "cat /proc/cpuinfo | grep \"physical id\" | sort | uniq | wc -l| tr -d \"\\n\"";
-	info.cpuPhysical = execute_commands(session, CpuPhysical);
-	string CpuCore = "cat /proc/cpuinfo | grep \"core id\" | sort | uniq | wc -l| tr -d \"\\n\"";
-	info.cpuCore = execute_commands(session, CpuCore);
-	string type_os;//Debian还是RPM;
-	type_os = execute_commands(session, "command -v apt >/dev/null 2>&1 && echo \"Debian\" || (command -v yum >/dev/null 2>&1 && echo \"RPM\" || echo \"Unknown\")| tr -d \"\\n\"");
-	if (type_os == "RPM") {
-		string Version = "rpm -q centos-release";
-		info.version = execute_commands(session, Version);
-	}
-	else {
-		string Version = "lsb_release -a 2>/dev/null | grep 'Release' | awk '{print $2}'| tr -d \"\\n\"";
-		info.version = execute_commands(session, Version);
-	}
-	string ProductName = "dmidecode -t system | grep 'Product Name' | awk -F \":\" '{print $2}' | xargs| tr -d \"\\n\"";
-	info.ProductName = execute_commands(session, ProductName);
-	//string free = "free -g | grep Mem | awk '{print $2}'| tr -d \"\\n\"";
-	string free = "free | grep Mem | awk '{printf \"%.1f\", $2/1024/1024}' | tr -d \"\\n\"";
-	info.free = execute_commands(session, free)+ " GB";
-	std::cout << info.free << endl;
-	string ping = "(ping -c 1 8.8.8.8 > /dev/null 2>&1 && echo true || echo false) | tr -d \"\\n\"";
-	info.isInternet = execute_commands(session, ping);
+void ServerInfo_Padding2(ServerInfo& info, const std::string ip, SSHConnectionPool& pool, ConnectionPool& mysqlPool, DatabaseHandler& dbHandler) {
+    SSHConnectionGuard guard(pool);
+    ssh_session session = guard.get();
+    string hostname = "hostname | tr -d \"\\n\"";
+    info.hostname = execute_commands(session, hostname);
+    string Arch = "arch | tr -d \"\\n\"";
+    info.arch = execute_commands(session, Arch);
+    string Cpu = "cat /proc/cpuinfo | grep name | sort | uniq | awk -F \":\" '{print $2}' | xargs | tr -d \"\\n\"";
+    info.cpu = execute_commands(session, Cpu);
+    string CpuPhysical = "cat /proc/cpuinfo | grep \"physical id\" | sort | uniq | wc -l| tr -d \"\\n\"";
+    info.cpuPhysical = execute_commands(session, CpuPhysical);
+    string CpuCore = "cat /proc/cpuinfo | grep \"core id\" | sort | uniq | wc -l| tr -d \"\\n\"";
+    info.cpuCore = execute_commands(session, CpuCore);
 
+    // 获取操作系统名称
+    string osName = "cat /etc/os-release | grep \"PRETTY_NAME\" | cut -d= -f2 | tr -d \"\\n\"";
+    info.osName = execute_commands(session, osName);
+
+    string type_os;//Debian还是RPM;
+    type_os = execute_commands(session, "command -v apt >/dev/null 2>&1 && echo \"Debian\" || (command -v yum >/dev/null 2>&1 && echo \"RPM\" || echo \"Unknown\")| tr -d \"\\n\"");
+    if (type_os == "RPM") {
+        string Version = "rpm -q centos-release";
+        info.version = execute_commands(session, Version);
+    }
+    else {
+        string Version = "lsb_release -a 2>/dev/null | grep 'Release' | awk '{print $2}'| tr -d \"\\n\"";
+        info.version = execute_commands(session, Version);
+    }
+    string ProductName = "dmidecode -t system | grep 'Product Name' | awk -F \":\" '{print $2}' | xargs| tr -d \"\\n\"";
+    info.ProductName = execute_commands(session, ProductName);
+    //string free = "free -g | grep Mem | awk '{print $2}'| tr -d \"\\n\"";
+    string free = "free | grep Mem | awk '{printf \"%.1f\", $2/1024/1024}' | tr -d \"\\n\"";
+    info.free = execute_commands(session, free) + " GB";
+    std::cout << info.free << endl;
+    string ping = "(ping -c 1 8.8.8.8 > /dev/null 2>&1 && echo true || echo false) | tr -d \"\\n\"";
+    info.isInternet = execute_commands(session, ping);
+    // 获取完信息后，调用数据库插入函数
+    dbHandler.insertServerInfo(info, ip, mysqlPool);
 }
