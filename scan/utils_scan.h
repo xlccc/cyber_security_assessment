@@ -98,7 +98,9 @@ std::pair<std::string, Vuln> deserialize_task_result(const std::string& data);
 void push_task_to_redis(redisContext* c, const std::string& task_data);
 
 // 从 Redis 队列获取任务
-std::string pop_task_from_redis(redisContext* c);
+//std::string pop_task_from_redis(redisContext* c);
+//std::string pop_task_from_redis(redisContext* redis_client, std::string unique_key);//半成品
+std::string pop_task_from_redis(redisContext* redis_client, const std::string& unique_key);
 
 // 将任务结果推送到 Redis 结果队列
 void push_result_to_redis(redisContext* c, const std::string& result_data);
