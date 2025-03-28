@@ -1108,7 +1108,6 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
             vuln.vulnType = matchVulnType(vuln.summary, vulnTypes);
 			std::cout << vuln.vulnType << std::endl;
             scan_host_result.vuln_result.insert(vuln);
-			
             dbHandler.alterHostVulnResultAfterPocVerify(pool, vuln, scan_host_result.ip);
             console->info("[Parent Process] Overwritten OS-level vuln ID: {} in scan_host_result", vuln.Vuln_id);
         }
