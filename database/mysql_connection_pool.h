@@ -64,22 +64,6 @@ public:
         }
     }
 
-        if (connections_.empty()) {
-            std::cerr << "警告: 无法初始化任何数据库连接" << std::endl;
-        }
-    }
-
-            std::cerr << "警告: 无法初始化任何数据库连接" << std::endl;
-        }
-    }
-
-            std::cerr << "警告: 无法初始化任何数据库连接" << std::endl;
-        }
-    }
-
-            std::cerr << "警告: 无法初始化任何数据库连接" << std::endl;
-        }
-    }
 
     ~ConnectionPool() {
         // 清理所有连接
