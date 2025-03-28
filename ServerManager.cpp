@@ -7,15 +7,21 @@ using namespace concurrency::streams;
 
 ServerManager::ServerManager()
     : localConfig{
-        "192.168.136.128",  // host
-        33060,            // port
-        "root",           // user
-        "123456", // password
-        "test_db"         // schema
+        CONFIG.getDbHost(),
+        CONFIG.getDbPort(),
+        CONFIG.getDbUser(),
+        CONFIG.getDbPassword(),
+        CONFIG.getDbSchema()
+        //"192.168.136.128",  // host
+        //33060,            // port
+        //"root",           // user
+        //"123456", // password
+        //"test_db"         // schema
     },
     pool(localConfig),    // 使用 localConfig 初始化 pool
-    dbManager(DB_PATH)    // 原有的 dbManager 初始化
+    dbManager(CONFIG.getPocDatabasePath())    // 原有的 dbManager 初始化
 {
+
     utility::string_t address = _XPLATSTR("http://192.168.136.128:8081/");
     uri_builder uri(address);
     auto addr = uri.to_uri().to_string();

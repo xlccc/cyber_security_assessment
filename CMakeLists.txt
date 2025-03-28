@@ -84,7 +84,7 @@ set(SOURCES
     "run/mysql_scan.cpp"
     scan/hostDiscovery.cpp
  "database/DatabaseHandler.cpp" "pgsql_scan.cpp"
-    utils/threadPool.cpp "log/log.cpp")
+    utils/threadPool.cpp "log/log.cpp" "utils/ConfigManager.cpp")
 
 set(HEADERS
     Command_Excute.h
@@ -115,7 +115,9 @@ set(HEADERS
     multipart_form_data.h "run/mysql_scan.h"
     "log/log.h"
     pgsql_scan.h
- "database/DatabaseHandler.h" "database/mysql_connection_pool.h")
+    "database/DatabaseHandler.h" "database/mysql_connection_pool.h" 
+    "utils/ConfigManager.h"
+    "utils/CommonDefs.h")
 
 # 添加可执行文件
 add_executable(MyCppProject ${SOURCES} ${HEADERS} "log/log.h" "log/log.cpp")

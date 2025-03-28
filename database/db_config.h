@@ -11,7 +11,6 @@ const char* const DB_PATH = "/home/c/.vs/cyber_security_assessment/8e509499-79aa
 
 
 
-
 //支持的poc脚本类型
 extern std::vector<std::string> supported_extensions;
 

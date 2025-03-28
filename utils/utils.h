@@ -22,6 +22,7 @@
 #include<iostream>
 #include <signal.h>  // 用于 SIGTERM, SIGKILL 和 kill 函数
 #include <unistd.h>  // 用于 usleep 函数和 pid_t 类型
+#include"CommonDefs.h"    //配置文件
 extern PyObject* global_importlib; // 仅声明，不定义
 extern PyObject* global_io;         // 仅声明，不定义
 
