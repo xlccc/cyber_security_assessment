@@ -27,10 +27,10 @@ struct DBConfig {
 
     // 构造函数，提供默认值
     DBConfig(
-        std::string host_ = "192.168.136.128",
+        std::string host_ = "10.9.130.37",
         uint16_t port_ = 33060,
         std::string user_ = "root",
-        std::string password_ = "123456",
+        std::string password_ = "Navicat822!",
         std::string schema_ = "",
         size_t initial_size_ = 5,
         size_t max_size_ = 20,

@@ -182,6 +182,11 @@ private:
     //判断特定ip的服务是否存在
     bool isServiceExistByIp(const std::string& ip, const std::string& service_name, ConnectionPool& pool);
 
+    // 在 ServerManager.h 中添加新的处理函数
+    void handle_get_security_check_by_ip(http_request request);
+
+    void handle_get_userInfo(http_request request);
+
 };
 
 #endif // SERVERMANAGER_H

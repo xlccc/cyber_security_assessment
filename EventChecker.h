@@ -39,33 +39,12 @@ public:
 
         
 
-        // Check password lifetime
-        //futures.push_back(threadPool.enqueue(&EventChecker::checkPasswordLifetime, this));
-
-        // Check password min length
-        //futures.push_back(threadPool.enqueue(&EventChecker::checkPasswordMinLength, this));
-
-        // Check password warn days
-        //futures.push_back(threadPool.enqueue(&EventChecker::checkPasswordWarnDays, this));
-
-        // Check password complexity
-        //futures.push_back(threadPool.enqueue(&EventChecker::checkPasswordComplex, this));
-
-        // Check empty password
-        //futures.push_back(threadPool.enqueue(&EventChecker::checkEmptyPassword, this));
-
-        // Check UID 0 except root
-        //futures.push_back(threadPool.enqueue(&EventChecker::checkUID0ExceptRoot, this));
-
-        // Check umask settings
-        //futures.push_back(threadPool.enqueue(&EventChecker::checkUmaskCshrc, this));
-        //futures.push_back(threadPool.enqueue(&EventChecker::checkUmaskBashrc, this));
-        //futures.push_back(threadPool.enqueue(&EventChecker::checkUmaskProfile, this));
-
         // 收集结果
         for (auto& future : futures) {
-            events.push_back(future.get());
+			event eventtest = future.get();
+            events.push_back(eventtest);
         }
+
     }
 
 private:
@@ -80,99 +59,194 @@ private:
     std::map<int, std::function<event()>> checkFunctions;
 
     void initializeCheckFunctions() {
-        // 使用ID映射每个检查函数
         checkFunctions = {
-            {1, std::bind(&EventChecker::checkPasswordLifetime, this)},
-            {2, std::bind(&EventChecker::checkPasswordMinLength, this)},
-            {3, std::bind(&EventChecker::checkPasswordWarnDays, this)},
-            {4, std::bind(&EventChecker::checkPasswordComplex, this)},
-            {5, std::bind(&EventChecker::checkEmptyPassword, this)},
-            {6, std::bind(&EventChecker::checkUID0ExceptRoot, this)},
-            {7, std::bind(&EventChecker::checkUmaskCshrc, this)},
-            {8, std::bind(&EventChecker::checkUmaskBashrc, this)},
-            {9, std::bind(&EventChecker::checkUmaskProfile, this)},
-            {10, std::bind(&EventChecker::checkModXinetd, this)},
-            {11, std::bind(&EventChecker::checkModGroup, this)},
-            {12, std::bind(&EventChecker::checkModShadow, this)},
-            {13, std::bind(&EventChecker::checkModServices, this)},
-            {14, std::bind(&EventChecker::checkModSecurity, this)},
-            {15, std::bind(&EventChecker::checkModPasswd, this)},
-            {16, std::bind(&EventChecker::checkModRc6, this)},
-            {17, std::bind(&EventChecker::checkModRc0, this)},
-            {18, std::bind(&EventChecker::checkModRc1, this)},
-            {19, std::bind(&EventChecker::checkModRc2, this)},
-            {20, std::bind(&EventChecker::checkModEtc, this)},
-            {21, std::bind(&EventChecker::checkModRc4, this)},
-            {22, std::bind(&EventChecker::checkModRc5, this)},
-            {23, std::bind(&EventChecker::checkModRc3, this)},
-            {24, std::bind(&EventChecker::checkModInit, this)},
-            {25, std::bind(&EventChecker::checkModTmp, this)},
-            {26, std::bind(&EventChecker::checkModGrub, this)},
-            {27, std::bind(&EventChecker::checkModGrubGrub, this)},
-            {28, std::bind(&EventChecker::checkModLilo, this)},
-            {29, std::bind(&EventChecker::checkAttributePasswd, this)},
-            {30, std::bind(&EventChecker::checkAttributeShadow, this)},
-            {31, std::bind(&EventChecker::checkAttributeGroup, this)},
-            {32, std::bind(&EventChecker::checkAttributeGshadow, this)},
-            {33, std::bind(&EventChecker::checkUmaskLogin, this)},
-            {34, std::bind(&EventChecker::checkSshBanner, this)},
-            {35, std::bind(&EventChecker::checkeNg, this)},
-            {36, std::bind(&EventChecker::checkRsyslog, this)},
-            {37, std::bind(&EventChecker::checkSyslog, this)},
-            {38, std::bind(&EventChecker::checkSyslogNgSafe, this)},
-            {39, std::bind(&EventChecker::checkRsyslogSafe, this)},
-            {40, std::bind(&EventChecker::checkSyslogSafe, this)},
-            {41, std::bind(&EventChecker::checkCron, this)},
-            {42, std::bind(&EventChecker::checkSecure, this)},
-            {43, std::bind(&EventChecker::checkMessage, this)},
-            {44, std::bind(&EventChecker::checkBootLog, this)},
-            {45, std::bind(&EventChecker::checkMail, this)},
-            {46, std::bind(&EventChecker::checkSpooler, this)},
-            {47, std::bind(&EventChecker::checkLocalMessages, this)},
-            {48, std::bind(&EventChecker::checkMaillog, this)},
-            {49, std::bind(&EventChecker::checkLast, this)},
-            {50, std::bind(&EventChecker::checkSuLog, this)},
-            {51, std::bind(&EventChecker::checkOpensshConfig, this)},
-            {52, std::bind(&EventChecker::checkRunningSnmp, this)},
-            {53, std::bind(&EventChecker::checkSnmpConfig, this)},
-            {54, std::bind(&EventChecker::checkSshConfig, this)},
-            {55, std::bind(&EventChecker::checkTelnetConfig, this)},
-            {56, std::bind(&EventChecker::checkRunningFtp, this)},
-            {57, std::bind(&EventChecker::checkFtpConfig, this)},
-            {58, std::bind(&EventChecker::checkAnonymousFtp, this)},
-            {59, std::bind(&EventChecker::checkCmdTimeout, this)},
-            {60, std::bind(&EventChecker::checkPasswordBootloader, this)},
-            {61, std::bind(&EventChecker::checkCoreDump, this)},
-            {62, std::bind(&EventChecker::checkHistSize, this)},
-            {63, std::bind(&EventChecker::checkGroupWheel, this)},
-            {64, std::bind(&EventChecker::checkInterLogin, this)},
-            {65, std::bind(&EventChecker::checkPasswordRepeatlimit, this)},
-            {66, std::bind(&EventChecker::checkAuthFailtimes, this)},
-            {67, std::bind(&EventChecker::checkMultiIp, this)},
-            {68, std::bind(&EventChecker::checkLoginRemoteIp, this)},
-            {69, std::bind(&EventChecker::checkAliasesUnnecessary, this)},
-            {70, std::bind(&EventChecker::checkPermSuidSgid, this)},
-            {71, std::bind(&EventChecker::checkScreenAutolock, this)},
-            {72, std::bind(&EventChecker::checkTcpSyncookies, this)},
-            {73, std::bind(&EventChecker::checkGroupManage, this)},
-            {74, std::bind(&EventChecker::checkRootPathCheck, this)},
-            {75, std::bind(&EventChecker::checkCtrlAltDelDisabled, this)},
-            {76, std::bind(&EventChecker::checkSysTrustMechanism, this)},
-            {77, std::bind(&EventChecker::checkDiskPartitionUsageRate, this)},
-            {78, std::bind(&EventChecker::checkPotentialRiskFiles, this)},
-            {79, std::bind(&EventChecker::checkUserMinPermission, this)},
-            {80, std::bind(&EventChecker::checkPacketForwardFunc, this)},
-            {81, std::bind(&EventChecker::checkNtpSyncStatus, this)},
-            {82, std::bind(&EventChecker::checkNfsServer, this)},
-            {83, std::bind(&EventChecker::checkSshBanner2, this)},
-            {84, std::bind(&EventChecker::checkUploadFtp, this)},
-            {85, std::bind(&EventChecker::checkFtpBaner, this)},
-            {86, std::bind(&EventChecker::checkBinOwner, this)},
-            {87, std::bind(&EventChecker::checkTelnetBanner, this)},
-            {88, std::bind(&EventChecker::checkFtpDirectory, this)},
-            {89, std::bind(&EventChecker::checkKernel_cve_2021_43267, this)}
+            {1, [this] { event e = checkPasswordLifetime(); e.item_id = 1; return e; }},
+            {2, [this] { event e = checkPasswordMinLength(); e.item_id = 2; return e; }},
+            {3, [this] { event e = checkPasswordWarnDays(); e.item_id = 3; return e; }},
+            {4, [this] { event e = checkPasswordComplex(); e.item_id = 4; return e; }},
+            {5, [this] { event e = checkEmptyPassword(); e.item_id = 5; return e; }},
+            {6, [this] { event e = checkUID0ExceptRoot(); e.item_id = 6; return e; }},
+            {7, [this] { event e = checkUmaskCshrc(); e.item_id = 7; return e; }},
+            {8, [this] { event e = checkUmaskBashrc(); e.item_id = 8; return e; }},
+            {9, [this] { event e = checkUmaskProfile(); e.item_id = 9; return e; }},
+            {10, [this] { event e = checkModXinetd(); e.item_id = 10; return e; }},
+            {11, [this] { event e = checkModGroup(); e.item_id = 11; return e; }},
+            {12, [this] { event e = checkModShadow(); e.item_id = 12; return e; }},
+            {13, [this] { event e = checkModServices(); e.item_id = 13; return e; }},
+            {14, [this] { event e = checkModSecurity(); e.item_id = 14; return e; }},
+            {15, [this] { event e = checkModPasswd(); e.item_id = 15; return e; }},
+            {16, [this] { event e = checkModRc6(); e.item_id = 16; return e; }},
+            {17, [this] { event e = checkModRc0(); e.item_id = 17; return e; }},
+            {18, [this] { event e = checkModRc1(); e.item_id = 18; return e; }},
+            {19, [this] { event e = checkModRc2(); e.item_id = 19; return e; }},
+            {20, [this] { event e = checkModEtc(); e.item_id = 20; return e; }},
+            {21, [this] { event e = checkModRc4(); e.item_id = 21; return e; }},
+            {22, [this] { event e = checkModRc5(); e.item_id = 22; return e; }},
+            {23, [this] { event e = checkModRc3(); e.item_id = 23; return e; }},
+            {24, [this] { event e = checkModInit(); e.item_id = 24; return e; }},
+            {25, [this] { event e = checkModTmp(); e.item_id = 25; return e; }},
+            {26, [this] { event e = checkModGrub(); e.item_id = 26; return e; }},
+            {27, [this] { event e = checkModGrubGrub(); e.item_id = 27; return e; }},
+            {28, [this] { event e = checkModLilo(); e.item_id = 28; return e; }},
+            {29, [this] { event e = checkAttributePasswd(); e.item_id = 29; return e; }},
+            {30, [this] { event e = checkAttributeShadow(); e.item_id = 30; return e; }},
+            {31, [this] { event e = checkAttributeGroup(); e.item_id = 31; return e; }},
+            {32, [this] { event e = checkAttributeGshadow(); e.item_id = 32; return e; }},
+            {33, [this] { event e = checkUmaskLogin(); e.item_id = 33; return e; }},
+            {34, [this] { event e = checkSshBanner(); e.item_id = 34; return e; }},
+            {35, [this] { event e = checkeNg(); e.item_id = 35; return e; }},
+            {36, [this] { event e = checkRsyslog(); e.item_id = 36; return e; }},
+            {37, [this] { event e = checkSyslog(); e.item_id = 37; return e; }},
+            {38, [this] { event e = checkSyslogNgSafe(); e.item_id = 38; return e; }},
+            {39, [this] { event e = checkRsyslogSafe(); e.item_id = 39; return e; }},
+            {40, [this] { event e = checkSyslogSafe(); e.item_id = 40; return e; }},
+            {41, [this] { event e = checkCron(); e.item_id = 41; return e; }},
+            {42, [this] { event e = checkSecure(); e.item_id = 42; return e; }},
+            {43, [this] { event e = checkMessage(); e.item_id = 43; return e; }},
+            {44, [this] { event e = checkBootLog(); e.item_id = 44; return e; }},
+            {45, [this] { event e = checkMail(); e.item_id = 45; return e; }},
+            {46, [this] { event e = checkSpooler(); e.item_id = 46; return e; }},
+            {47, [this] { event e = checkLocalMessages(); e.item_id = 47; return e; }},
+            {48, [this] { event e = checkMaillog(); e.item_id = 48; return e; }},
+            {49, [this] { event e = checkLast(); e.item_id = 49; return e; }},
+            {50, [this] { event e = checkSuLog(); e.item_id = 50; return e; }},
+            {51, [this] { event e = checkOpensshConfig(); e.item_id = 51; return e; }},
+            {52, [this] { event e = checkRunningSnmp(); e.item_id = 52; return e; }},
+            {53, [this] { event e = checkSnmpConfig(); e.item_id = 53; return e; }},
+            {54, [this] { event e = checkSshConfig(); e.item_id = 54; return e; }},
+            {55, [this] { event e = checkTelnetConfig(); e.item_id = 55; return e; }},
+            {56, [this] { event e = checkRunningFtp(); e.item_id = 56; return e; }},
+            {57, [this] { event e = checkFtpConfig(); e.item_id = 57; return e; }},
+            {58, [this] { event e = checkAnonymousFtp(); e.item_id = 58; return e; }},
+            {59, [this] { event e = checkCmdTimeout(); e.item_id = 59; return e; }},
+            {60, [this] { event e = checkPasswordBootloader(); e.item_id = 60; return e; }},
+            {61, [this] { event e = checkCoreDump(); e.item_id = 61; return e; }},
+            {62, [this] { event e = checkHistSize(); e.item_id = 62; return e; }},
+            {63, [this] { event e = checkGroupWheel(); e.item_id = 63; return e; }},
+            {64, [this] { event e = checkInterLogin(); e.item_id = 64; return e; }},
+            {65, [this] { event e = checkPasswordRepeatlimit(); e.item_id = 65; return e; }},
+            {66, [this] { event e = checkAuthFailtimes(); e.item_id = 66; return e; }},
+            {67, [this] { event e = checkMultiIp(); e.item_id = 67; return e; }},
+            {68, [this] { event e = checkLoginRemoteIp(); e.item_id = 68; return e; }},
+            {69, [this] { event e = checkAliasesUnnecessary(); e.item_id = 69; return e; }},
+            {70, [this] { event e = checkPermSuidSgid(); e.item_id = 70; return e; }},
+            {71, [this] { event e = checkScreenAutolock(); e.item_id = 71; return e; }},
+            {72, [this] { event e = checkTcpSyncookies(); e.item_id = 72; return e; }},
+            {73, [this] { event e = checkGroupManage(); e.item_id = 73; return e; }},
+            {74, [this] { event e = checkRootPathCheck(); e.item_id = 74; return e; }},
+            {75, [this] { event e = checkCtrlAltDelDisabled(); e.item_id = 75; return e; }},
+            {76, [this] { event e = checkSysTrustMechanism(); e.item_id = 76; return e; }},
+            {77, [this] { event e = checkDiskPartitionUsageRate(); e.item_id = 77; return e; }},
+            {78, [this] { event e = checkPotentialRiskFiles(); e.item_id = 78; return e; }},
+            {79, [this] { event e = checkUserMinPermission(); e.item_id = 79; return e; }},
+            {80, [this] { event e = checkPacketForwardFunc(); e.item_id = 80; return e; }},
+            {81, [this] { event e = checkNtpSyncStatus(); e.item_id = 81; return e; }},
+            {82, [this] { event e = checkNfsServer(); e.item_id = 82; return e; }},
+            {83, [this] { event e = checkSshBanner2(); e.item_id = 83; return e; }},
+            {84, [this] { event e = checkUploadFtp(); e.item_id = 84; return e; }},
+            {85, [this] { event e = checkFtpBaner(); e.item_id = 85; return e; }},
+            {86, [this] { event e = checkBinOwner(); e.item_id = 86; return e; }},
+            {87, [this] { event e = checkTelnetBanner(); e.item_id = 87; return e; }},
+            {88, [this] { event e = checkFtpDirectory(); e.item_id = 88; return e; }},
+            {89, [this] { event e = checkKernel_cve_2021_43267(); e.item_id = 89; return e; }},
         };
     }
+
+
+    //void initializeCheckFunctions() {
+    //    // 使用ID映射每个检查函数
+    //    checkFunctions = {
+    //        {1, std::bind(&EventChecker::checkPasswordLifetime, this)},
+    //        {2, std::bind(&EventChecker::checkPasswordMinLength, this)},
+    //        {3, std::bind(&EventChecker::checkPasswordWarnDays, this)},
+    //        {4, std::bind(&EventChecker::checkPasswordComplex, this)},
+    //        {5, std::bind(&EventChecker::checkEmptyPassword, this)},
+    //        {6, std::bind(&EventChecker::checkUID0ExceptRoot, this)},
+    //        {7, std::bind(&EventChecker::checkUmaskCshrc, this)},
+    //        {8, std::bind(&EventChecker::checkUmaskBashrc, this)},
+    //        {9, std::bind(&EventChecker::checkUmaskProfile, this)},
+    //        {10, std::bind(&EventChecker::checkModXinetd, this)},
+    //        {11, std::bind(&EventChecker::checkModGroup, this)},
+    //        {12, std::bind(&EventChecker::checkModShadow, this)},
+    //        {13, std::bind(&EventChecker::checkModServices, this)},
+    //        {14, std::bind(&EventChecker::checkModSecurity, this)},
+    //        {15, std::bind(&EventChecker::checkModPasswd, this)},
+    //        {16, std::bind(&EventChecker::checkModRc6, this)},
+    //        {17, std::bind(&EventChecker::checkModRc0, this)},
+    //        {18, std::bind(&EventChecker::checkModRc1, this)},
+    //        {19, std::bind(&EventChecker::checkModRc2, this)},
+    //        {20, std::bind(&EventChecker::checkModEtc, this)},
+    //        {21, std::bind(&EventChecker::checkModRc4, this)},
+    //        {22, std::bind(&EventChecker::checkModRc5, this)},
+    //        {23, std::bind(&EventChecker::checkModRc3, this)},
+    //        {24, std::bind(&EventChecker::checkModInit, this)},
+    //        {25, std::bind(&EventChecker::checkModTmp, this)},
+    //        {26, std::bind(&EventChecker::checkModGrub, this)},
+    //        {27, std::bind(&EventChecker::checkModGrubGrub, this)},
+    //        {28, std::bind(&EventChecker::checkModLilo, this)},
+    //        {29, std::bind(&EventChecker::checkAttributePasswd, this)},
+    //        {30, std::bind(&EventChecker::checkAttributeShadow, this)},
+    //        {31, std::bind(&EventChecker::checkAttributeGroup, this)},
+    //        {32, std::bind(&EventChecker::checkAttributeGshadow, this)},
+    //        {33, std::bind(&EventChecker::checkUmaskLogin, this)},
+    //        {34, std::bind(&EventChecker::checkSshBanner, this)},
+    //        {35, std::bind(&EventChecker::checkeNg, this)},
+    //        {36, std::bind(&EventChecker::checkRsyslog, this)},
+    //        {37, std::bind(&EventChecker::checkSyslog, this)},
+    //        {38, std::bind(&EventChecker::checkSyslogNgSafe, this)},
+    //        {39, std::bind(&EventChecker::checkRsyslogSafe, this)},
+    //        {40, std::bind(&EventChecker::checkSyslogSafe, this)},
+    //        {41, std::bind(&EventChecker::checkCron, this)},
+    //        {42, std::bind(&EventChecker::checkSecure, this)},
+    //        {43, std::bind(&EventChecker::checkMessage, this)},
+    //        {44, std::bind(&EventChecker::checkBootLog, this)},
+    //        {45, std::bind(&EventChecker::checkMail, this)},
+    //        {46, std::bind(&EventChecker::checkSpooler, this)},
+    //        {47, std::bind(&EventChecker::checkLocalMessages, this)},
+    //        {48, std::bind(&EventChecker::checkMaillog, this)},
+    //        {49, std::bind(&EventChecker::checkLast, this)},
+    //        {50, std::bind(&EventChecker::checkSuLog, this)},
+    //        {51, std::bind(&EventChecker::checkOpensshConfig, this)},
+    //        {52, std::bind(&EventChecker::checkRunningSnmp, this)},
+    //        {53, std::bind(&EventChecker::checkSnmpConfig, this)},
+    //        {54, std::bind(&EventChecker::checkSshConfig, this)},
+    //        {55, std::bind(&EventChecker::checkTelnetConfig, this)},
+    //        {56, std::bind(&EventChecker::checkRunningFtp, this)},
+    //        {57, std::bind(&EventChecker::checkFtpConfig, this)},
+    //        {58, std::bind(&EventChecker::checkAnonymousFtp, this)},
+    //        {59, std::bind(&EventChecker::checkCmdTimeout, this)},
+    //        {60, std::bind(&EventChecker::checkPasswordBootloader, this)},
+    //        {61, std::bind(&EventChecker::checkCoreDump, this)},
+    //        {62, std::bind(&EventChecker::checkHistSize, this)},
+    //        {63, std::bind(&EventChecker::checkGroupWheel, this)},
+    //        {64, std::bind(&EventChecker::checkInterLogin, this)},
+    //        {65, std::bind(&EventChecker::checkPasswordRepeatlimit, this)},
+    //        {66, std::bind(&EventChecker::checkAuthFailtimes, this)},
+    //        {67, std::bind(&EventChecker::checkMultiIp, this)},
+    //        {68, std::bind(&EventChecker::checkLoginRemoteIp, this)},
+    //        {69, std::bind(&EventChecker::checkAliasesUnnecessary, this)},
+    //        {70, std::bind(&EventChecker::checkPermSuidSgid, this)},
+    //        {71, std::bind(&EventChecker::checkScreenAutolock, this)},
+    //        {72, std::bind(&EventChecker::checkTcpSyncookies, this)},
+    //        {73, std::bind(&EventChecker::checkGroupManage, this)},
+    //        {74, std::bind(&EventChecker::checkRootPathCheck, this)},
+    //        {75, std::bind(&EventChecker::checkCtrlAltDelDisabled, this)},
+    //        {76, std::bind(&EventChecker::checkSysTrustMechanism, this)},
+    //        {77, std::bind(&EventChecker::checkDiskPartitionUsageRate, this)},
+    //        {78, std::bind(&EventChecker::checkPotentialRiskFiles, this)},
+    //        {79, std::bind(&EventChecker::checkUserMinPermission, this)},
+    //        {80, std::bind(&EventChecker::checkPacketForwardFunc, this)},
+    //        {81, std::bind(&EventChecker::checkNtpSyncStatus, this)},
+    //        {82, std::bind(&EventChecker::checkNfsServer, this)},
+    //        {83, std::bind(&EventChecker::checkSshBanner2, this)},
+    //        {84, std::bind(&EventChecker::checkUploadFtp, this)},
+    //        {85, std::bind(&EventChecker::checkFtpBaner, this)},
+    //        {86, std::bind(&EventChecker::checkBinOwner, this)},
+    //        {87, std::bind(&EventChecker::checkTelnetBanner, this)},
+    //        {88, std::bind(&EventChecker::checkFtpDirectory, this)},
+    //        {89, std::bind(&EventChecker::checkKernel_cve_2021_43267, this)}
+    //    };
+    //}
 
     event checkPasswordLifetime() {
         SSHConnectionGuard guard(sshPool);//guard 从 sshPool 获取一个空闲的 SSH 连接
@@ -183,7 +257,7 @@ private:
         e.result = execute_commands(guard.get(), e.command);//guard.get() 获取 ssh_session 对象，在该对象上执行命令。
         e.recommend = "口令生存周期为不大于3个月的时间";
         e.importantLevel = "3";
-
+		e.item_id = 1;// 设置检查项 ID
         // Rest of the implementation...
         // (Similar to original code but for a single event)
         size_t pos = e.result.find_last_not_of('\n');
@@ -234,6 +308,7 @@ private:
         e.result = execute_commands(guard.get(), e.command);
         e.recommend = "口令最小长度不小于8";
         e.importantLevel = "3";
+		e.item_id = 2;
         int num = atoi(e.result.c_str());
         if (e.result.compare(""))
         {
@@ -264,12 +339,14 @@ private:
     event checkPasswordWarnDays() {
         SSHConnectionGuard guard(sshPool);
         event e;
+
         e.description = "检查口令过期前警告天数";
         e.basis = ">=30";
         e.command = "cat /etc/login.defs | grep PASS_WARN_AGE | grep -v ^#| awk '{print $2}' ";
         e.result = execute_commands(guard.get(), e.command);
         e.recommend = "口令过期前应至少提前30天警告";
         e.importantLevel = "3";
+		e.item_id = 3;
         int num = atoi(e.result.c_str());
         if (e.result.compare(""))
         {
@@ -305,6 +382,7 @@ private:
         e.basis = "至少包含1个大写字母、1个小写字母、1个数字、1个特殊字符";
         e.recommend = "密码至少包含1个大写字母、1个小写字母、1个数字、1个特殊字符";
         e.importantLevel = "3";
+		e.item_id = 4;
         //此部分要求不一，检查/etc/pam.d/system-auth和/etc/security/pwquality.conf
         //先检查/etc/pam.d/system-auth
         //将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
@@ -406,6 +484,7 @@ private:
         //e.command = "cat /etc/shadow";
         e.result = execute_commands(guard.get(), e.command);
         e.recommend = "空口令会让攻击者不需要口令进入系统，存在较大风险。应删除空口令账号或者为其添加口令";
+		e.item_id = 5;
 
         if (e.result.compare("") == 0)
         {
@@ -429,8 +508,10 @@ private:
         e.result = execute_commands(guard.get(), e.command);
         e.recommend = "不可设置除了root之外，第二个具有root权限的账号。root之外的用户其UID应为0。";
         e.importantLevel = "2";
+		e.item_id = 6;
         if (e.result.compare("") == 0)
         {
+            e.result= "普通用户的UID全为非0";
             e.IsComply = "true";
         }
         std::cout << "Completed check: " << e.description
@@ -448,6 +529,7 @@ private:
         e.basis = "=027 或 =077";
         e.recommend = "用户权限要求不严格可设置为027，严格可设置为077";
         e.importantLevel = "2";
+		e.item_id = 7;
         //fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
         //将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
         string fileIsExist = "cat /etc/csh.cshrc 2>&1 | grep cat: ";
@@ -491,6 +573,7 @@ private:
         e.basis = "=027 或 =077";
         e.recommend = "用户权限要求不严格可设置为027，严格可设置为077";
         e.importantLevel = "2";
+		e.item_id = 8;
         //fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
         //将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
         string fileIsExist = "cat /etc/bashrc 2>&1 | grep cat: ";
@@ -540,6 +623,7 @@ private:
         e.basis = "=027 或 =077";
         e.recommend = "用户权限要求不严格可设置为027，严格可设置为077";
         e.importantLevel = "2";
+		e.item_id = 9;
         //fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
         //将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
         string fileIsExist = "cat /etc/profile 2>&1 | grep cat: ";
@@ -586,6 +670,7 @@ private:
         e.basis = "<=600";
         e.recommend = "/etc/xinted.conf的权限应该小于等于600";
         e.importantLevel = "2";
+		e.item_id = 10;
         //fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
         //将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
         string fileIsExist = "stat -c %a /etc/xineted.conf 2>&1 | grep stat: ";
@@ -624,6 +709,7 @@ private:
         e.basis = "<=644";
         e.recommend = "/etc/group的权限应该小于等于644";
         e.importantLevel = "2";
+		e.item_id = 11;
         //fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
         //将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
         string fileIsExist = "stat -c %a /etc/group 2>&1 | grep stat: ";
@@ -662,6 +748,7 @@ private:
         e.basis = "<=400";
         e.recommend = "/etc/shadow的权限应该小于等于400";
         e.importantLevel = "2";
+		e.item_id = 12;
         //fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
         //将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
         string fileIsExist = "stat -c %a /etc/shadow 2>&1 | grep stat: ";
@@ -700,6 +787,7 @@ private:
         e.basis = "<=644";
         e.recommend = "/etc/services的权限应该小于等于644";
         e.importantLevel = "2";
+		e.item_id = 13;
         //fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
         //将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
         string fileIsExist = "stat -c %a /etc/services 2>&1 | grep stat: ";
@@ -1341,7 +1429,12 @@ private:
             {
 
                 e.IsComply = "true";
+                e.result = "已设置i属性";
 
+            }
+            else {
+                e.IsComply = "false";
+                e.result = "未设置i属性";
             }
         }
         else
@@ -1361,7 +1454,7 @@ private:
         event e;
         e.importantLevel = "2";
         e.description = "检查/etc/shadow的文件属性";
-        e.basis = "是否设置了i属性";
+        e.basis = "设置i属性";
         e.recommend = "应设置重要文件为i属性（如：chattr +i /etc/shadow），设定文件不能删除、改名、设定链接关系等";
 
         //fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
@@ -1377,9 +1470,13 @@ private:
 
             if (e.result.compare("i") == 0)
             {
-
                 e.IsComply = "true";
+                e.result = "已设置i属性";
 
+            }
+            else {
+                e.IsComply = "false";
+                e.result = "未设置i属性";
             }
         }
         else
@@ -1399,7 +1496,7 @@ private:
         event e;
         e.importantLevel = "2";
         e.description = "检查/etc/group的文件属性";
-        e.basis = "是否设置了i属性";
+        e.basis = "设置i属性";
         e.recommend = "应设置重要文件为i属性（如：chattr +i /etc/group），设定文件不能删除、改名、设定链接关系等";
 
         //fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
@@ -1417,7 +1514,12 @@ private:
             {
 
                 e.IsComply = "true";
+                e.result = "已设置i属性";
 
+            }
+            else {
+                e.IsComply = "false";
+                e.result = "未设置i属性";
             }
         }
         else
@@ -1436,7 +1538,7 @@ private:
         event e;
         e.importantLevel = "2";
         e.description = "检查/etc/gshadow的文件属性";
-        e.basis = "是否设置了i属性";
+        e.basis = "设置i属性";
         e.recommend = "应设置重要文件为i属性（如：chattr +i /etc/gshadow），设定文件不能删除、改名、设定链接关系等";
 
         //fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
@@ -1454,7 +1556,12 @@ private:
             {
 
                 e.IsComply = "true";
+                e.result = "已设置i属性";
 
+            }
+            else {
+                e.IsComply = "false";
+                e.result = "未设置i属性";
             }
         }
         else
@@ -1716,7 +1823,7 @@ private:
         event e;
         e.importantLevel = "1";
         e.description = "检查/var/log/cron日志文件是否other用户不可写";
-        e.basis = "ls -l检查";
+        e.basis = "other用户不可写";
         e.command = "ls -l /var/log/cron";
         e.result = execute_commands(guard.get(), e.command);
         if (e.result == "") {
@@ -1738,7 +1845,7 @@ private:
         event e;
         e.importantLevel = "1";
         e.description = "检查/var/log/secure日志文件是否other用户不可写";
-        e.basis = "ls -l检查";
+        e.basis = "other用户不可写";
         e.command = "ls -l /var/log/secure";
         e.result = execute_commands(guard.get(), e.command);
         if (e.result == "") {
@@ -1759,7 +1866,7 @@ private:
         event e;
         e.importantLevel = "1";
         e.description = "检查/var/log/messages日志文件是否other用户不可写";
-        e.basis = "ls -l检查";
+        e.basis = "other用户不可写";
         e.command = "ls -l /var/log/messages";
         e.result = execute_commands(guard.get(), e.command);
         if (e.result == "") {
@@ -1776,12 +1883,13 @@ private:
     }
 
     //4.3.4 检查/var/log/boot.log日志文件是否other用户不可写
+
     event checkBootLog() {
         SSHConnectionGuard guard(sshPool);
         event e;
         e.importantLevel = "1";
         e.description = "检查/var/log/boot.log日志文件是否other用户不可写";
-        e.basis = "ls -l检查";
+        e.basis = "other用户不可写";
         e.command = "ls -l /var/log/boot.log";
         e.result = execute_commands(guard.get(), e.command);
         if (e.result == "") {
@@ -1789,6 +1897,12 @@ private:
         }
         string command_Iscomply = "ls -l /var/log/boot.log | grep -q \".\\{7\\}[^ w]\" && echo -n true || echo -n false";
         e.IsComply = execute_commands(guard.get(), command_Iscomply);
+        if (e.IsComply == "true") {
+            e.result = "other用户不可写";
+        }
+        else {
+            e.result = "other用户可写";
+        }
         e.recommend = "/var/log/boot.log日志文件other用户不可写";
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
@@ -1802,16 +1916,25 @@ private:
         event e;
         e.importantLevel = "1";
         e.description = "检查/var/log/mail日志文件是否other用户不可写";
-        e.basis = "ls -l检查";
+        e.basis = "other用户不可写";
         e.command = "ls -l /var/log/mail";
         string command = "ls -l /var/log/boot.log";
         e.result = execute_commands(guard.get(), command);
         if (e.result == "") {
             e.result = "没有这个文件";
         }
-        string command_Iscomply = "ls -l /var/log/boot | grep -q \".\\{7\\}[^ w]\" && echo -n true || echo -n false";
-        e.IsComply = execute_commands(guard.get(), command_Iscomply);
-        e.recommend = "/var/log/boot日志文件other用户不可写";
+        else {
+            string command_Iscomply = "ls -l /var/log/boot | grep -q \".\\{7\\}[^ w]\" && echo -n true || echo -n false";
+            e.IsComply = execute_commands(guard.get(), command_Iscomply);
+            if (e.IsComply == "true") {
+                e.result = "other用户不可写";
+            }
+            else {
+                e.result = "other用户可写";
+            }
+            e.recommend = "/var/log/boot日志文件other用户不可写";
+        }
+        
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
             << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
@@ -1824,7 +1947,7 @@ private:
         event e;
         e.importantLevel = "1";
         e.description = "检查/var/log/spooler日志文件是否other用户不可写";
-        e.basis = "ls -l检查";
+        e.basis = "other用户不可写";
         e.command = "ls -l /var/log/spooler";
         e.result = execute_commands(guard.get(), e.command);
         if (e.result == "") {
@@ -1845,7 +1968,7 @@ private:
         event e;
         e.importantLevel = "1";
         e.description = "检查/var/log/localmessages日志文件是否other用户不可写";
-        e.basis = "ls -l检查";
+        e.basis = "other用户不可写";
         e.command = "ls -l /var/log/localmessages";
         e.result = execute_commands(guard.get(), e.command);
         if (e.result == "") {
@@ -1866,7 +1989,7 @@ private:
         event e;
         e.importantLevel = "1";
         e.description = "检查/var/log/maillog日志文件是否other用户不可写";
-        e.basis = "ls -l检查";
+        e.basis = "other用户不可写";
         e.command = "ls -l /var/log/maillog";
         e.result = execute_commands(guard.get(), e.command);
         if (e.result == "") {
@@ -2100,7 +2223,7 @@ private:
         event e;
         e.importantLevel = "2";
         e.description = "检查是否禁止root用户登录ftp";
-        e.basis = "/etc/vsftpd/ftpusers文件中是否包含root用户";
+        e.basis = "/etc/vsftpd/ftpusers文件中包含root用户即为禁止了";
         e.command = "grep '^[^#]*root' /etc/vsftpd/ftpusers";
         if (temp == "true") {
             e.result = "ftp未运行，不用判断";
@@ -2109,9 +2232,11 @@ private:
         else {
             e.result = execute_commands(guard.get(), e.command);
             if (e.result == "") {
+                e.result = "未禁止root用户登录ftp";
                 e.IsComply = "false";
             }
             else {
+                e.result = "已禁止root用户登录ftp";
                 e.IsComply = "true";
             }
         }
@@ -2152,7 +2277,7 @@ private:
         event e;
         e.importantLevel = "3";
         e.description = "检查是否设置命令行界面超时退出";
-        e.basis = "<=600";
+        e.basis = "开启TMOUT且TMOUNT<=600";
         e.recommend = "建议命令行界面超时自动登出时间TMOUT应不大于600s，检查项建议系统管理员根据系统情况自行判断";
 
         //fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
@@ -2180,7 +2305,7 @@ private:
             }
             else
             {
-                e.result = "未开启";
+                e.result = "未开启TMOUT设置";
                 e.recommend = "开启/etc/profile中的TMOUT设置，且TMOUT值应不大于600";
             }
         }
@@ -2202,98 +2327,185 @@ private:
         event e;
         e.importantLevel = "1";
         e.description = "检查是否设置系统引导管理器密码";
-        e.basis = "系统引导管理器grub2或grub或lilo是否设置了密码";
-        e.recommend = "根据引导器不同类型（grub2或grub或lilo），为其设置引导管理器密码。";
-
-        //fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
-        //将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
-        string fileIsExist = "cat /boot/grub/menu.lst 2>&1 | grep cat: ";
-        string command_result2 = "cat /etc/grub.conf 2>&1 | grep cat:";
-        string command_result3 = "cat /boot/grub/grub.cfg 2>&1 | grep cat:";
-
-        fileIsExist = execute_commands(guard.get(), fileIsExist);
-        command_result2 = execute_commands(guard.get(), command_result2);
-        command_result3 = execute_commands(guard.get(), command_result3);
+        e.basis = "系统引导管理器（GRUB2、GRUB 或 LILO）应设置密码";
+        e.recommend = "根据引导器类型（GRUB2、GRUB 或 LILO），为其设置引导管理器密码。";
 
         bool findFile = false;
+        bool passwordFound = false; // 用于跟踪是否找到了密码配置
 
-        if (fileIsExist.compare("") == 0 || command_result2.compare("") == 0 || command_result3.compare("") == 0)
-        {
-            findFile = true;
+        // 1. 检查 GRUB 1
+        string grubFiles[] = { "/boot/grub/menu.lst", "/etc/grub.conf", "/boot/grub/grub.cfg" };
+        for (const auto& file : grubFiles) {
+            string fileCheckCmd = "test -f " + file + " && echo exist || echo not_exist";
+            string fileCheckResult = execute_commands(guard.get(), fileCheckCmd);
 
-            //cout << "系统引导器为grub！" << endl;
-
-            e.command = "echo $grub | grep password | tr -d '\n'";
-            e.result = execute_commands(guard.get(), e.command);
-
-            if (e.result.compare(""))
-            {
-                e.IsComply = "true";
-            }
-
-        }
-
-        if (!findFile)
-        {
-            fileIsExist = "cat /boot/grub2/menu.lst 2>&1 | grep cat: ";
-            command_result2 = "cat /etc/grub2.conf 2>&1 | grep cat:";
-            command_result3 = "cat /boot/grub2/grub2.cfg 2>&1 | grep cat:";
-
-            fileIsExist = execute_commands(guard.get(), fileIsExist);
-            command_result2 = execute_commands(guard.get(), command_result2);
-            command_result3 = execute_commands(guard.get(), command_result3);
-
-            if (fileIsExist.compare("") == 0 || command_result2.compare("") == 0 || command_result3.compare("") == 0)
-            {
+            if (fileCheckResult == "exist") {
                 findFile = true;
 
-                //cout << "系统引导器为grub2！" << endl;
-
-                e.command = "echo $grub2 | grep password | tr -d '\n'";
+                e.command = "grep -E 'password|password_pbkdf2' " + file + " 2>/dev/null";
                 e.result = execute_commands(guard.get(), e.command);
 
-                if (e.result.compare(""))
-                {
+                if (!e.result.empty()) {
                     e.IsComply = "true";
+                    passwordFound = true;
+                    break; // 找到密码后可以提前结束
                 }
-
             }
-
         }
 
-        if (!findFile)
-        {
-            fileIsExist = "cat /etc/lilo.conf 2>&1 | grep cat: ";
-            fileIsExist = execute_commands(guard.get(), fileIsExist);
+        // 2. 检查 GRUB2
+        if (!findFile) {
+            string grub2Files[] = { "/boot/grub2/menu.lst", "/etc/grub2.conf", "/boot/grub2/grub2.cfg" };
+            for (const auto& file : grub2Files) {
+                string fileCheckCmd = "test -f " + file + " && echo exist || echo not_exist";
+                string fileCheckResult = execute_commands(guard.get(), fileCheckCmd);
 
-            if (fileIsExist.compare("") == 0)
-            {
+                if (fileCheckResult == "exist") {
+                    findFile = true;
+
+                    e.command = "grep -E 'password|password_pbkdf2' " + file + " 2>/dev/null";
+                    e.result = execute_commands(guard.get(), e.command);
+
+                    if (!e.result.empty()) {
+                        e.IsComply = "true";
+                        passwordFound = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // 3. 检查 LILO
+        if (!findFile) {
+            string liloFile = "/etc/lilo.conf";
+            string fileCheckCmd = "test -f " + liloFile + " && echo exist || echo not_exist";
+            string fileCheckResult = execute_commands(guard.get(), fileCheckCmd);
+
+            if (fileCheckResult == "exist") {
                 findFile = true;
 
-                //cout << "系统引导器为lilo！" << endl;
-
-                e.command = "echo $lilo | grep password | tr -d '\n'";
+                e.command = "grep -i 'password' " + liloFile + " 2>/dev/null";
                 e.result = execute_commands(guard.get(), e.command);
 
-                if (e.result.compare(""))
-                {
+                if (!e.result.empty()) {
                     e.IsComply = "true";
+                    passwordFound = true;
                 }
-
             }
-
         }
 
-        if (!findFile)
-        {
-            e.result = "未找到配置文件";
+        // 4. 处理各种情况，确保 e.result 不为空
+        if (!findFile) {
+            e.result = "未找到相关配置文件，系统可能使用了其他引导管理器或配置文件已被删除。";
+        }
+        else if (!passwordFound) {
+            e.result = "已找到引导管理器配置文件，但未检测到密码设置，建议配置密码以增强安全性。";
         }
 
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
             << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+
         return e;
     }
+
+    //event checkPasswordBootloader() {
+    //    SSHConnectionGuard guard(sshPool);
+    //    event e;
+    //    e.importantLevel = "1";
+    //    e.description = "检查是否设置系统引导管理器密码";
+    //    e.basis = "系统引导管理器grub2或grub或lilo是否设置了密码";
+    //    e.recommend = "根据引导器不同类型（grub2或grub或lilo），为其设置引导管理器密码。";
+
+    //    //fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
+    //    //将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
+    //    string fileIsExist = "cat /boot/grub/menu.lst 2>&1 | grep cat: ";
+    //    string command_result2 = "cat /etc/grub.conf 2>&1 | grep cat:";
+    //    string command_result3 = "cat /boot/grub/grub.cfg 2>&1 | grep cat:";
+
+    //    fileIsExist = execute_commands(guard.get(), fileIsExist);
+    //    command_result2 = execute_commands(guard.get(), command_result2);
+    //    command_result3 = execute_commands(guard.get(), command_result3);
+
+    //    bool findFile = false;
+
+    //    if (fileIsExist.compare("") == 0 || command_result2.compare("") == 0 || command_result3.compare("") == 0)
+    //    {
+    //        findFile = true;
+
+    //        //cout << "系统引导器为grub！" << endl;
+
+    //        e.command = "echo $grub | grep password | tr -d '\n'";
+    //        e.result = execute_commands(guard.get(), e.command);
+
+    //        if (e.result.compare(""))
+    //        {
+    //            e.IsComply = "true";
+    //        }
+
+    //    }
+
+    //    if (!findFile)
+    //    {
+    //        fileIsExist = "cat /boot/grub2/menu.lst 2>&1 | grep cat: ";
+    //        command_result2 = "cat /etc/grub2.conf 2>&1 | grep cat:";
+    //        command_result3 = "cat /boot/grub2/grub2.cfg 2>&1 | grep cat:";
+
+    //        fileIsExist = execute_commands(guard.get(), fileIsExist);
+    //        command_result2 = execute_commands(guard.get(), command_result2);
+    //        command_result3 = execute_commands(guard.get(), command_result3);
+
+    //        if (fileIsExist.compare("") == 0 || command_result2.compare("") == 0 || command_result3.compare("") == 0)
+    //        {
+    //            findFile = true;
+
+    //            //cout << "系统引导器为grub2！" << endl;
+
+    //            e.command = "echo $grub2 | grep password | tr -d '\n'";
+    //            e.result = execute_commands(guard.get(), e.command);
+
+    //            if (e.result.compare(""))
+    //            {
+    //                e.IsComply = "true";
+    //            }
+
+    //        }
+
+    //    }
+
+    //    if (!findFile)
+    //    {
+    //        fileIsExist = "cat /etc/lilo.conf 2>&1 | grep cat: ";
+    //        fileIsExist = execute_commands(guard.get(), fileIsExist);
+
+    //        if (fileIsExist.compare("") == 0)
+    //        {
+    //            findFile = true;
+
+    //            //cout << "系统引导器为lilo！" << endl;
+
+    //            e.command = "echo $lilo | grep password | tr -d '\n'";
+    //            e.result = execute_commands(guard.get(), e.command);
+
+    //            if (e.result.compare(""))
+    //            {
+    //                e.IsComply = "true";
+    //            }
+
+    //        }
+
+    //    }
+
+    //    if (!findFile)
+    //    {
+    //        e.result = "未找到配置文件";
+    //    }
+
+    //    std::cout << "Completed check: " << e.description
+    //        << " [ThreadID: " << std::this_thread::get_id()
+    //        << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+    //    return e;
+    //}
 
     //6.3检查系统coredump设置
     event checkCoreDump() {
@@ -2301,8 +2513,8 @@ private:
         event e;
         e.importantLevel = "2";
         e.description = "检查系统coredump设置";
-        e.basis = "检查/etc/security/limits.conf是否设置* hard core 0 和 * soft core 0";
-        e.recommend = "检查系统cire dump设置，防止内存状态信息暴露，设置* soft  core、* hard core为0，且注释掉ulimit -S -c 0 > /dev/null 2>&1";
+        e.basis = "在文件/etc/security/limits.conf中配置* hard core 0 和 * soft core 0";
+        e.recommend = "检查系统core dump设置，在文件/etc/security/limits.conf中配置* hard core 0 和 * soft core 0";
 
         //fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
         //将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
@@ -2323,22 +2535,25 @@ private:
             if (e.result.compare("") && command_result2.compare(""))
             {
                 e.IsComply = "true";
+                e.result = "coredump 配置正确:\n" + e.result + "\n" + command_result2;
             }
             else
             {
-                e.result = "未开启";
+                e.result = "文件存在，但 coredump 未正确配置，缺少 `* soft core 0` 或 `* hard core 0`";
             }
         }
 
         if (!findFile)
         {
-            e.result = "未找到配置文件";
+            e.result = "未找到配置文件 `/etc/security/limits.conf`，系统可能未进行 Core Dump 限制。";
         }
+
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
             << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
+
 
     //6.4检查历史命令设置
     event checkHistSize() {
@@ -2346,50 +2561,55 @@ private:
         event e;
         e.importantLevel = "1";
         e.description = "检查历史命令设置";
-        e.basis = "HISTFILESIZE和HISTSIZE的值应<=5";
-        e.recommend = "历史命令文件HISTFILESIZE和HISTSIZE的值应小于等于5";
+        e.basis = "HISTFILESIZE 和 HISTSIZE 的值 <= 5";
+        e.recommend = "历史命令文件 HISTFILESIZE 和 HISTSIZE 的值应小于等于 5";
 
-        //fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
-        //将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
-        string fileIsExist = "cat /etc/profile 2>&1 | grep cat: ";
-        fileIsExist = execute_commands(guard.get(), fileIsExist);
         bool findFile = false;
+        bool correctlyConfigured = false;
 
-        if (fileIsExist.compare("") == 0)
-        {
+        // 检查 /etc/profile 是否存在
+        string fileCheckCmd = "test -f /etc/profile && echo exist || echo not_exist";
+        string fileIsExist = execute_commands(guard.get(), fileCheckCmd);
+
+        if (fileIsExist == "exist") {
             findFile = true;
 
-            e.command = "cat /etc/profile | grep ^HISTSIZE | egrep -v ^\# | awk -F  '=' '{print $2}' | tr -d ' ' | tr -d '\n'";
-            string command_result2 = "cat /etc/profile | grep ^HISTFILESIZE | egrep -v ^\# | awk -F '=' '{print $2}' | tr -d ' ' | tr -d '\n'";
+            // 获取 HISTSIZE 和 HISTFILESIZE 的值
+            e.command = "grep -E '^[^#]*HISTSIZE' /etc/profile | awk -F '=' '{print $2}' | tr -d ' ' | tr -d '\n'";
+            string command_result2 = "grep -E '^[^#]*HISTFILESIZE' /etc/profile | awk -F '=' '{print $2}' | tr -d ' ' | tr -d '\n'";
 
             e.result = execute_commands(guard.get(), e.command);
             command_result2 = execute_commands(guard.get(), command_result2);
 
-
-            if (e.result.compare("") && command_result2.compare(""))
-            {
+            if (!e.result.empty() && !command_result2.empty()) {
                 int num1 = atoi(e.result.c_str());
                 int num2 = atoi(command_result2.c_str());
-                if (num1 <= 5 && num2 <= 5)
-                {
+
+                if (num1 <= 5 && num2 <= 5) {
                     e.IsComply = "true";
+                    correctlyConfigured = true;
+                    e.result = "HISTSIZE 和 HISTFILESIZE 均符合要求（≤5）：\nHISTSIZE=" + e.result + "\nHISTFILESIZE=" + command_result2;
+                }
+                else {
+                    e.result = "HISTSIZE 或 HISTFILESIZE 超出要求值（>5）：\nHISTSIZE=" + e.result + "\nHISTFILESIZE=" + command_result2;
                 }
             }
-            else
-            {
-                e.result = "未开启";
+            else {
+                e.result = "未检测到 HISTSIZE 或 HISTFILESIZE 配置，请检查 /etc/profile 是否正确配置。";
             }
         }
 
-        if (!findFile)
-        {
-            e.result = "未找到配置文件";
+        if (!findFile) {
+            e.result = "未找到配置文件 `/etc/profile`，请检查文件是否存在。";
         }
+
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
             << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+
         return e;
     }
+
 
     //6.5检查是否使用PAM认证模块禁止wheel组之外的用户su为root
     event checkGroupWheel() {
@@ -2397,45 +2617,109 @@ private:
         event e;
         e.importantLevel = "3";
         e.description = "检查是否使用PAM认证模块禁止wheel组之外的用户su为root";
-        e.basis = "检查/etc/pam.d/su文件中，是否存在如下配置: auth  sufficient pam_rootok.so 和 auth  required pam_wheel.so group=wheel";
-        e.recommend = "禁止wheel组外用户使用su命令，提高操作系统的完整性";
+        e.basis = "在 /etc/pam.d/su 文件中配置: \n  auth sufficient pam_rootok.so \n  auth required pam_wheel.so group=wheel";
+        e.recommend = "禁止 wheel 组外用户使用 su 命令，提高操作系统的完整性。";
 
-        //fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
-        //将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
-        string fileIsExist = "cat /etc/pam.d/su 2>&1 | grep cat: ";
-        fileIsExist = execute_commands(guard.get(), fileIsExist);
         bool findFile = false;
+        bool isCompliant = false;
 
-        if (fileIsExist.compare("") == 0)
-        {
+        // 检查 /etc/pam.d/su 是否存在
+        string fileCheckCmd = "test -f /etc/pam.d/su && echo exist || echo not_exist";
+        string fileIsExist = execute_commands(guard.get(), fileCheckCmd);
+        size_t pos = fileIsExist.find_last_not_of('\n');
+        if (pos != string::npos) {
+            // 从开头到最后一个非换行符的字符复制字符串
+            fileIsExist = fileIsExist.substr(0, pos + 1);
+        }
+        else {
+            // 如果没有找到，说明没有换行符，直接复制原始字符串
+            fileIsExist = fileIsExist;
+        }
+
+        std::cout << fileIsExist;
+
+        if (fileIsExist=="exist") {
             findFile = true;
 
+            // 查找 pam_rootok.so 和 pam_wheel.so group=wheel 配置
             e.command = "cat /etc/pam.d/su | grep auth | grep sufficient | grep pam_rootok.so | grep -v ^#";
             string command_result2 = "cat /etc/pam.d/su | grep auth | grep pam_wheel.so | grep group=wheel | grep -v ^#";
 
             e.result = execute_commands(guard.get(), e.command);
             command_result2 = execute_commands(guard.get(), command_result2);
 
-
-            if (e.result.compare("") && command_result2.compare(""))
-            {
+            if (!e.result.empty() && !command_result2.empty()) {
                 e.IsComply = "true";
+                isCompliant = true;
+                e.result = "PAM 配置符合要求：\n" + e.result + "\n" + command_result2;
             }
-            else
-            {
-                e.result = "未开启";
+            else {
+                e.result = "PAM 配置不完整：\n";
+                if (e.result.empty()) {
+                    e.result += "缺少 `auth sufficient pam_rootok.so`\n";
+                }
+                if (command_result2.empty()) {
+                    e.result += "缺少 `auth required pam_wheel.so group=wheel`\n";
+                }
             }
         }
 
-        if (!findFile)
-        {
-            e.result = "未找到配置文件";
+        if (fileIsExist== "not_exist") {
+            e.result = "未找到配置文件 `/etc/pam.d/su`，系统可能未启用 PAM 认证。";
         }
+
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
             << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+
         return e;
     }
+
+
+    //event checkGroupWheel() {
+    //    SSHConnectionGuard guard(sshPool);
+    //    event e;
+    //    e.importantLevel = "3";
+    //    e.description = "检查是否使用PAM认证模块禁止wheel组之外的用户su为root";
+    //    e.basis = "在/etc/pam.d/su文件中配置: auth  sufficient pam_rootok.so 和 auth  required pam_wheel.so group=wheel";
+    //    e.recommend = "禁止wheel组外用户使用su命令，提高操作系统的完整性";
+
+    //    //fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
+    //    //将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
+    //    string fileIsExist = "cat /etc/pam.d/su 2>&1 | grep cat: ";
+    //    fileIsExist = execute_commands(guard.get(), fileIsExist);
+    //    bool findFile = false;
+
+    //    if (fileIsExist.compare("") == 0)
+    //    {
+    //        findFile = true;
+
+    //        e.command = "cat /etc/pam.d/su | grep auth | grep sufficient | grep pam_rootok.so | grep -v ^#";
+    //        string command_result2 = "cat /etc/pam.d/su | grep auth | grep pam_wheel.so | grep group=wheel | grep -v ^#";
+
+    //        e.result = execute_commands(guard.get(), e.command);
+    //        command_result2 = execute_commands(guard.get(), command_result2);
+
+
+    //        if (e.result.compare("") && command_result2.compare(""))
+    //        {
+    //            e.IsComply = "true";
+    //        }
+    //        else
+    //        {
+    //            e.result = "未开启";
+    //        }
+    //    }
+
+    //    if (!findFile)
+    //    {
+    //        e.result = "未找到配置文件";
+    //    }
+    //    std::cout << "Completed check: " << e.description
+    //        << " [ThreadID: " << std::this_thread::get_id()
+    //        << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+    //    return e;
+    //}
 
     //6.6检查是否对系统账户进行登录限制
     event checkInterLogin() {
@@ -2525,13 +2809,14 @@ private:
         event e;
         e.importantLevel = "1";
         e.description = "检查是否关闭绑定多ip功能";
-        e.basis = "/etc/host.conf中multi的开启状态";
+        e.basis = "/etc/host.conf中设置 multi off";
         e.recommend = "应关闭绑定多ip功能，使系统操作责任到人。";
 
         //fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
         //将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
-        string fileIsExist = "cat /etc/host.conf 2>&1 | grep cat: ";
+        string fileIsExist = "cat /etc/host.conf 2>&1 | grep cat: ";//文件存在则不会返回任何内容
         fileIsExist = execute_commands(guard.get(), fileIsExist);
+        std::cout << fileIsExist;
         bool findFile = false;
 
         if (fileIsExist.compare("") == 0)
@@ -2542,15 +2827,19 @@ private:
             e.result = execute_commands(guard.get(), e.command);
 
 
-            if (e.result.compare(""))
+            if (e.result.compare("")!=0)
             {
+                e.result = "已设置关闭绑定多ip功能";
                 e.IsComply = "true";
+            }
+            else {
+                e.result = "未设置关闭绑定多ip功能";
             }
         }
 
         if (!findFile)
         {
-            e.result = "未找到配置文件";
+            e.result = "未设置关闭绑定多ip功能";
         }
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
@@ -2595,17 +2884,21 @@ private:
         event e;
         e.importantLevel = "1";
         e.description = "检查重要文件是否存在suid和sgid权限";
-        e.basis = "重要文件是否存在suid和sgid权限：/usr/bin/chage /usr/bin/gpasswd /usr/bin/wall /usr/bin/chfn /usr/bin/chsh /usr/bin/newgrp /usr/bin/write /usr/sbin/usernetctl /usr/sbin/traceroute /bin/mount /bin/umount /bin/ping /sbin/netreport";
-        e.recommend = "suid管理上有漏洞，易被黑客利用suid来踢拳，来放后门控制linux主机。sgid同样权力过大。对于重要文件建议关闭suid和sgid";
+        e.basis = "重要文件应该不存在suid和sgid权限";
+        e.recommend = "对于重要文件建议关闭suid和sgid";
 
 
         e.command = "find /usr/bin/chage /usr/bin/gpasswd /usr/bin/wall /usr/bin/chfn /usr/bin/chsh /usr/bin/newgrp /usr/bin/write /usr/sbin/usernetctl /usr/sbin/traceroute /bin/mount /bin/umount /bin/ping /sbin/netreport -type f -perm /6000";
         e.result = execute_commands(guard.get(), e.command);
 
 
-        if (e.result.compare("") == 0)
-        {
+        if (e.result.compare("") == 0){
             e.IsComply = "true";
+            e.result = "未发现存在 SUID 或 SGID 权限的文件，符合安全要求。";
+        }
+        else {
+            e.IsComply = "false";
+            e.result = "以下文件存在 SUID 或 SGID 权限，需要检查或移除：\n" + e.result;
         }
 
         std::cout << "Completed check: " << e.description
@@ -2701,7 +2994,7 @@ private:
         if (numm == 0)
         {
             e.IsComply = "true";
-            e.result = "不包含（.和..）的路径,符合基线";
+            e.result = "不包含（.和..）的路径";
         }
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
@@ -2770,17 +3063,18 @@ private:
         event e;
         e.importantLevel = "1";
         e.description = "检查系统磁盘分区使用率";
-        e.basis = "<=80";
+        e.basis = "系统磁盘分区使用率均<=80%";
 
         e.command = "df -h | awk 'NR>1 {sub(/%/,\"\",$5); if ($5+0 > 80) print $5 \" % \" \" \" $6}'";
         e.recommend = "磁盘动态分区空间不足，建议管理员扩充磁盘容量。命令：df - h";
 
         e.result = execute_commands(guard.get(), e.command);
         if (e.result == "") {
-            e.result = "系统磁盘分区使用率都<=80,符合基线";
+            e.result = "系统磁盘分区使用率均<=80%,符合基线";
             e.IsComply = "true";
         }
         else {
+            e.result = "系统磁盘分区使用率存在>80%的情况";
             e.IsComply = "false";
         }
         std::cout << "Completed check: " << e.description
@@ -2802,7 +3096,7 @@ private:
 
         e.result = execute_commands(guard.get(), e.command);
         if (e.result == "") {
-            e.result = "已删除潜在危险文件，符合基线";
+            e.result = "已删除潜在危险文件";
             e.IsComply = "true";
         }
         else {
@@ -2834,6 +3128,7 @@ private:
             e.IsComply = "true";
         }
         else {
+            e.result = "存在未配置用户最小权限："+ e.result;
             e.IsComply = "false";
         }
         std::cout << "Completed check: " << e.description
@@ -2847,7 +3142,7 @@ private:
         SSHConnectionGuard guard(sshPool);
         event e;
         e.importantLevel = "1";
-        e.description = "对检查是否关闭数据包转发功能";
+        e.description = "检查是否关闭数据包转发功能";
         e.basis = "对于不做路由功能的系统，应该关闭数据包转发功能";
 
         e.command = "cat /proc/sys/net/ipv4/ip_forward";
@@ -2894,17 +3189,17 @@ private:
         e.result = execute_commands(guard.get(), e.command);
 
         if (e.result.find("no ntp") != std::string::npos) {
-            e.result = "未开启NTP服务，不符合基线";
+            e.result = "未开启NTP服务";
             e.recommend = "开启ntp服务： redhat为：/etc/init.d/ntpd start ；suse9为：/etc/init.d/xntpd start ；suse10,11为：/etc/init.d/ntp start。";
             e.IsComply = "false";
         }
         else if (e.result.find("no server") != std::string::npos) {
-            e.result = "未配置NTP服务器地址，不符合基线";
+            e.result = "未配置NTP服务器地址";
             e.recommend = "编辑ntp的配置文件： #vi / etc / ntp.conf,配置：server IP地址（提供ntp服务的机器）,如：server 192.168.1.1 ";
             e.IsComply = "false";
         }
         else {
-            e.result = "已配置NTP服务器地址，符合基线";
+            e.result = "已配置NTP服务器地址";
             e.IsComply = "true";
         }
 
@@ -2928,17 +3223,17 @@ private:
         e.recommend = "停止NFS服务或限制能够访问NFS服务的IP范围";
 
         if (e.result.find("no nfs") != std::string::npos) {
-            e.result = "没有NFS服务在运行，符合基线";
+            e.result = "没有NFS服务在运行";
             e.recommend = "停止NFS服务或限制能够访问NFS服务的IP范围";
             e.IsComply = "true";
         }
         else if (e.result.find("no ip limitation") != std::string::npos) {
-            e.result = "NFS服务在运行，但没有配置任何IP访问限制规则，不符合基线";
+            e.result = "NFS服务在运行，但没有配置任何IP访问限制规则";
             e.recommend = "限制能够访问NFS服务的IP范围： 编辑文件：vi /etc/hosts.allow 增加一行:portmap: 允许访问的IP。或停止nfs服务： Suse系统：/etc/init.d/nfsserver stop ；Redhat系统：/etc/init.d/nfs stop";
             e.IsComply = "false";
         }
         else {
-            e.result = "已开启NFS服务并限制能够访问NFS服务的IP范围，符合基线";
+            e.result = "已开启NFS服务并限制能够访问NFS服务的IP范围";
             e.IsComply = "true";
         }
         std::cout << "Completed check: " << e.description
@@ -2962,7 +3257,7 @@ private:
 
         e.result = execute_commands(guard.get(), e.command);
         if (e.result == "") {
-            e.result = "未设置ssh成功登陆后Banner，不符合基线";
+            e.result = "未设置ssh成功登陆后Banner";
             e.recommend = "为了保证信息安全的抗抵赖性，需要设置ssh成功登录后Banner：修改文件/etc/motd的内容，如没有该文件，则创建它。 #echo \"Login success.All activity will be monitored and reported \" > /etc/motd根据实际需要修改该文件的内容";
             e.IsComply = "false";
         }
@@ -2981,7 +3276,7 @@ private:
         event e;
         e.importantLevel = "1";
         e.description = "检查FTP用户上传的文件所具有的权限";
-        e.basis = "检查是否允许上传和上传权限设置正确";
+        e.basis = "检查是否安装vsftpd或者pure-ftpd，且上传权限设置正确";
         string type_os = execute_commands(guard.get(), "command -v apt >/dev/null 2>&1 && echo \"Debian\" || (command -v yum >/dev/null 2>&1 && echo \"RPM\" || echo \"Unknown\")");
         if (type_os == "RPM") {
             soft_ware = execute_commands(guard.get(), rpm_command);
@@ -3026,7 +3321,7 @@ private:
             e.command = "None";
             e.result = "未安装vsftpd或者pure-ftpd";
             e.IsComply = "false";
-            e.recommend = "要安装vsftpd或者pure-ftpd";
+            e.recommend = "要安装vsftpd或者pure-ftpd并设置上传权限";
 
         }
         std::cout << "Completed check: " << e.description
@@ -3083,12 +3378,12 @@ private:
         SSHConnectionGuard guard(sshPool);
         event e;
         e.importantLevel = "1";
-        e.description = "为了保证信息安全的可靠性，需要减产可执行文件的拥有者属性";
+        e.description = "为了保证信息安全的可靠性，需要检查可执行文件的拥有者属性";
         e.basis = "所有含有“s”属性的文件，把不必要的“s”属性去掉，或者把不用的直接删除。";
         e.command = "find /usr/bin -type f \( -perm -04000 -o -perm -02000 \) -exec ls -lg {} \; ";
-        e.result = "自行判断";
+        e.result = "手动检查";
         e.IsComply = "false";
-        e.recommend = "减产可执行文件的拥有者属性";
+        e.recommend = "s属性在运行时可以获得拥有者的权限，所以为了安全需要，需要做出修改";
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
             << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
@@ -3104,7 +3399,7 @@ private:
         e.basis = "请手动检查修改文件/etc/issue 和/etc/issue.net中的内容";
         e.recommend = "请手动检查修改文件/etc/issue 和/etc/issue.net中的内容";
         e.IsComply = "false";
-        e.result = "自行判断";
+        e.result = "手动检查";
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
             << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";

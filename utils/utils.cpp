@@ -11,21 +11,50 @@ std::unordered_map<std::string, std::vector<std::string>> rules = {
 
 // 创建哈希表，键是漏洞类型，值是关键字列表
 std::unordered_map<std::string, std::vector<std::string>> vulnTypes = {
-    {"Buffer Overflow", {"Buffer Overflow", "Stack Overflow", "Heap Overflow", "Out-of-Bounds Write", "Out-of-Bounds Read"}},
-    {"File Upload Vulnerability", {"Arbitrary File Upload", "Unrestricted File Upload", "File Inclusion", "Remote File Execution"}},
-    {"Code Injection", {"Command Injection", "Code Injection", "Arbitrary Code Execution"}},
-    {"SQL Injection", {"SQL Injection", "SQLi", "Crafted SQL Query"}},
-    {"Cross-Site Scripting (XSS)", {"Cross-Site Scripting", "XSS", "Script Injection", "Malicious Input"}},
-    {"Privilege Escalation", {"Privilege Escalation", "Elevation of Privileges", "Unauthorized Access"}},
-    {"Denial of Service (DoS)", {"Denial of Service", "DoS", "Crash", "Infinite Loop", "Resource Exhaustion"}},
-    {"Authentication Bypass", {"Authentication Bypass", "Unauthorized Access", "Token Manipulation"}},
-    {"Path Traversal", {"Path Traversal", "Directory Traversal", "File Inclusion"}},
-    {"Information Disclosure", {"Information Disclosure", "Data Leakage", "Sensitive Information Exposure"}},
-    {"Cross-Site Request Forgery (CSRF)", {"CSRF", "Cross-Site Request Forgery", "Unauthorized Actions"}},
-    {"XML External Entity (XXE)", {"XXE", "XML External Entity", "XML Parsing"}},
-    {"Remote Code Execution (RCE)", {"Remote Code Execution", "RCE", "Arbitrary Code Execution"}},
-    {"Session Hijacking", {"Session Hijacking", "Session Fixation", "Token Theft"}},
-    {"Unauthorized Access", {"Unauthorized Access", "Access Control Bypass", "Security Restriction Bypass"}}
+    {"缓冲区溢出", {"Buffer Overflow", "Stack Overflow", "Heap Overflow", "Out-of-Bounds Write", "Out-of-Bounds Read",
+                    "缓冲区溢出", "栈溢出", "堆溢出", "越界写", "越界读"}},
+
+    {"文件上传漏洞", {"Arbitrary File Upload", "Unrestricted File Upload", "File Inclusion", "Remote File Execution",
+                      "任意文件上传", "不受限制的文件上传", "文件包含", "远程文件执行", "文件上传", "PUTs enabled", "readonly parameter", "JSP file upload"}},
+
+    {"代码注入", {"Command Injection", "Code Injection", "Arbitrary Code Execution",
+                  "命令注入", "代码注入", "任意代码执行"}},
+
+    {"SQL 注入", {"SQL Injection", "SQLi", "Crafted SQL Query",
+                  "SQL注入", "SQLi", "构造SQL查询"}},
+
+    {"跨站脚本攻击 (XSS)", {"Cross-Site Scripting", "XSS", "Script Injection", "Malicious Input",
+                            "跨站脚本攻击", "XSS", "脚本注入", "恶意输入"}},
+
+    {"权限提升", {"Privilege Escalation", "Elevation of Privileges", "Unauthorized Access",
+                  "权限提升", "权限升级", "未经授权的访问"}},
+
+    {"拒绝服务攻击 (DoS)", {"Denial of Service", "DoS", "Crash", "Infinite Loop", "Resource Exhaustion",
+                            "拒绝服务", "DoS", "程序崩溃", "死循环", "资源耗尽"}},
+
+    {"身份验证绕过", {"Authentication Bypass", "Unauthorized Access", "Token Manipulation",
+                      "身份验证绕过", "未经授权的访问", "令牌篡改"}},
+
+    {"路径遍历", {"Path Traversal", "Directory Traversal", "File Inclusion",
+                  "路径遍历", "目录遍历", "文件包含"}},
+
+    {"信息泄露", {"Information Disclosure", "Data Leakage", "Sensitive Information Exposure",
+                  "信息泄露", "数据泄露", "敏感信息暴露"}},
+
+    {"跨站请求伪造 (CSRF)", {"CSRF", "Cross-Site Request Forgery", "Unauthorized Actions",
+                              "跨站请求伪造", "CSRF", "未经授权的操作"}},
+
+    {"XML 外部实体注入 (XXE)", {"XXE", "XML External Entity", "XML Parsing",
+                                 "XML外部实体注入", "XXE", "XML解析漏洞"}},
+
+    {"远程代码执行 (RCE)", {"Remote Code Execution", "RCE", "Arbitrary Code Execution",
+                            "远程代码执行", "RCE", "任意代码执行","服务器执行"}},
+
+    {"会话劫持", {"Session Hijacking", "Session Fixation", "Token Theft",
+                  "会话劫持", "会话固定", "令牌窃取"}},
+
+    {"未经授权的访问", {"Unauthorized Access", "Access Control Bypass", "Security Restriction Bypass",
+                        "未经授权的访问", "访问控制绕过", "安全限制绕过"}}
 };
 
 PyObject* global_importlib = nullptr; // 定义
@@ -271,7 +300,7 @@ std::string toLower(const std::string& str) {
     std::transform(lowerStr.begin(), lowerStr.end(), lowerStr.begin(), ::tolower);
     return lowerStr;
 }
-// 匹配服务类型
+// 匹配漏洞类型
 std::string matchVulnType(const std::string& vulnSummary, const std::unordered_map<std::string, std::vector<std::string>>& rules) {
     if (vulnSummary.empty()) {
         return "未知类型"; // 或者返回一个特殊标识，表示输入无效

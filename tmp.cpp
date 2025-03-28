@@ -1,161 +1,161 @@
-//»ñÈ¡ip¶ÔÓ¦µÄScanHostResult
-ScanHostResult DatabaseHandler::getScanHostResult(const std::string& ip, ConnectionPool& pool) {
-    ScanHostResult oldScanResult;
-    oldScanResult.ip = ip;
-
-    try {
-        auto conn = pool.getConnection();  // »ñÈ¡Á¬½Ó
-
-        // ²éÑ¯ scan_host_result ±í»ñÈ¡»ù±¾ĞÅÏ¢
-        mysqlx::SqlResult result = conn->sql("SELECT id, scan_time, alive, expire_time FROM scan_host_result WHERE ip = ?")
-            .bind(ip).execute();
-        mysqlx::Row row = result.fetchOne();
-        if (!row) {
-            std::cerr << "Î´ÕÒµ½¶ÔÓ¦ IP µÄÖ÷»ú¼ÇÂ¼£º" << ip << std::endl;
-            return oldScanResult;
-        }
-        int shr_id = row[0];  // »ñÈ¡Ö÷»úID
-        oldScanResult.scan_time = row[1].get<std::string>();
-
-        // ²éÑ¯ os_info ±í»ñÈ¡²Ù×÷ÏµÍ³ĞÅÏ¢
-        result = conn->sql("SELECT os_version FROM os_info WHERE shr_id = ?")
-            .bind(shr_id).execute();
-        while (mysqlx::Row osRow = result.fetchOne()) {
-            oldScanResult.os_matches.push_back(osRow[0].get<std::string>());
-        }
-
-        // ²éÑ¯ open_ports ±í»ñÈ¡¶Ë¿ÚĞÅÏ¢
-        result = conn->sql("SELECT port, protocol, status, service_name, product, version, software_type FROM open_ports WHERE shr_id = ?")
-            .bind(shr_id).execute();
-        while (mysqlx::Row portRow = result.fetchOne()) {
-            ScanResult portResult;
-            portResult.portId = std::to_string(portRow[0].get<int>());
-            portResult.protocol = portRow[1].get<std::string>();
-            portResult.status = portRow[2].get<std::string>();
-            portResult.service_name = portRow[3].get<std::string>();
-            portResult.product = portRow[4].get<std::string>();
-            portResult.version = portRow[5].get<std::string>();
-            portResult.softwareType = portRow[6].get<std::string>();
-            oldScanResult.ports.push_back(portResult);
-        }
-
-        // ²éÑ¯ host_cpe ±í»ñÈ¡ CPE ĞÅÏ¢
-        result = conn->sql("SELECT cpe FROM host_cpe WHERE shr_id = ?")
-            .bind(shr_id).execute();
-        while (mysqlx::Row cpeRow = result.fetchOne()) {
-            std::string cpe = cpeRow[0].get<std::string>();
-            // ÕâÀïĞèÒª¸ù¾İ CPE ½øÒ»²½²éÑ¯Ïà¹ØµÄ Vuln ĞÅÏ¢£¬¿É¸ù¾İÊµ¼ÊÇé¿öÊµÏÖ
-            // Ä¿Ç°ÏÈ¼òµ¥´¦Àí£¬²»Ìî³ä cpes ºÍ vuln_result
-        }
-
-    }
-    catch (const mysqlx::Error& err) {
-        std::cerr << "Êı¾İ¿â´íÎó: " << err.what() << std::endl;
-    }
-    catch (std::exception& ex) {
-        std::cerr << "Òì³£: " << ex.what() << std::endl;
-    }
-
-    return oldScanResult;
-}
-
-// ´Ó Redis ¶ÓÁĞ»ñÈ¡ÈÎÎñ
-std::string pop_task_from_redis(redisContext* redis_client) {
-
-    const int timeout_seconds = 1;  // ÉèÖÃ³¬Ê±Ê±¼ä£¬µ¥Î»Ãë
-
-    // »ñÈ¡¶ÓÁĞ³¤¶È²¢´òÓ¡
-    redisReply* length_reply = (redisReply*)redisCommand(redis_client, "LLEN POC_TASK_QUEUE");
-    if (length_reply == nullptr) {
-        console->error("[pop_task_from_redis] Failed to get queue length: {}", redis_client->errstr);
-        system_logger->error("[pop_task_from_redis] Failed to get queue length: {}", redis_client->errstr);
-        return "";
-    }
-    long long queue_length = length_reply->integer;
-    console->info("[pop_task_from_redis] Current queue length: {}", queue_length);
-    freeReplyObject(length_reply);
-
-    // ¼ì²é¶ÓÁĞÊÇ·ñÎª¿Õ
-    if (queue_length == 0) {
-        console->info("[pop_task_from_redis] Queue is empty, no task to pop.");
-        return "";
-    }
-
-
-    // ³¢ÊÔµ¯³öÈÎÎñ
-    redisReply* reply = (redisReply*)redisCommand(redis_client, "BRPOP POC_TASK_QUEUE %d", timeout_seconds);
-    if (reply == nullptr) {
-        console->error("[pop_task_from_redis] Redis command failed: {}", redis_client->errstr);
-        system_logger->error("[pop_task_from_redis] Redis command failed: {}", redis_client->errstr);
-        return "";
-    }
-
-    // ¼ì²é·µ»ØµÄÊı¾İÊÇ·ñÎª¿Õ
-    if (reply->type == REDIS_REPLY_NIL) {
-        console->info("[pop_task_from_redis] No task data found (RPOP returned NIL).");
-        freeReplyObject(reply);
-        return "";
-    }
-
-    // ÕâÀïĞèÒª¶îÍâ¼ì²é reply->str ÊÇ·ñÎª nullptr
-    if (reply->type == REDIS_REPLY_STRING && reply->str == nullptr) {
-        console->error("[pop_task_from_redis] Redis reply string is null although type is REDIS_REPLY_STRING.");
-        system_logger->error("[pop_task_from_redis] Redis reply string is null although type is REDIS_REPLY_STRING.");
-        freeReplyObject(reply);
-        return "";
-    }
-
-    cout << "pop_task : " << (reply->str == nullptr) << endl;
-
-    // ÔÙ´Î¼ì²é reply->str ÊÇ·ñÎª nullptr
-    if (reply->str == nullptr) {
-        console->error("[pop_task_from_redis] Redis reply string is null, returning empty string.");
-        system_logger->error("[pop_task_from_redis] Redis reply string is null, returning empty string.");
-        freeReplyObject(reply);
-        return "";
-    }
-
-    // Êä³öµ÷ÊÔĞÅÏ¢£º´òÓ¡·µ»ØµÄÈÎÎñÊı¾İ
-    console->info("[pop_task_from_redis] Popped task data: {}", reply->str);
-
-    // »ñÈ¡ÈÎÎñÊı¾İ²¢ÊÍ·Å Redis »Ø¸´¶ÔÏó
-    std::string task_data(reply->str);
-    freeReplyObject(reply);
-
-    return task_data;
-
-
-    /* ¾É°æ£º²âÊÔ¹ı
-    if (reply->type == REDIS_REPLY_STRING) {
-        std::string task_data = reply->str;
-        console->info("[pop_task_from_redis] Task data: {}", task_data);
-        freeReplyObject(reply);
-        return task_data;
-    }
-    else {
-        console->info("[pop_task_from_redis] No task data found (empty response).");;
-        freeReplyObject(reply);
-        return "";
-    }*/
-}
-
-
-// µÈ´ıËùÓĞ×Ó½ø³ÌÍê³É
-for (pid_t pid : child_pids) {
-    int status;
-    pid_t terminated_pid = waitpid(pid, &status, 0);
-    if (terminated_pid > 0) {
-        if (WIFEXITED(status)) {
-            system_logger->info("[Parent Process] Child process with PID: {} exited normally with status: {}", terminated_pid, WEXITSTATUS(status));
-            console->debug("[Parent Process] Child process with PID: {} exited normally with status: {}", terminated_pid, WEXITSTATUS(status));
-        }
-        else if (WIFSIGNALED(status)) {
-            console->debug("[Parent Process] Child process with PID: {} was terminated by signal: {}", terminated_pid, WTERMSIG(status));
-        }
-    }
-    else {
-        console->error("[Parent Process] Failed to wait for child process with PID: {}", pid);
-        system_logger->error("[Parent Process] Failed to wait for child process with PID: {}", pid);
-    }
-}
-
+ï»¿////è·å–ipå¯¹åº”çš„ScanHostResult
+//ScanHostResult DatabaseHandler::getScanHostResult(const std::string& ip, ConnectionPool& pool) {
+//    ScanHostResult oldScanResult;
+//    oldScanResult.ip = ip;
+//
+//    try {
+//        auto conn = pool.getConnection();  // è·å–è¿æ¥
+//
+//        // æŸ¥è¯¢ scan_host_result è¡¨è·å–åŸºæœ¬ä¿¡æ¯
+//        mysqlx::SqlResult result = conn->sql("SELECT id, scan_time, alive, expire_time FROM scan_host_result WHERE ip = ?")
+//            .bind(ip).execute();
+//        mysqlx::Row row = result.fetchOne();
+//        if (!row) {
+//            std::cerr << "æœªæ‰¾åˆ°å¯¹åº” IP çš„ä¸»æœºè®°å½•ï¼š" << ip << std::endl;
+//            return oldScanResult;
+//        }
+//        int shr_id = row[0];  // è·å–ä¸»æœºID
+//        oldScanResult.scan_time = row[1].get<std::string>();
+//
+//        // æŸ¥è¯¢ os_info è¡¨è·å–æ“ä½œç³»ç»Ÿä¿¡æ¯
+//        result = conn->sql("SELECT os_version FROM os_info WHERE shr_id = ?")
+//            .bind(shr_id).execute();
+//        while (mysqlx::Row osRow = result.fetchOne()) {
+//            oldScanResult.os_matches.push_back(osRow[0].get<std::string>());
+//        }
+//
+//        // æŸ¥è¯¢ open_ports è¡¨è·å–ç«¯å£ä¿¡æ¯
+//        result = conn->sql("SELECT port, protocol, status, service_name, product, version, software_type FROM open_ports WHERE shr_id = ?")
+//            .bind(shr_id).execute();
+//        while (mysqlx::Row portRow = result.fetchOne()) {
+//            ScanResult portResult;
+//            portResult.portId = std::to_string(portRow[0].get<int>());
+//            portResult.protocol = portRow[1].get<std::string>();
+//            portResult.status = portRow[2].get<std::string>();
+//            portResult.service_name = portRow[3].get<std::string>();
+//            portResult.product = portRow[4].get<std::string>();
+//            portResult.version = portRow[5].get<std::string>();
+//            portResult.softwareType = portRow[6].get<std::string>();
+//            oldScanResult.ports.push_back(portResult);
+//        }
+//
+//        // æŸ¥è¯¢ host_cpe è¡¨è·å– CPE ä¿¡æ¯
+//        result = conn->sql("SELECT cpe FROM host_cpe WHERE shr_id = ?")
+//            .bind(shr_id).execute();
+//        while (mysqlx::Row cpeRow = result.fetchOne()) {
+//            std::string cpe = cpeRow[0].get<std::string>();
+//            // è¿™é‡Œéœ€è¦æ ¹æ® CPE è¿›ä¸€æ­¥æŸ¥è¯¢ç›¸å…³çš„ Vuln ä¿¡æ¯ï¼Œå¯æ ¹æ®å®é™…æƒ…å†µå®ç°
+//            // ç›®å‰å…ˆç®€å•å¤„ç†ï¼Œä¸å¡«å…… cpes å’Œ vuln_result
+//        }
+//
+//    }
+//    catch (const mysqlx::Error& err) {
+//        std::cerr << "æ•°æ®åº“é”™è¯¯: " << err.what() << std::endl;
+//    }
+//    catch (std::exception& ex) {
+//        std::cerr << "å¼‚å¸¸: " << ex.what() << std::endl;
+//    }
+//
+//    return oldScanResult;
+//}
+//
+//// ä» Redis é˜Ÿåˆ—è·å–ä»»åŠ¡
+//std::string pop_task_from_redis(redisContext* redis_client) {
+//
+//    const int timeout_seconds = 1;  // è®¾ç½®è¶…æ—¶æ—¶é—´ï¼Œå•ä½ç§’
+//
+//    // è·å–é˜Ÿåˆ—é•¿åº¦å¹¶æ‰“å°
+//    redisReply* length_reply = (redisReply*)redisCommand(redis_client, "LLEN POC_TASK_QUEUE");
+//    if (length_reply == nullptr) {
+//        console->error("[pop_task_from_redis] Failed to get queue length: {}", redis_client->errstr);
+//        system_logger->error("[pop_task_from_redis] Failed to get queue length: {}", redis_client->errstr);
+//        return "";
+//    }
+//    long long queue_length = length_reply->integer;
+//    console->info("[pop_task_from_redis] Current queue length: {}", queue_length);
+//    freeReplyObject(length_reply);
+//
+//    // æ£€æŸ¥é˜Ÿåˆ—æ˜¯å¦ä¸ºç©º
+//    if (queue_length == 0) {
+//        console->info("[pop_task_from_redis] Queue is empty, no task to pop.");
+//        return "";
+//    }
+//
+//
+//    // å°è¯•å¼¹å‡ºä»»åŠ¡
+//    redisReply* reply = (redisReply*)redisCommand(redis_client, "BRPOP POC_TASK_QUEUE %d", timeout_seconds);
+//    if (reply == nullptr) {
+//        console->error("[pop_task_from_redis] Redis command failed: {}", redis_client->errstr);
+//        system_logger->error("[pop_task_from_redis] Redis command failed: {}", redis_client->errstr);
+//        return "";
+//    }
+//
+//    // æ£€æŸ¥è¿”å›çš„æ•°æ®æ˜¯å¦ä¸ºç©º
+//    if (reply->type == REDIS_REPLY_NIL) {
+//        console->info("[pop_task_from_redis] No task data found (RPOP returned NIL).");
+//        freeReplyObject(reply);
+//        return "";
+//    }
+//
+//    // è¿™é‡Œéœ€è¦é¢å¤–æ£€æŸ¥ reply->str æ˜¯å¦ä¸º nullptr
+//    if (reply->type == REDIS_REPLY_STRING && reply->str == nullptr) {
+//        console->error("[pop_task_from_redis] Redis reply string is null although type is REDIS_REPLY_STRING.");
+//        system_logger->error("[pop_task_from_redis] Redis reply string is null although type is REDIS_REPLY_STRING.");
+//        freeReplyObject(reply);
+//        return "";
+//    }
+//
+//    cout << "pop_task : " << (reply->str == nullptr) << endl;
+//
+//    // å†æ¬¡æ£€æŸ¥ reply->str æ˜¯å¦ä¸º nullptr
+//    if (reply->str == nullptr) {
+//        console->error("[pop_task_from_redis] Redis reply string is null, returning empty string.");
+//        system_logger->error("[pop_task_from_redis] Redis reply string is null, returning empty string.");
+//        freeReplyObject(reply);
+//        return "";
+//    }
+//
+//    // è¾“å‡ºè°ƒè¯•ä¿¡æ¯ï¼šæ‰“å°è¿”å›çš„ä»»åŠ¡æ•°æ®
+//    console->info("[pop_task_from_redis] Popped task data: {}", reply->str);
+//
+//    // è·å–ä»»åŠ¡æ•°æ®å¹¶é‡Šæ”¾ Redis å›å¤å¯¹è±¡
+//    std::string task_data(reply->str);
+//    freeReplyObject(reply);
+//
+//    return task_data;
+//
+//
+//    /* æ—§ç‰ˆï¼šæµ‹è¯•è¿‡
+//    if (reply->type == REDIS_REPLY_STRING) {
+//        std::string task_data = reply->str;
+//        console->info("[pop_task_from_redis] Task data: {}", task_data);
+//        freeReplyObject(reply);
+//        return task_data;
+//    }
+//    else {
+//        console->info("[pop_task_from_redis] No task data found (empty response).");;
+//        freeReplyObject(reply);
+//        return "";
+//    }*/
+//}
+//
+//
+//// ç­‰å¾…æ‰€æœ‰å­è¿›ç¨‹å®Œæˆ
+//for (pid_t pid : child_pids) {
+//    int status;
+//    pid_t terminated_pid = waitpid(pid, &status, 0);
+//    if (terminated_pid > 0) {
+//        if (WIFEXITED(status)) {
+//            system_logger->info("[Parent Process] Child process with PID: {} exited normally with status: {}", terminated_pid, WEXITSTATUS(status));
+//            console->debug("[Parent Process] Child process with PID: {} exited normally with status: {}", terminated_pid, WEXITSTATUS(status));
+//        }
+//        else if (WIFSIGNALED(status)) {
+//            console->debug("[Parent Process] Child process with PID: {} was terminated by signal: {}", terminated_pid, WTERMSIG(status));
+//        }
+//    }
+//    else {
+//        console->error("[Parent Process] Failed to wait for child process with PID: {}", pid);
+//        system_logger->error("[Parent Process] Failed to wait for child process with PID: {}", pid);
+//    }
+//}
+//
