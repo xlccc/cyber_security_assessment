@@ -22,7 +22,8 @@ ServerManager::ServerManager()
     dbManager(CONFIG.getPocDatabasePath())    // 原有的 dbManager 初始化
 {
 
-    utility::string_t address = _XPLATSTR("http://192.168.136.128:8081/");
+    utility::string_t address = utility::conversions::to_string_t(CONFIG.getServerUrl());
+    //utility::string_t address = _XPLATSTR("http://192.168.136.128:8081/");
     uri_builder uri(address);
     auto addr = uri.to_uri().to_string();
     listener = std::make_unique<http_listener>(addr);
@@ -35,13 +36,20 @@ ServerManager::ServerManager()
 
     // 检查并创建临时文件
     struct stat buffer;
-    if (stat(TEMP_FILENAME.c_str(), &buffer) != 0) {
-        std::ofstream temp_file(TEMP_FILENAME, std::ios::binary);
+    if (stat(CONFIG.getPocTempFile().c_str(), &buffer) != 0) {
+        std::ofstream temp_file(CONFIG.getPocTempFile(), std::ios::binary);
         if (!temp_file.is_open()) {
             throw std::runtime_error("Failed to create temporary file");
         }
         temp_file.close();
     }
+    //if (stat(TEMP_FILENAME.c_str(), &buffer) != 0) {
+    //    std::ofstream temp_file(TEMP_FILENAME, std::ios::binary);
+    //    if (!temp_file.is_open()) {
+    //        throw std::runtime_error("Failed to create temporary file");
+    //    }
+    //    temp_file.close();
+    //}
 
 }
 
@@ -186,14 +194,14 @@ void ServerManager::handle_request(http_request request) {
 
 void ServerManager::redis_get_scan(http_request request) {
     
-    std::cout << check_redis_unauthorized("root","12341234","12341234","10.9.130.37") << std::endl;
-    std::cout << check_pgsql_unauthorized("root", "12341234","postgres","12341234" ,"10.9.130.37","5432" ) << std::endl;
+    std::cout << check_redis_unauthorized("root", "12341234", "12341234", CONFIG.getServerIp()) << std::endl;
+    std::cout << check_pgsql_unauthorized("root", "12341234", "postgres", "12341234", CONFIG.getServerIp()) << std::endl;
     request.reply(web::http::status_codes::OK, "result");
 }
 
 void ServerManager::handle_get_test(http_request request)
 {
-    std::string ip = "10.9.130.37";
+    std::string ip = CONFIG.getServerIp();
     ScanHostResult result = dbHandler_.getScanHostResult(ip, pool);
 
     // 打印结果
@@ -779,7 +787,7 @@ void ServerManager::handle_post_insert_data(http_request request) {
 
         // 解析表单字段
         std::string cve_id, vul_name, type, description, affected_infra, script_type, mode, edit_filename, filename, poc_content;
-        std::ifstream temp_file(TEMP_FILENAME, std::ios::binary);
+        std::ifstream temp_file(CONFIG.getPocTempFile(), std::ios::binary);
         std::string body((std::istreambuf_iterator<char>(temp_file)), std::istreambuf_iterator<char>());
         temp_file.close();
 
@@ -835,7 +843,7 @@ void ServerManager::handle_post_insert_data(http_request request) {
         // 编辑逻辑
         if (mode == "edit") {
             if (!edit_filename.empty()) {
-                std::string full_file_path = POC_DIRECTORY + edit_filename;
+                std::string full_file_path = CONFIG.getPocDirectory() + edit_filename;
 
                 // 检查文件是否已经存在
                 std::ifstream infile(full_file_path);
@@ -1062,7 +1070,7 @@ void ServerManager::handle_put_update_data_by_id(http_request request)
         POC poc;
 
         // 解析表单字段
-        std::ifstream temp_file(TEMP_FILENAME, std::ios::binary);
+        std::ifstream temp_file(CONFIG.getPocTempFile(), std::ios::binary);
         std::string body((std::istreambuf_iterator<char>(temp_file)), std::istreambuf_iterator<char>());
         temp_file.close();
 
@@ -1122,7 +1130,7 @@ void ServerManager::handle_put_update_data_by_id(http_request request)
                 return;
             }
 
-            std::string full_file_path = POC_DIRECTORY + edit_filename;
+            std::string full_file_path = CONFIG.getPocDirectory() + edit_filename;
 
             // 如果要更新的文件名与数据库中的不一致，检查文件是否已存在
             if (edit_filename != poc.script) {
@@ -1532,6 +1540,9 @@ void ServerManager::handle_post_get_Nmap(http_request request)
             }
 
         }
+
+        //新增:最近一次扫描是否为全端口扫描
+        scan_host_result[0].allPorts = allPorts;
 
         //搜索POC代码是否存在并装载。
         searchPOCs(scan_host_result[0], dbManager, dbHandler_, pool);
@@ -2157,6 +2168,8 @@ json::value ServerManager::ScanHostResult_to_json(const ScanHostResult& scan_hos
 
     // 添加是否合并的标识字段
     result[_XPLATSTR("is_merged")] = json::value::boolean(scan_host_result.is_merged);
+    //最近一次扫描是否为全端口扫描（新增）
+    result[_XPLATSTR("allPorts")] = json::value::boolean(scan_host_result.allPorts);
 
     return result;
 }
@@ -2304,7 +2317,7 @@ void ServerManager::save_request_to_temp_file(http_request request) {
     std::string body(buffer.collection().begin(), buffer.collection().end());
 
     // 写入临时文件（覆盖之前的内容）
-    std::ofstream temp_file(TEMP_FILENAME, std::ios::binary | std::ios::trunc);
+    std::ofstream temp_file(CONFIG.getPocTempFile(), std::ios::binary | std::ios::trunc);
     if (!temp_file.is_open()) {
         throw std::runtime_error("Failed to open temporary file for writing");
     }
@@ -2504,7 +2517,7 @@ void ServerManager::update_poc_by_cve(http_request request) {
 
         std::string cve_id, vul_name, affected_infra, mode, edit_filename, poc_content;
         std::string filename = "";  // 初始化 filename
-        std::ifstream temp_file(TEMP_FILENAME, std::ios::binary);
+        std::ifstream temp_file(CONFIG.getPocTempFile(), std::ios::binary);
         std::string body((std::istreambuf_iterator<char>(temp_file)), std::istreambuf_iterator<char>());
         temp_file.close();
 
@@ -2567,7 +2580,7 @@ void ServerManager::update_poc_by_cve(http_request request) {
                 return;
             }
 
-            std::string full_file_path = POC_DIRECTORY + edit_filename;
+            std::string full_file_path = CONFIG.getPocDirectory() + edit_filename;
 
             // 如果要更新的文件名与数据库中的不一致，检查文件是否已存在
             if (edit_filename != existing_poc.script) {
@@ -2598,7 +2611,7 @@ void ServerManager::update_poc_by_cve(http_request request) {
 
             // 删除原POC文件
             if (!existing_poc.script.empty() && edit_filename != existing_poc.script) {
-                std::string full_path = POC_DIRECTORY + existing_poc.script;
+                std::string full_path = CONFIG.getPocDirectory() + existing_poc.script;
                 if (std::remove(full_path.c_str()) != 0) {
                     std::cerr << "Error deleting file: " << full_path << std::endl;
                     response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("更新失败！删除原POC文件失败，请联系管理员！"));
@@ -2630,7 +2643,7 @@ void ServerManager::update_poc_by_cve(http_request request) {
 
                 // 删除原POC文件之前，构建文件路径
                 if (!existing_poc.script.empty()) {
-                    std::string base_path = POC_DIRECTORY;
+                    std::string base_path = CONFIG.getPocDirectory();
                     std::string file_path = base_path + existing_poc.script;  // 构建完整的文件路径
 
                     // 尝试删除文件
@@ -3032,6 +3045,7 @@ void ServerManager::handle_post_poc_scan(http_request request) {
                 auto timestamp = getCurrentTimestamp(2);
                 for (auto& result : scan_host_results) {
                     result.scan_time = timestamp;
+                    result.allPorts = allPorts; // 新增
                 }
                 scan_host_result = scan_host_results[0];
                 historicalData.data[ip] = scan_host_result;
@@ -3162,6 +3176,7 @@ void ServerManager::handle_auto_select_poc(http_request request) {
                 auto timestamp = getCurrentTimestamp(2);
                 for (auto& result : scan_host_results) {
                     result.scan_time = timestamp;
+                    result.allPorts = allPorts; // 新增
                 }
                 scan_host_result = scan_host_results[0];
                 historicalData.data[ip] = scan_host_result;

@@ -16,6 +16,7 @@ public:
 
     // Server
     std::string getServerUrl() const;
+    std::string getServerIp() const;
 
     // Database
     std::string getDbHost() const;

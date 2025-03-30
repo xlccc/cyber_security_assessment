@@ -5,7 +5,7 @@
 #include <unistd.h>
 
 HostDiscovery::HostDiscovery(const std::string& network)
-    :network(network), threadPool(threadCount) {
+    :network(network), threadPool(CONFIG.getThreadCount()) {
 
     //若输入为网段，则提取子网掩码
     if (isValidCIDR(network)) {

@@ -47,6 +47,10 @@ std::string ConfigManager::getServerUrl() const {
     ensureLoaded();
     return root["server"]["url"].get<std::string>();
 }
+std::string ConfigManager::getServerIp() const {
+    ensureLoaded();
+    return root["server"]["ip"].get<std::string>();
+}
 
 std::string ConfigManager::getDbHost() const {
     ensureLoaded();

@@ -69,8 +69,9 @@ struct ScanHostResult {
     std::vector<ScanResult> ports;  //端口扫描结果
     
     std::string scan_time;      // 扫描时间
-    std::set<Vuln> vuln_result; //存放操作系统的漏洞扫描结果（新增）
-    bool is_merged;             // 标识是否合并两种漏洞扫描方法的结果 （新增）
+    std::set<Vuln> vuln_result; //存放操作系统的漏洞扫描结果
+    bool is_merged;             // 标识是否合并两种漏洞扫描方法的结果 
+    bool allPorts = false;      //最近一次扫描是否为全端口扫描
     
 };
 
