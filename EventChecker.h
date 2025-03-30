@@ -489,6 +489,7 @@ private:
         if (e.result.compare("") == 0)
         {
             e.IsComply = "true";
+            e.result = "不存在空口令账号";
         }
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
@@ -1264,7 +1265,10 @@ private:
         if (fileIsExist.compare("") == 0)
         {
 
-            e.command = "stat -c %a /tmp | tr -d ' ' | tr -d '\n'";
+            //e.command = "stat -c %a /tmp | tr -d ' ' | tr -d '\n'";
+            
+            e.command = "stat -c %a /tmp | tr -d ' ' | tr -d '\n' | sed 's/^1//'";
+
             e.result = execute_commands(guard.get(), e.command);
 
             int num = atoi(e.result.c_str());
@@ -1829,9 +1833,14 @@ private:
         if (e.result == "") {
             e.result = "没有这个文件";
         }
+        
         string command_Iscomply = "ls -l /var/log/cron | grep -q \".\\{7\\}[^ w]\" && echo -n true || echo -n false";
         e.IsComply = execute_commands(guard.get(), command_Iscomply);
-
+        if (e.IsComply == "true") {
+            e.result = "other用户不可写";
+        }else {
+            e.result = "other用户可写";
+        }
         e.recommend = "/var/log/cron日志文件other用户不可写";
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
@@ -1853,6 +1862,12 @@ private:
         }
         string command_Iscomply = "ls -l /var/log/secure | grep -q \".\\{7\\}[^ w]\" && echo -n true || echo -n false";
         e.IsComply = execute_commands(guard.get(), command_Iscomply);
+        if (e.IsComply == "true") {
+            e.result = "other用户不可写";
+        }
+        else {
+            e.result = "other用户可写";
+        }
         e.recommend = "/var/log/secure日志文件other用户不可写";
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
@@ -1874,7 +1889,12 @@ private:
         }
         string command_Iscomply = "ls -l /var/log/messages | grep -q \".\\{7\\}[^ w]\" && echo -n true || echo -n false";
         e.IsComply = execute_commands(guard.get(), command_Iscomply);
-
+        if (e.IsComply == "true") {
+            e.result = "other用户不可写";
+        }
+        else {
+            e.result = "other用户可写";
+        }
         e.recommend = "/var/log/messages日志文件other用户不可写";
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
@@ -1955,6 +1975,12 @@ private:
         }
         string command_Iscomply = "ls -l /var/log/spooler | grep -q \".\\{7\\}[^ w]\" && echo -n true || echo -n false";
         e.IsComply = execute_commands(guard.get(), command_Iscomply);
+        if (e.IsComply == "true") {
+            e.result = "other用户不可写";
+        }
+        else {
+            e.result = "other用户可写";
+        }
         e.recommend = "/var/log/spooler日志文件other用户不可写";
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
@@ -1997,6 +2023,12 @@ private:
         }
         string command_Iscomply = "ls -l /var/log/maillog | grep -q \".\\{7\\}[^ w]\" && echo -n true || echo -n false";
         e.IsComply = execute_commands(guard.get(), command_Iscomply);
+        if (e.IsComply == "true") {
+            e.result = "other用户不可写";
+        }
+        else {
+            e.result = "other用户可写";
+        }
         e.recommend = "应/var/log/maillog日志文件other用户不可写";
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
@@ -2018,7 +2050,7 @@ private:
             e.IsComply = "false";
         }
         else {
-            e.result = "已对登录进行日志记录,结果太长，已忽略";
+            e.result = "已对登录进行日志记录";
             e.IsComply = "true";
         }
         e.recommend = "要对登录进行日志记录";

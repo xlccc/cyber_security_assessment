@@ -283,9 +283,9 @@ void initializePython()
     // 设置sys.path
     PyObject* sys = PyImport_ImportModule("sys");
     PyObject* sys_path = PyObject_GetAttrString(sys, "path");
-    PyList_Append(sys_path, PyUnicode_FromString("/root/.vs/cyber_seproject/6731b597-df0c-4866-ab56-292bdcaceae0/src/scan/lib"));
-    PyList_Append(sys_path, PyUnicode_FromString("/root/.vs/cyber_seproject/6731b597-df0c-4866-ab56-292bdcaceae0/src/scan/scripts"));
-    PyList_Append(sys_path, PyUnicode_FromString("/root/.vs/cyber_seproject/6731b597-df0c-4866-ab56-292bdcaceae0/src/scan"));
+    PyList_Append(sys_path, PyUnicode_FromString("/root/.vs/cyber_seproject2/8cf44de5-c72a-44b7-b30d-6effcd345537/src/scan/lib"));
+    PyList_Append(sys_path, PyUnicode_FromString("/root/.vs/cyber_seproject2/8cf44de5-c72a-44b7-b30d-6effcd345537/src/scan/scripts"));
+    PyList_Append(sys_path, PyUnicode_FromString("/root/.vs/cyber_seproject2/8cf44de5-c72a-44b7-b30d-6effcd345537/src/scan"));
     PyList_Append(sys_path, PyUnicode_FromString("/root/.vs/cyber_seproject/6731b597-df0c-4866-ab56-292bdcaceae0/src"));
 
 }
