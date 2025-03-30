@@ -1761,7 +1761,7 @@ void ServerManager::handle_post_hydra(http_request request) {
 			// 服务名是否在服务列表中
             //if (port_services.find(service_name) != port_services.end()) {
             bool exists = isServiceExistByIp(ip, service_name, pool);
-            if (exists) {
+            if (true) {
                 // 构建并执行hydra命令
                 std::string command = "hydra -L " + usernameFile + " -P " + passwordFile + " -f " + service_name + "://" + ip;
                 std::string output = exec_hydra(command.c_str());
