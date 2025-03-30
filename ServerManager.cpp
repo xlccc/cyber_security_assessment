@@ -10,7 +10,7 @@ ServerManager::ServerManager()
         "10.9.130.100",  // host
         33060,            // port
         "root",           // user
-        "Navicat822!", // password
+        "ComplexPassword123!", // password
         "test_db"         // schema
     },
     pool(localConfig),    // 使用 localConfig 初始化 pool
@@ -187,12 +187,44 @@ void ServerManager::redis_get_scan(http_request request) {
 
 void ServerManager::handle_get_test(http_request request)
 {
-    std::string ip = "10.9.130.100";
-    ScanHostResult result = dbHandler_.getScanHostResult(ip, pool);
+    try {
+        // 解析请求中的IP参数
+        auto query = uri::split_query(request.request_uri().query());
+        auto it = query.find(_XPLATSTR("ip"));
+        if (it == query.end()) {
+            request.reply(status_codes::BadRequest, _XPLATSTR("Missing 'ip' parameter"));
+            return;
+        }
 
-    // 打印结果
-    printScanHostResult(result);
-    return;
+        // 获取IP地址并检查是否为空
+        std::string ip = utility::conversions::to_utf8string(it->second);
+        if (ip.empty()) {
+            request.reply(status_codes::BadRequest, _XPLATSTR("Empty IP parameter"));
+            return;
+        }
+
+        // 使用从请求中获取的IP地址
+        ScanHostResult result = dbHandler_.getScanHostResult(ip, pool);
+
+        // 打印结果
+        printScanHostResult(result);
+
+        // 使用已有的函数将ScanHostResult转换为JSON
+        web::json::value response = ScanHostResult_to_json(result);
+
+        // 返回结果
+        http_response http_resp(status_codes::OK);
+        http_resp.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+        http_resp.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, OPTIONS"));
+        http_resp.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+        http_resp.set_body(response);
+        request.reply(http_resp);
+    }
+    catch (const std::exception& e) {
+        std::cerr << "处理扫描主机结果请求时出错: " << e.what() << std::endl;
+        request.reply(status_codes::InternalError,
+            web::json::value::string(utility::conversions::to_string_t("内部服务器错误: " + std::string(e.what()))));
+    }
 }
 
 
