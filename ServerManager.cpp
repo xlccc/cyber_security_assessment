@@ -7,16 +7,16 @@ using namespace concurrency::streams;
 
 ServerManager::ServerManager()
     : localConfig{
-        "10.9.130.83",  // host
+        "172.20.10.2",  // host
         33060,            // port
         "root",           // user
-        "ComplexPassword123!", // password
+        "Navicat822!", // password
         "test_db"         // schema
     },
     pool(localConfig),    // 使用 localConfig 初始化 pool
     dbManager(DB_PATH)    // 原有的 dbManager 初始化
 {
-    utility::string_t address = _XPLATSTR("http://10.9.130.83:8081/");
+    utility::string_t address = _XPLATSTR("http://172.20.10.2:8081/");
     uri_builder uri(address);
     auto addr = uri.to_uri().to_string();
     listener = std::make_unique<http_listener>(addr);
@@ -180,8 +180,8 @@ void ServerManager::handle_request(http_request request) {
 
 void ServerManager::redis_get_scan(http_request request) {
     
-    std::cout << check_redis_unauthorized("root","12341234","12341234","10.9.130.83") << std::endl;
-    std::cout << check_pgsql_unauthorized("root", "12341234","postgres","12341234" ,"10.9.130.83","5432" ) << std::endl;
+    std::cout << check_redis_unauthorized("root","12341234","12341234","172.20.10.2") << std::endl;
+    std::cout << check_pgsql_unauthorized("root", "12341234","postgres","12341234" ,"172.20.10.2","5432" ) << std::endl;
     request.reply(web::http::status_codes::OK, "result");
 }
 

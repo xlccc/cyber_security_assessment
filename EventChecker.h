@@ -2242,7 +2242,7 @@ private:
         else {
             e.result = "ftp服务在运行，还要进一步检测配置文件";
             e.IsComply = "false";
-            temp = "false";
+            temp = "true";
         }
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
