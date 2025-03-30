@@ -7,7 +7,7 @@ using namespace concurrency::streams;
 
 ServerManager::ServerManager()
     : localConfig{
-        "10.9.130.83",  // host
+        "10.9.130.100",  // host
         33060,            // port
         "root",           // user
         "ComplexPassword123!", // password
@@ -16,7 +16,7 @@ ServerManager::ServerManager()
     pool(localConfig),    // 使用 localConfig 初始化 pool
     dbManager(DB_PATH)    // 原有的 dbManager 初始化
 {
-    utility::string_t address = _XPLATSTR("http://10.9.130.83:8081/");
+    utility::string_t address = _XPLATSTR("http://10.9.130.100:8081/");
     uri_builder uri(address);
     auto addr = uri.to_uri().to_string();
     listener = std::make_unique<http_listener>(addr);
@@ -180,8 +180,8 @@ void ServerManager::handle_request(http_request request) {
 
 void ServerManager::redis_get_scan(http_request request) {
     
-    std::cout << check_redis_unauthorized("root","12341234","12341234","10.9.130.83") << std::endl;
-    std::cout << check_pgsql_unauthorized("root", "12341234","postgres","12341234" ,"10.9.130.83","5432" ) << std::endl;
+    std::cout << check_redis_unauthorized("root","12341234","12341234","10.9.130.100") << std::endl;
+    std::cout << check_pgsql_unauthorized("root", "12341234","postgres","12341234" ,"10.9.130.100","5432" ) << std::endl;
     request.reply(web::http::status_codes::OK, "result");
 }
 
@@ -1761,7 +1761,7 @@ void ServerManager::handle_post_hydra(http_request request) {
 			// 服务名是否在服务列表中
             //if (port_services.find(service_name) != port_services.end()) {
             bool exists = isServiceExistByIp(ip, service_name, pool);
-            if (exists) {
+            if (true) {
                 // 构建并执行hydra命令
                 std::string command = "hydra -L " + usernameFile + " -P " + passwordFile + " -f " + service_name + "://" + ip;
                 std::string output = exec_hydra(command.c_str());
