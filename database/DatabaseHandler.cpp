@@ -1959,6 +1959,82 @@ std::vector<event> DatabaseHandler::getSecurityCheckResults(const std::string& i
     return checkResults;
 }
 
+std::vector<event> DatabaseHandler::getSecurityCheckResultsByIds(const std::string& ip, const std::vector<int>& ids, ConnectionPool& pool) {
+    std::vector<event> checkResults;
+
+    try {
+        auto conn = pool.getConnection();  // 获取连接
+
+        // 首先获取scan_host_result表中的id
+        mysqlx::SqlResult hostResult = conn->sql("SELECT id FROM scan_host_result WHERE ip = ?")
+            .bind(ip)
+            .execute();
+
+        mysqlx::Row hostRow = hostResult.fetchOne();
+        if (!hostRow) {
+            std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
+            return checkResults;
+        }
+
+        int shr_id = hostRow[0]; // 获取shr_id
+
+        // 构建IN子句字符串
+        std::string placeholders;
+        for (size_t i = 0; i < ids.size(); ++i) {
+            if (i > 0) placeholders += ", ";
+            placeholders += "?";
+        }
+
+        // 查询特定item_id的安全检查结果
+        std::string query = "SELECT item_id, description, basis, command, result, is_comply, recommend, "
+            "important_level, DATE_FORMAT(check_time, '%Y-%m-%d %H:%i:%s') as formatted_check_time "
+            "FROM security_check_results "
+            "WHERE shr_id = ? AND item_id IN (" + placeholders + ") "
+            "ORDER BY item_id";
+
+        mysqlx::SqlStatement stmt = conn->sql(query);
+
+        // 绑定shr_id参数
+        stmt.bind(shr_id);
+
+        // 绑定id列表参数
+        for (const int& id : ids) {
+            stmt.bind(id);
+        }
+
+        mysqlx::SqlResult checkResult = stmt.execute();
+
+        // 处理查询结果
+        while (mysqlx::Row row = checkResult.fetchOne()) {
+            event checkEvent;
+
+            checkEvent.item_id = row[0].get<int>();
+            checkEvent.description = row[1].get<std::string>();
+            checkEvent.basis = row[2].isNull() ? "" : row[2].get<std::string>();
+            checkEvent.command = row[3].isNull() ? "" : row[3].get<std::string>();
+            checkEvent.result = row[4].get<std::string>();
+            checkEvent.IsComply = row[5].get<std::string>();
+            checkEvent.recommend = row[6].isNull() ? "" : row[6].get<std::string>();
+            checkEvent.importantLevel = row[7].get<std::string>();
+
+            checkResults.push_back(checkEvent);
+        }
+
+        std::cout << "成功获取IP " << ip << " 的指定安全检查结果，共 " << checkResults.size() << " 条记录" << std::endl;
+    }
+    catch (const mysqlx::Error& err) {
+        std::cerr << "getSecurityCheckResultsByIds时数据库错误: " << err.what() << std::endl;
+    }
+    catch (std::exception& ex) {
+        std::cerr << "异常: " << ex.what() << std::endl;
+    }
+    catch (...) {
+        std::cerr << "未知错误发生" << std::endl;
+    }
+
+    return checkResults;
+}
+
 // 计算基线检测摘要信息
 BaselineCheckSummary DatabaseHandler::calculateBaselineSummary(const std::vector<event>& check_results) {
     BaselineCheckSummary summary = {};  // 初始化所有字段为0

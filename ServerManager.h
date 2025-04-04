@@ -63,12 +63,12 @@ private:
     DBConfig localConfig;
     // ´æ´¢portIdºÍservice_nameµÄmap
     std::map<std::string, std::string> port_services;
-
+    //缓存 ip 和上次检测的临时ids的映射
+    std::map<std::string, std::vector<int>> lastCheckedIds;
     std::unique_ptr<http_listener> listener;
     void handle_options(http_request request);
     void handle_request(http_request request);
 
-    void handle_get_userinfo(http_request request);
     void handle_post_login(http_request request);
     void handle_get_cve_scan(http_request request);
 
@@ -158,11 +158,6 @@ private:
     std::string global_ip;
     std::string global_pd;
 
-    // Placeholder for SSH session and info
-    // Define your own info_new and new_Event structures and initialize_ssh_session, fun, ConvertEvents, ServerInfo_Padding, convert functions accordingly.
-    ServerInfo_t info_new;
-    std::vector<event_t> new_Event;
-    vector<event> Event;
     vector<scoreMeasure> vecScoreMeasure;
 
     //当前扫描结果
@@ -186,7 +181,7 @@ private:
     void handle_get_security_check_by_ip(http_request request);
 
     void handle_get_userInfo(http_request request);
-
+    void handle_get_tmpUserInfo(http_request request);
 };
 
 #endif // SERVERMANAGER_H

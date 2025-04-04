@@ -3,10 +3,13 @@
 #include"Command_Excute.h"
 #include<libssh/libssh.h>
 #include"Padding2.h"
-void fun2(vector<event>& Event, const string& host, const string& username, const string& password, 
+void fun2( const string& host, const string& username, const string& password, 
 	ConnectionPool& mysqlPool, DatabaseHandler& dbHandler, const vector<int>& ids ) {
 	auto start = std::chrono::high_resolution_clock::now();
 	try {
+        // 创建局部变量，避免使用全局变量
+        vector<event> localEvent;
+
 		// 创建ssh连接池 数量为4
 		SSHConnectionPool pool(host, username, password, 4);
 
@@ -14,8 +17,8 @@ void fun2(vector<event>& Event, const string& host, const string& username, cons
 		EventChecker checker(4, pool);
 
 		// 运行检测项
-		checker.checkEvents(Event,ids);
-		for (auto& e : Event) {
+		checker.checkEvents(localEvent,ids);
+		for (auto& e : localEvent) {
 			dbHandler.saveSecurityCheckResult(host, e, mysqlPool);
 		}
 
@@ -66,8 +69,6 @@ void ServerInfo_Padding2(ServerInfo& info, const std::string ip, SSHConnectionPo
     string free = "free | grep Mem | awk '{printf \"%.1f\", $2/1024/1024}' | tr -d \"\\n\"";
     info.free = execute_commands(session, free) + " GB";
     std::cout << info.free << endl;
-    string ping = "(ping -c 1 8.8.8.8 > /dev/null 2>&1 && echo true || echo false) | tr -d \"\\n\"";
-    info.isInternet = execute_commands(session, ping);
     // 获取完信息后，调用数据库插入函数
     dbHandler.insertServerInfo(info, ip, mysqlPool);
 }
