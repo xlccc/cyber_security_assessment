@@ -7,7 +7,7 @@ DatabaseManager::DatabaseManager(const std::string& dbPath) {
     // 打开数据库，如果不存在则创建，参数1：db的文件路径，参数2：返回的sqlite3*对象
     db = nullptr;
 
-    console->info("SQLite database Path: {}", dbPath);
+    console->info("SQLite database Path: {}",dbPath);
     system_logger->info("SQLite database Path: {}",dbPath);
 
     if (sqlite3_open(dbPath.c_str(), &db) != SQLITE_OK) {

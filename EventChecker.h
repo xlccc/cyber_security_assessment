@@ -7,6 +7,8 @@
 #include "ThreadPool.h"
 #include "SSHConnectionPool.h"
 #include <map>
+#include <algorithm>   // std::remove_if
+#include <cctype>      // ::isspace
 
 class EventChecker {
 public:
@@ -446,20 +448,59 @@ private:
         {
             findFile = true;
 
-            e.command = "cat /etc/csh.cshrc | grep umask | /bin/awk -F 'umask' '{print $2}' | tr -d ' ' | tr -d '\n'";
-            e.result = execute_commands(guard.get(), e.command);
+            //旧版：多个输出的情况不适用
+            //e.command = "cat /etc/csh.cshrc | grep umask | /bin/awk -F 'umask' '{print $2}' | tr -d ' ' | tr -d '\n'";
+            //e.result = execute_commands(session, e.command);
 
-            if (e.result.compare(""))
+            e.command = R"(/bin/awk '!/^\s*#/ && /^\s*umask/ {print $2}' /etc/csh.cshrc)";
+            std::string result_raw = execute_commands(guard.get(), e.command);
+            e.result = result_raw;
+
+            if (!result_raw.empty())
             {
-                if (e.result.compare("077") || e.result.compare("027"))
+                std::istringstream iss(result_raw);
+                std::string line;
+                bool all_good = true;
+                std::vector<std::string> umask_values;
+
+                while (std::getline(iss, line))
                 {
-                    e.IsComply = "true";
+                    // 清除空格
+                    line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
+
+                    if (!line.empty())
+                    {
+                        umask_values.push_back(line);
+
+                        if (line != "027" && line != "077")
+                        {
+                            all_good = false;
+                        }
+                    }
                 }
+
+                // 格式化为 “027或077” 形式
+                if (!umask_values.empty())
+                {
+                    e.result = umask_values[0];
+                    for (size_t i = 1; i < umask_values.size(); ++i)
+                    {
+                        e.result += "或" + umask_values[i];
+                    }
+                }
+                else
+                {
+                    e.result = "未设置";
+                    all_good = false;
+                }
+
+                e.IsComply = all_good ? "true" : "false";
             }
             else
             {
                 e.result = "未开启";
-                e.recommend = "开启/etc/csh.cshrc中的用户umask设置，且umask应为027或者077";
+                e.recommend = "开启 /etc/csh.cshrc 中的用户 umask 设置，且 umask 应为027或者077";
+                e.IsComply = "false";
             }
         }
         if (!findFile)
@@ -490,15 +531,59 @@ private:
         {
             findFile = true;
 
-            e.command = "/bin/cat /etc/bashrc | grep umask | /bin/awk -F 'umask' '{print $2}' | tr -d ' ' | tr -d '\n'";
-            e.result = execute_commands(guard.get(), e.command);
+            //旧版:有的情况不适用
+            // e.command = "/bin/cat /etc/bashrc | grep umask | /bin/awk -F 'umask' '{print $2}' | tr -d ' ' | tr -d '\n'";
+            e.command = R"(/bin/awk '!/^\s*#/ && /^\s*umask/ {print $2}' /etc/bashrc)";
+            std::string result_raw = execute_commands(guard.get(), e.command);
+            e.result = result_raw;
 
-            if (e.result.compare(""))
+            //旧版:有的情况不适用
+            //if (e.result.compare(""))
+            //{
+            //	if (e.result.compare("077") || e.result.compare("027"))
+            //	{
+            //		e.IsComply = "true";
+            //	}
+            //}
+            if (!result_raw.empty())
             {
-                if (e.result.compare("077") || e.result.compare("027"))
+                std::istringstream iss(result_raw);
+                std::string line;
+                bool all_good = true;
+                std::vector<std::string> umask_values;
+
+                while (std::getline(iss, line))
                 {
-                    e.IsComply = "true";
+                    // 清理空格、换行等
+                    line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
+
+                    if (!line.empty())
+                    {
+                        umask_values.push_back(line);
+
+                        if (line != "027" && line != "077")
+                        {
+                            all_good = false;
+                        }
+                    }
                 }
+
+                // 拼接结果为 "027或077" 的形式
+                if (!umask_values.empty())
+                {
+                    e.result = umask_values[0];
+                    for (size_t i = 1; i < umask_values.size(); ++i)
+                    {
+                        e.result += "或" + umask_values[i];
+                    }
+                }
+                else
+                {
+                    e.result = "未设置";
+                    all_good = false;
+                }
+
+                e.IsComply = all_good ? "true" : "false";
             }
             else
             {
@@ -540,20 +625,72 @@ private:
         {
             findFile = true;
 
-            e.command = "/bin/cat /etc/profile| grep umask | /bin/awk -F 'umask' '{print $2}' | tr -d ' ' | tr -d '\n'";
-            e.result = execute_commands(guard.get(), e.command);
+            //旧版：多种情况不适用
+            //e.command = "/bin/cat /etc/profile| grep umask | /bin/awk -F 'umask' '{print $2}' | tr -d ' ' | tr -d '\n'";
+            //e.result = execute_commands(guard.get(), e.command);
 
-            if (e.result.compare(""))
+            //if (e.result.compare(""))
+            //{
+            //	if (e.result.compare("077") || e.result.compare("027"))
+            //	{
+            //		e.IsComply = "true";
+            //	}
+            //}
+            //else
+            //{
+            //	e.result = "未开启";
+            //	e.recommend = "开启/etc/profile中的用户umask设置，且umask应为027或者077";
+            //}
+
+            e.command = R"(/bin/awk '!/^\s*#/ && /^\s*umask/ {print $2}' /etc/profile)";
+            std::string result_raw = execute_commands(guard.get(), e.command);
+            e.result = result_raw;
+
+            if (!result_raw.empty())
             {
-                if (e.result.compare("077") || e.result.compare("027"))
+                std::istringstream iss(result_raw);
+                std::string line;
+                bool all_good = true;
+                std::vector<std::string> umask_values;
+
+                while (std::getline(iss, line))
                 {
-                    e.IsComply = "true";
+                    // 去掉空格
+                    line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
+
+                    if (!line.empty())
+                    {
+                        umask_values.push_back(line);
+
+                        if (line != "027" && line != "077")
+                        {
+                            all_good = false;
+                        }
+                    }
                 }
+
+                // 拼接结果为 "027或077"
+                if (!umask_values.empty())
+                {
+                    e.result = umask_values[0];
+                    for (size_t i = 1; i < umask_values.size(); ++i)
+                    {
+                        e.result += "或" + umask_values[i];
+                    }
+                }
+                else
+                {
+                    e.result = "未设置";
+                    all_good = false;
+                }
+
+                e.IsComply = all_good ? "true" : "false";
             }
             else
             {
                 e.result = "未开启";
-                e.recommend = "开启/etc/profile中的用户umask设置，且umask应为027或者077";
+                e.recommend = "开启 /etc/profile 中的用户 umask 设置，且 umask 应为027或者077";
+                e.IsComply = "false";
             }
         }
 
@@ -2147,7 +2284,7 @@ private:
         else {
             e.result = "ftp服务在运行，还要进一步检测配置文件";
             e.IsComply = "false";
-            temp = "false";
+            temp = "true";
         }
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()

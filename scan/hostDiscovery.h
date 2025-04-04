@@ -9,7 +9,7 @@
 #include <iostream>
 #include <regex>
 #include"log/log.h"
-
+#include"utils/CommonDefs.h"
 
 //主机发现类
 class HostDiscovery {

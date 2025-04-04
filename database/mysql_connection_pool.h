@@ -11,6 +11,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <thread> // 添加用于sleep操作
+#include"utils/CommonDefs.h"
 
 // 数据库配置结构体
 struct DBConfig {
@@ -27,11 +28,16 @@ struct DBConfig {
 
     // 构造函数，提供默认值
     DBConfig(
-        std::string host_ = "10.9.130.100",
-        uint16_t port_ = 33060,
-        std::string user_ = "root",
-        std::string password_ = "ComplexPassword123!",
-        std::string schema_ = "",
+        //std::string host_ = "10.9.130.37",
+        //uint16_t port_ = 33060,
+        //std::string user_ = "root",
+        //std::string password_ = "Navicat822!",
+        //std::string schema_ = "",
+        std::string host_ = CONFIG.getDbHost(),
+        uint16_t port_ = CONFIG.getDbPort(),
+        std::string user_ = CONFIG.getDbUser(),
+        std::string password_ = CONFIG.getDbPassword(),
+        std::string schema_ = CONFIG.getDbSchema(),
         size_t initial_size_ = 5,
         size_t max_size_ = 20,
         std::chrono::seconds connection_timeout_ = std::chrono::seconds(30),

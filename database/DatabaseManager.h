@@ -5,6 +5,7 @@
 #include <sqlite3.h>
 #include<vector>
 #include<iostream>
+#include<string>
 #include"poc.h"
 #include"../utils/utils.h"
 #include <spdlog/spdlog.h>

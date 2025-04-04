@@ -276,23 +276,62 @@ void fun(vector<event>& Event, ssh_session session) {
 	{
 		findFile = true;
 
-		umask_cshrc.command = "cat /etc/csh.cshrc | grep umask | /bin/awk -F 'umask' '{print $2}' | tr -d ' ' | tr -d '\n'";
-		umask_cshrc.result = execute_commands(session, umask_cshrc.command);
+		//旧版：多个输出的情况不适用
+		//umask_cshrc.command = "cat /etc/csh.cshrc | grep umask | /bin/awk -F 'umask' '{print $2}' | tr -d ' ' | tr -d '\n'";
+		//umask_cshrc.result = execute_commands(session, umask_cshrc.command);
 
-		if (umask_cshrc.result.compare(""))
+		umask_cshrc.command = R"(/bin/awk '!/^\s*#/ && /^\s*umask/ {print $2}' /etc/csh.cshrc)";
+		std::string result_raw = execute_commands(session, umask_cshrc.command);
+		umask_cshrc.result = result_raw;
+
+		if (!result_raw.empty())
 		{
-			if (umask_cshrc.result.compare("077") || umask_cshrc.result.compare("027"))
+			std::istringstream iss(result_raw);
+			std::string line;
+			bool all_good = true;
+			std::vector<std::string> umask_values;
+
+			while (std::getline(iss, line))
 			{
-				umask_cshrc.IsComply = "true";
+				// 清除空格
+				line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
+
+				if (!line.empty())
+				{
+					umask_values.push_back(line);
+
+					if (line != "027" && line != "077")
+					{
+						all_good = false;
+					}
+				}
 			}
+
+			// 格式化为 “027或077” 形式
+			if (!umask_values.empty())
+			{
+				umask_cshrc.result = umask_values[0];
+				for (size_t i = 1; i < umask_values.size(); ++i)
+				{
+					umask_cshrc.result += "或" + umask_values[i];
+				}
+			}
+			else
+			{
+				umask_cshrc.result = "未设置";
+				all_good = false;
+			}
+
+			umask_cshrc.IsComply = all_good ? "true" : "false";
 		}
 		else
 		{
 			umask_cshrc.result = "未开启";
-			umask_cshrc.recommend = "开启/etc/csh.cshrc中的用户umask设置，且umask应为027或者077";
+			umask_cshrc.recommend = "开启 /etc/csh.cshrc 中的用户 umask 设置，且 umask 应为027或者077";
+			umask_cshrc.IsComply = "false";
 		}
 	}
-	if (!findFile)
+	else
 	{
 		umask_cshrc.result = "未找到配置文件";
 	}
@@ -315,15 +354,59 @@ void fun(vector<event>& Event, ssh_session session) {
 	{
 		findFile = true;
 
-		umask_bashrc.command = "/bin/cat /etc/bashrc | grep umask | /bin/awk -F 'umask' '{print $2}' | tr -d ' ' | tr -d '\n'";
-		umask_bashrc.result = execute_commands(session, umask_bashrc.command);
+		//旧版:有的情况不适用
+		// umask_bashrc.command = "/bin/cat /etc/bashrc | grep umask | /bin/awk -F 'umask' '{print $2}' | tr -d ' ' | tr -d '\n'";
+		umask_bashrc.command = R"(/bin/awk '!/^\s*#/ && /^\s*umask/ {print $2}' /etc/bashrc)";
+		std::string result_raw = execute_commands(session, umask_bashrc.command);
+		umask_bashrc.result = result_raw;
 
-		if (umask_bashrc.result.compare(""))
+		//旧版:有的情况不适用
+		//if (umask_bashrc.result.compare(""))
+		//{
+		//	if (umask_bashrc.result.compare("077") || umask_bashrc.result.compare("027"))
+		//	{
+		//		umask_bashrc.IsComply = "true";
+		//	}
+		//}
+		if (!result_raw.empty())
 		{
-			if (umask_bashrc.result.compare("077") || umask_bashrc.result.compare("027"))
+			std::istringstream iss(result_raw);
+			std::string line;
+			bool all_good = true;
+			std::vector<std::string> umask_values;
+
+			while (std::getline(iss, line))
 			{
-				umask_bashrc.IsComply = "true";
+				// 清理空格、换行等
+				line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
+
+				if (!line.empty())
+				{
+					umask_values.push_back(line);
+
+					if (line != "027" && line != "077")
+					{
+						all_good = false;
+					}
+				}
 			}
+
+			// 拼接结果为 "027或077" 的形式
+			if (!umask_values.empty())
+			{
+				umask_bashrc.result = umask_values[0];
+				for (size_t i = 1; i < umask_values.size(); ++i)
+				{
+					umask_bashrc.result += "或" + umask_values[i];
+				}
+			}
+			else
+			{
+				umask_bashrc.result = "未设置";
+				all_good = false;
+			}
+
+			umask_bashrc.IsComply = all_good ? "true" : "false";
 		}
 		else
 		{
@@ -355,20 +438,72 @@ void fun(vector<event>& Event, ssh_session session) {
 	{
 		findFile = true;
 
-		umask_profile.command = "/bin/cat /etc/profile| grep umask | /bin/awk -F 'umask' '{print $2}' | tr -d ' ' | tr -d '\n'";
-		umask_profile.result = execute_commands(session, umask_profile.command);
+		//旧版：多种情况不适用
+		//umask_profile.command = "/bin/cat /etc/profile| grep umask | /bin/awk -F 'umask' '{print $2}' | tr -d ' ' | tr -d '\n'";
+		//umask_profile.result = execute_commands(session, umask_profile.command);
 
-		if (umask_profile.result.compare(""))
+		//if (umask_profile.result.compare(""))
+		//{
+		//	if (umask_profile.result.compare("077") || umask_profile.result.compare("027"))
+		//	{
+		//		umask_profile.IsComply = "true";
+		//	}
+		//}
+		//else
+		//{
+		//	umask_profile.result = "未开启";
+		//	umask_profile.recommend = "开启/etc/profile中的用户umask设置，且umask应为027或者077";
+		//}
+
+		umask_profile.command = R"(/bin/awk '!/^\s*#/ && /^\s*umask/ {print $2}' /etc/profile)";
+		std::string result_raw = execute_commands(session, umask_profile.command);
+		umask_profile.result = result_raw;
+
+		if (!result_raw.empty())
 		{
-			if (umask_profile.result.compare("077") || umask_profile.result.compare("027"))
+			std::istringstream iss(result_raw);
+			std::string line;
+			bool all_good = true;
+			std::vector<std::string> umask_values;
+
+			while (std::getline(iss, line))
 			{
-				umask_profile.IsComply = "true";
+				// 去掉空格
+				line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
+
+				if (!line.empty())
+				{
+					umask_values.push_back(line);
+
+					if (line != "027" && line != "077")
+					{
+						all_good = false;
+					}
+				}
 			}
+
+			// 拼接结果为 "027或077"
+			if (!umask_values.empty())
+			{
+				umask_profile.result = umask_values[0];
+				for (size_t i = 1; i < umask_values.size(); ++i)
+				{
+					umask_profile.result += "或" + umask_values[i];
+				}
+			}
+			else
+			{
+				umask_profile.result = "未设置";
+				all_good = false;
+			}
+
+			umask_profile.IsComply = all_good ? "true" : "false";
 		}
 		else
 		{
 			umask_profile.result = "未开启";
-			umask_profile.recommend = "开启/etc/profile中的用户umask设置，且umask应为027或者077";
+			umask_profile.recommend = "开启 /etc/profile 中的用户 umask 设置，且 umask 应为027或者077";
+			umask_profile.IsComply = "false";
 		}
 	}
 
