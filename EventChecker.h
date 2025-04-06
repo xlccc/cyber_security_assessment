@@ -9,12 +9,41 @@
 #include <map>
 #include <algorithm>   // std::remove_if
 #include <cctype>      // ::isspace
-
+#include <regex>
 class EventChecker {
 public:
     EventChecker(size_t threadCount, SSHConnectionPool& pool)
         : threadPool(threadCount), sshPool(pool) {
         initializeCheckFunctions();
+    }
+
+    // 检查三级等保合规性
+    void checkLevel3Events(std::vector<event>& events, const std::vector<int>& ids = {}) {
+        std::vector<std::future<event>> futures;
+        if (ids.empty()) {
+            // 如果没有指定 ID，执行所有三级等保检查
+            for (const auto& pair : level3ComplianceFunctions) {
+                futures.push_back(threadPool.enqueue(pair.second));
+            }
+        }
+        else {
+            // 只执行指定 ID 的三级等保检查
+            for (int id : ids) {
+                auto it = level3ComplianceFunctions.find(id);
+                if (it != level3ComplianceFunctions.end()) {
+                    futures.push_back(threadPool.enqueue(it->second));
+                }
+                else {
+                    std::cerr << "Warning: Level 3 Compliance Check ID " << id << " not found" << std::endl;
+                }
+            }
+        }
+
+        // 收集结果
+        for (auto& future : futures) {
+            event eventResult = future.get();
+            events.push_back(eventResult);
+        }
     }
 
     void checkEvents(std::vector<event>& events, const std::vector<int>& ids = {}) {
@@ -59,6 +88,9 @@ private:
     string soft_ware;
 
     std::map<int, std::function<event()>> checkFunctions;
+
+    // 三级等保检查函数映射
+    std::map<int, std::function<event()>> level3ComplianceFunctions;
 
     void initializeCheckFunctions() {
         checkFunctions = {
@@ -152,7 +184,85 @@ private:
             {88, [this] { event e = checkFtpDirectory(); e.item_id = 88; return e; }},
             {89, [this] { event e = checkKernel_cve_2021_43267(); e.item_id = 89; return e; }},
         };
+
+        // 三级等保检查条目初始化
+        level3ComplianceFunctions = {
+            {1, [this] { event e = checkFirewallCompliance(); e.item_id = 1;  return e; }},
+            
+            // 可以继续添加更多三级等保检查项
+        };
+
     }
+
+    event checkFirewallCompliance() {
+        SSHConnectionGuard guard(sshPool);//guard 从 sshPool 获取一个空闲的 SSH 连接
+        event e;
+        e.description = "8.1.3.2.a";
+        e.importantLevel = "3";
+        e.basis = "应在网络边界或区域之间根据访问控制策略设置访问控制规则，默认情况下除允许通信外受控接口拒绝所有通信";
+        e.IsComply = "false";
+        // 1. 检查防火墙是否开启
+        std::string command = "sudo ufw status verbose";
+        std::string statusOutput = execute_commands(guard.get(), command);
+        if (statusOutput.find("状态：激活") == std::string::npos &&
+            statusOutput.find("Status: active") == std::string::npos) {
+            e.result = "防火墙未开启";
+            std::cout << "防火墙未开启" << std::endl;
+            return e;
+        }
+        // 2. 检查默认策略是否符合要求
+        // 检查入站默认策略是否为拒绝
+        if (statusOutput.find("默认：deny (incoming)") == std::string::npos &&
+            statusOutput.find("Default: deny (incoming)") == std::string::npos) {
+            e.result = "入站默认策略不是deny";
+            e.recommend = "应符合入站默认策略是deny";
+            std::cout << "入站默认策略不是deny" << std::endl;
+            return e;
+        }
+
+        // 检查出站默认策略是否为允许
+        if (statusOutput.find("allow (outgoing)") == std::string::npos) {
+            e.result = "出站默认策略不是allow";
+            e.recommend = "应符合出站默认策略是allow";
+            std::cout << "出站默认策略不是allow" << std::endl;
+            return e;
+        }
+
+        // 检查路由默认策略是否为拒绝
+        if (statusOutput.find("deny (routed)") == std::string::npos) {
+            e.result = "路由默认策略不是deny";
+            e.recommend = "应符合路由默认策略是deny";
+            std::cout << "路由默认策略不是deny" << std::endl;
+            return e;
+        }
+
+        // 3. 检查是否存在Anywhere规则
+        command = "sudo ufw status numbered";
+        std::string rulesOutput = execute_commands(guard.get(), command);
+
+        // 使用正则表达式检查入站规则中是否有Anywhere
+        std::regex incomingAnywherePattern("ALLOW\\s+IN\\s+Anywhere");
+        std::smatch matches;
+        if (std::regex_search(rulesOutput, matches, incomingAnywherePattern)) {
+            e.result = "发现入站规则允许Anywhere访问，不符合白名单机制";
+            e.recommend = "应符合白名单机制";
+            
+            std::cout << "发现入站规则允许Anywhere访问，不符合白名单机制" << std::endl;
+            return e;
+        }
+
+        // 所有检查都通过
+        e.result = "防火墙配置符合三级等保要求";
+        e.IsComply = "true";
+        return e;
+
+
+    }
+
+
+
+
+
 
 
     event checkPasswordLifetime() {

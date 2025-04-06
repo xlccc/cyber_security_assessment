@@ -92,6 +92,13 @@ public:
     void insertServerInfo(const ServerInfo& info, const std::string& ip, ConnectionPool& pool);
 
     ServerInfo getServerInfoByIp(const std::string& ip, ConnectionPool& pool);
+
+    void saveLevel3SecurityCheckResult(const std::string& ip, const event& checkEvent, ConnectionPool& pool);
+
+    std::vector<event> getLevel3SecurityCheckResults(const std::string& ip, ConnectionPool& pool);
+
+    // 在DatabaseHandler类的public部分添加以下声明
+    std::vector<event> getLevel3SecurityCheckResultsByIds(const std::string& ip, const std::vector<int>& ids, ConnectionPool& pool);
 };
 
 #endif // DATABASEHANDLER_H

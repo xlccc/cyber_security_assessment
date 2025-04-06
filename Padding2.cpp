@@ -35,6 +35,39 @@ void fun2( const string& host, const string& username, const string& password,
 	std::cout << "代码执行时间: " << elapsed.count() << " 毫秒" << std::endl;
 
 }
+
+void level3Fun(const string& host, const string& username, const string& password,
+	ConnectionPool& mysqlPool, DatabaseHandler& dbHandler, const vector<int>& ids) {
+	auto start = std::chrono::high_resolution_clock::now();
+	try {
+		// 创建局部变量，避免使用全局变量
+		vector<event> localEvent;
+
+		// 创建ssh连接池 数量为4
+		SSHConnectionPool pool(host, username, password, 4);
+
+		// 创建线程池 数量为4
+		EventChecker checker(4, pool);
+
+		// 运行检测项
+		checker.checkLevel3Events(localEvent, ids);
+		for (auto& e : localEvent) {
+			dbHandler.saveLevel3SecurityCheckResult(host, e, mysqlPool);
+		}
+
+	}
+	catch (const std::exception& e) {
+		std::cerr << "Error: " << e.what() << std::endl;
+	}
+
+	// 获取结束时间（用于测试）
+	auto end = std::chrono::high_resolution_clock::now();
+	// 计算时间差（以毫秒为单位）
+	std::chrono::duration<double, std::milli> elapsed = end - start;
+	// 输出时间差
+	std::cout << "代码执行时间: " << elapsed.count() << " 毫秒" << std::endl;
+
+}
 void ServerInfo_Padding2(ServerInfo& info, const std::string ip, SSHConnectionPool& pool, ConnectionPool& mysqlPool, DatabaseHandler& dbHandler) {
     SSHConnectionGuard guard(pool);
     ssh_session session = guard.get();

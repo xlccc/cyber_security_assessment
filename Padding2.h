@@ -8,3 +8,6 @@
 void fun2(const string& host, const string& username, const string& password,
       ConnectionPool& pool, DatabaseHandler& dbHandler, const vector<int>& ids = std::vector<int>());
 void ServerInfo_Padding2(ServerInfo& info, const std::string ip, SSHConnectionPool& pool, ConnectionPool& mysqlPool, DatabaseHandler& dbHandler);
+
+void level3Fun(const string& host, const string& username, const string& password,
+	ConnectionPool& mysqlPool, DatabaseHandler& dbHandler, const vector<int>& ids);

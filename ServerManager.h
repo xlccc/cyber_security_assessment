@@ -65,6 +65,8 @@ private:
     std::map<std::string, std::string> port_services;
     //缓存 ip 和上次检测的临时ids的映射
     std::map<std::string, std::vector<int>> lastCheckedIds;
+
+    std::map<std::string, std::vector<int>> lastLevel3CheckedIds;
     std::unique_ptr<http_listener> listener;
     void handle_options(http_request request);
     void handle_request(http_request request);
@@ -182,6 +184,10 @@ private:
 
     void handle_get_userInfo(http_request request);
     void handle_get_tmpUserInfo(http_request request);
+
+    void handle_post_level3(http_request request);
+    void handle_get_level3UserInfo(http_request request);
+    void handle_get_level3TmpUserInfo(http_request request);
 };
 
 #endif // SERVERMANAGER_H
