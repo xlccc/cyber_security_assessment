@@ -169,7 +169,8 @@ private:
 
     // 将资产信息转换为JSON格式
     web::json::value convertAssetInfoToJson(const AssetInfo& assetInfo);
-
+    // 将ports信息转换为JSON格式
+    web::json::value convertPortsToJson(const std::vector<PortInfo>& ports);
     // 处理获取所有资产信息的HTTP请求
     void handle_get_all_assets_info(http_request request);
 
@@ -188,6 +189,7 @@ private:
     void handle_post_level3(http_request request);
     void handle_get_level3UserInfo(http_request request);
     void handle_get_level3TmpUserInfo(http_request request);
+    void handle_get_weak_password_by_ip(http_request request);
 };
 
 #endif // SERVERMANAGER_H
