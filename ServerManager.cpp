@@ -92,14 +92,15 @@ void ServerManager::handle_request(http_request request) {
     else if (first_segment == _XPLATSTR("login") && request.method() == methods::POST) {
         handle_post_login(request);
     }
-    //基线检测的账号密码登录
+    //三级等保检测的账号密码登录
     else if (first_segment == _XPLATSTR("level3Login") && request.method() == methods::POST) {
         handle_post_level3(request);
     }
-    //返回基线检测的结果
+    //返回三级等保检测的结果
     else if (first_segment == _XPLATSTR("level3Userinfo") && request.method() == methods::GET) {
         handle_get_level3UserInfo(request);
     }
+    //返回三级等保当前检测的结果
     else if (first_segment == _XPLATSTR("level3TmpUserinfo") && request.method() == methods::GET) {
         handle_get_level3TmpUserInfo(request);
     }
@@ -2240,86 +2241,6 @@ void ServerManager::handle_get_classify_protect(http_request request) {
     // 发送响应
     request.reply(response);
 }
-//void ServerManager::handle_post_hydra(http_request request)
-//{
-//    request.extract_json().then([this, &request](json::value body) {
-//        std::string ip = body[_XPLATSTR("ip")].as_string();
-//        std::string service_name = body[_XPLATSTR("service_name")].as_string();
-//        std::string portId_name = body[_XPLATSTR("portId_name")].as_string();
-//
-//        std::string usernameFile = "/hydra/usernames.txt";
-//        std::string passwordFile = "/hydra/passwords.txt";
-//
-//        //说明有这个服务
-//        if (port_services.find(service_name) != port_services.end()) {
-//            // Construct the hydra command
-//            std::string command = "hydra -L " + usernameFile + " -P " + passwordFile + " -f" + service_name + "://" + ip;
-//
-//            // Execute the command and get the output
-//            std::string output = exec(command.c_str());
-//
-//
-//            string res = extract_login_info(output);
-//
-//
-//            std::regex pattern(R"(\[(\d+)\]\[([^\]]+)\] host:\s*([^\s]+)\s+login:\s*([^\s]+)\s+password:\s*([^\s]+))");
-//            std::smatch match;
-//            int port = 0;
-//            string service = "";
-//            string host = "";
-//            string login = "";
-//            string password = "";
-//            // Search for the pattern in the input string
-//            if (std::regex_search(res, match, pattern)) {
-//                port = std::stoi(match[1].str());
-//                service = match[2].str();
-//                host = match[3].str();
-//                login = match[4].str();
-//                password = match[5].str();
-//            }
-//            else {
-//                throw std::runtime_error("No matching info found");
-//            }
-//            json::value json_obj = json::value::object();
-//            json_obj[_XPLATSTR("port")] = json::value::number(port);
-//            json_obj[_XPLATSTR("service")] = json::value::string(service);
-//            json_obj[_XPLATSTR("host")] = json::value::string(host);
-//            json_obj[_XPLATSTR("login")] = json::value::string(login);
-//            json_obj[_XPLATSTR("password")] = json::value::string(password);
-//
-//            // Create a JSON array and add the JSON object to it
-//            json::value json_array = json::value::array();
-//            json_array[0] = json_obj;
-//
-//            // 创建响应
-//            http_response response(status_codes::OK);
-//            response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
-//            response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
-//            response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
-//
-//            //json::value response_data;
-//            //response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR(res));
-//            response.set_body(json_array);
-//            request.reply(response);
-//        }
-//        else {
-//            // 服务不存在，返回错误信息
-//            json::value error_response = json::value::object();
-//            error_response[_XPLATSTR("error")] = json::value::string(_XPLATSTR("Service not found"));
-//            error_response[_XPLATSTR("service_name")] = json::value::string(service_name);
-//
-//            // 创建响应
-//            http_response response(status_codes::NotFound);
-//            response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
-//            response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
-//            response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
-//
-//            response.set_body(error_response);
-//            request.reply(response);
-//        }
-//        }).wait();
-//}
-
 
 
 

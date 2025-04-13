@@ -10,6 +10,8 @@
 #include <algorithm>   // std::remove_if
 #include <cctype>      // ::isspace
 #include <regex>
+#include <sstream>
+#include"utils/utils.h"
 class EventChecker {
 public:
     EventChecker(size_t threadCount, SSHConnectionPool& pool)
@@ -188,7 +190,7 @@ private:
         // 三级等保检查条目初始化
         level3ComplianceFunctions = {
             {1, [this] { event e = checkFirewallCompliance(); e.item_id = 1;  return e; }},
-            
+            {2, [this] { event e = checkFirewallRedundancy(); e.item_id = 2;  return e; }}
             // 可以继续添加更多三级等保检查项
         };
 
@@ -259,7 +261,84 @@ private:
 
     }
 
+    event checkFirewallRedundancy() {
+        SSHConnectionGuard guard(sshPool);  // guard 从 sshPool 获取一个空闲的 SSH 连接
+        event e;
+        e.description = "8.1.3.2.b";
+        e.importantLevel = "3";
+        e.basis = "应删除多余或无效的访问控制规则，优化访问控制列表，并保证访问控制规则数量最小化";
+        e.IsComply = "false";
 
+        try {
+            // 获取UFW防火墙规则
+            std::string ufwOutput;
+
+            // 尝试从命令执行获取规则
+            std::string command = "sudo ufw status numbered";
+            ufwOutput = execute_commands(guard.get(), command);
+
+            // 确保输出不为空
+            if (ufwOutput.empty()) {
+                e.result = "无法获取防火墙规则，请确保UFW已启用且有规则存在";
+                return e;
+            }
+
+            // 过滤出带编号的规则
+            std::string numberedRulesStr = filterNumberedRules(ufwOutput);
+
+            if (numberedRulesStr.empty()) {
+                e.result = "未找到UFW规则，防火墙可能未启用或没有配置规则";
+                return e;
+            }
+
+            // 解析UFW规则
+            std::vector<UfwRule> rules = parseUfwRules(numberedRulesStr);
+
+            if (rules.empty()) {
+                e.result = "没有解析到任何规则，可能是解析失败或防火墙没有规则";
+                return e;
+            }
+
+            // 查找冗余规则
+            std::vector<UfwRule> redundantRules = findRedundantRules(rules);
+
+            if (redundantRules.empty()) {
+                e.result = "防火墙规则配置已优化，没有发现冗余规则";
+                e.IsComply = "true";
+            }
+            else {
+                // 构建冗余规则编号的字符串
+                std::stringstream redundantInfo;
+                redundantInfo << "发现 " << redundantRules.size() << " 条冗余规则，编号: ";
+
+                for (size_t i = 0; i < redundantRules.size(); ++i) {
+                    if (i > 0) redundantInfo << ", ";
+                    redundantInfo << redundantRules[i].number;
+                }
+
+                // 生成删除建议命令
+                std::stringstream recommendCommands;
+                recommendCommands << "建议执行以下命令删除冗余规则:\n";
+
+                // 按照从大到小的顺序删除，避免删除一条规则后编号变化导致删错规则
+                std::sort(redundantRules.begin(), redundantRules.end(),
+                    [](const UfwRule& a, const UfwRule& b) { return a.number > b.number; });
+
+                for (const auto& rule : redundantRules) {
+                    recommendCommands << "sudo ufw delete " << rule.number << "\n";
+                }
+
+                e.result = redundantInfo.str();
+                e.recommend = recommendCommands.str();
+            }
+
+        }
+        catch (const std::exception& err) {
+            e.result = "检查防火墙冗余规则过程中发生错误: " + std::string(err.what());
+        }
+
+        return e;
+    }
 
 
 
