@@ -211,6 +211,7 @@ private:
         if (statusOutput.find("状态：激活") == std::string::npos &&
             statusOutput.find("Status: active") == std::string::npos) {
             e.result = "防火墙未开启";
+            e.recommend = "应开启防火墙";
             std::cout << "防火墙未开启" << std::endl;
             return e;
         }
@@ -282,6 +283,7 @@ private:
             // 确保输出不为空
             if (ufwOutput.empty()) {
                 e.result = "无法获取防火墙规则，请确保UFW已启用且有规则存在";
+                e.recommend = "应开启防火墙";
                 return e;
             }
 
@@ -290,6 +292,7 @@ private:
 
             if (numberedRulesStr.empty()) {
                 e.result = "未找到UFW规则，防火墙可能未启用或没有配置规则";
+                e.recommend = "应开启防火墙或配置规则";
                 return e;
             }
 
@@ -298,6 +301,7 @@ private:
 
             if (rules.empty()) {
                 e.result = "没有解析到任何规则，可能是解析失败或防火墙没有规则";
+                e.recommend = "应开启防火墙或配置规则";
                 return e;
             }
 
