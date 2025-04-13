@@ -190,7 +190,9 @@ private:
         // 三级等保检查条目初始化
         level3ComplianceFunctions = {
             {1, [this] { event e = checkFirewallCompliance(); e.item_id = 1;  return e; }},
-            {2, [this] { event e = checkFirewallRedundancy(); e.item_id = 2;  return e; }}
+            {2, [this] { event e = checkFirewallRedundancy(); e.item_id = 2;  return e; }},
+            {4, [this] { event e = checkSessionControlCompliance(); e.item_id = 4;  return e; }},
+            {5, [this] { event e = checkApplicationControlCompliance(); e.item_id = 5;  return e; }},
             // 可以继续添加更多三级等保检查项
         };
 
@@ -340,7 +342,202 @@ private:
         return e;
     }
 
+    event checkSessionControlCompliance() {
+        SSHConnectionGuard guard(sshPool);
+        event e;
+        e.description = "8.1.3.2.d";
+        e.importantLevel = "3";
+        e.basis = "应能根据会话状态信息为进出数据流提供明确的允许/拒绝访问能力";
+        e.IsComply = "false";
+        std::vector<std::string> problems;   // 存储所有问题描述
+        std::vector<std::string> recommends; // 存储所有修复建议
 
+        // 1. 防火墙服务状态检查 - 最基础的要求
+        std::string fw_status = execute_commands(guard.get(), "systemctl is-active firewalld 2>/dev/null || systemctl is-active iptables 2>/dev/null || systemctl is-active nftables 2>/dev/null || echo 'inactive'");
+        if (fw_status.find("active") == std::string::npos) {
+            problems.emplace_back("防火墙服务未运行");
+            recommends.emplace_back("启动防火墙服务：systemctl start firewalld 或 systemctl start iptables 或 systemctl start nftables");
+        }
+
+        // 2. 防火墙默认策略检查 - 核心要求：明确的拒绝能力
+        std::string default_policy = execute_commands(guard.get(), "iptables -L -vn | grep policy");
+        bool hasDefaultDrop = false;
+
+        if (default_policy.find("policy DROP") != std::string::npos ||
+            default_policy.find("policy REJECT") != std::string::npos) {
+            hasDefaultDrop = true;
+        }
+        else {
+            std::string nft_policy = execute_commands(guard.get(), "nft list ruleset | grep -E 'policy (drop|reject)'");
+            if (!nft_policy.empty()) {
+                hasDefaultDrop = true;
+            }
+        }
+
+        if (!hasDefaultDrop) {
+            problems.emplace_back("防火墙未配置默认拒绝策略");
+            recommends.emplace_back("配置默认拒绝策略：iptables -P INPUT DROP 和 iptables -P FORWARD DROP");
+        }
+
+        // 3. 状态防火墙规则检查 - 核心要求：基于会话状态的允许能力
+        bool hasStateRule = false;
+
+        // 检查iptables状态规则
+        std::string state_rules = execute_commands(guard.get(), "iptables -L -vn | grep -E 'RELATED,ESTABLISHED|ESTABLISHED,RELATED'");
+        if (!state_rules.empty()) {
+            hasStateRule = true;
+        }
+        else {
+            // 检查nftables状态规则
+            std::string nft_state = execute_commands(guard.get(), "nft list ruleset | grep 'ct state'");
+            if (!nft_state.empty()) {
+                hasStateRule = true;
+            }
+        }
+
+        if (!hasStateRule) {
+            problems.emplace_back("未配置基于会话状态的访问控制规则");
+            recommends.emplace_back("添加规则：iptables -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT");
+        }
+
+        // 4. 明确的允许规则检查 - 明确的允许能力
+        std::string accept_rules = execute_commands(guard.get(), "iptables -L -vn | grep ACCEPT");
+        if (accept_rules.empty()) {
+            std::string nft_accept = execute_commands(guard.get(), "nft list ruleset | grep accept");
+            if (nft_accept.empty()) {
+                problems.emplace_back("未配置明确的允许规则");
+                recommends.emplace_back("配置明确的服务允许规则，例如：iptables -A INPUT -p tcp --dport 22 -j ACCEPT");
+            }
+        }
+
+        // 5. 会话跟踪模块检查 - 状态防火墙的基础
+        std::string conntrack_check = execute_commands(guard.get(), "lsmod | grep -E 'nf_conntrack|ip_conntrack'");
+        if (conntrack_check.empty()) {
+            problems.emplace_back("连接跟踪模块未加载");
+            recommends.emplace_back("加载模块：modprobe nf_conntrack && echo 'nf_conntrack' >> /etc/modules");
+        }
+
+        // 结果合成
+        if (!problems.empty()) {
+            std::stringstream result;
+            result << "发现" << problems.size() << "个不符合项：\n";
+            for (size_t i = 0; i < problems.size(); ++i) {
+                result << i + 1 << ". " << problems[i] << "\n";
+            }
+            e.result = result.str();
+            // 拼接所有修复建议
+            std::stringstream recommendStream;
+            recommendStream << "建议修复操作：\n";
+            for (size_t i = 0; i < recommends.size(); ++i) {
+                recommendStream << i + 1 << ". " << recommends[i] << "\n";
+            }
+            e.recommend = recommendStream.str();
+        }
+        else {
+            e.result = "会话状态访问控制机制符合要求";
+            e.IsComply = "true";
+        }
+        return e;
+    }
+
+    event checkApplicationControlCompliance() {
+        SSHConnectionGuard guard(sshPool);
+        event e;
+        e.description = "8.1.3.2.e";
+        e.importantLevel = "3";
+        e.basis = "应对进出网络的数据流实现基于应用协议和应用内容的访问控制";
+        e.IsComply = "false";
+
+        std::vector<std::string> problems;    // 存储所有问题描述
+        std::vector<std::string> recommends;  // 存储所有修复建议
+
+        // 1. 检查防火墙服务是否运行
+        std::string fw_status = execute_commands(guard.get(),
+            "systemctl is-active firewalld 2>/dev/null || "
+            "systemctl is-active iptables 2>/dev/null || "
+            "systemctl is-active nftables 2>/dev/null || "
+            "echo 'inactive'");
+
+        if (fw_status.find("active") == std::string::npos) {
+            problems.emplace_back("防火墙服务未运行");
+            recommends.emplace_back("启动防火墙服务：systemctl start firewalld 或 systemctl start iptables");
+        }
+
+        // 2. 检查是否有基于应用协议的访问控制规则
+        bool hasProtocolRules = false;
+
+        // 检查iptables中的协议规则
+        std::string port_rules = execute_commands(guard.get(),
+            "iptables -L -vn | grep -E 'dpt:(21|22|25|53|80|110|143|443|993|995)'");
+        if (!port_rules.empty()) {
+            hasProtocolRules = true;
+        }
+
+        if (!hasProtocolRules) {
+            problems.emplace_back("未配置基于应用协议的访问控制规则");
+            recommends.emplace_back("添加基于协议的访问控制规则，例如：iptables -A INPUT -p tcp --dport 80 -j ACCEPT");
+        }
+
+        // 3. 检查是否有内容检测能力
+        bool hasContentInspection = false;
+
+        // 检查是否安装了应用层防火墙
+        std::string app_fw_check = execute_commands(guard.get(),
+            "dpkg -l | grep -E '(squid|snort|suricata)' || "
+            "which squid snort suricata 2>/dev/null");
+
+        // 过滤掉错误信息
+        if (!app_fw_check.empty() && app_fw_check.find("not found") == std::string::npos) {
+            hasContentInspection = true;
+        }
+
+        // 检查iptables是否有字符串匹配能力和相关规则
+        std::string string_match_support = execute_commands(guard.get(),
+            "iptables -m string --help 2>&1 | grep 'string match'");
+
+        if (!string_match_support.empty()) {
+            std::string l7_rules = execute_commands(guard.get(),
+                "iptables -L -vn | grep -E '(string|content)'");
+
+            if (!l7_rules.empty()) {
+                hasContentInspection = true;
+            }
+        }
+
+        if (!hasContentInspection) {
+            problems.emplace_back("未配置基于应用内容的访问控制能力");
+            if (!string_match_support.empty()) {
+                recommends.emplace_back("添加基于内容的访问控制规则：iptables -A INPUT -p tcp --dport 80 -m string --string \"malicious\" --algo bm -j DROP");
+            }
+            else {
+                recommends.emplace_back("安装应用层防火墙：apt install suricata");
+            }
+        }
+
+        // 结果合成
+        if (!problems.empty()) {
+            std::stringstream result;
+            result << "发现" << problems.size() << "个不符合项：\n";
+            for (size_t i = 0; i < problems.size(); ++i) {
+                result << i + 1 << ". " << problems[i] << "\n";
+            }
+            e.result = result.str();
+
+            // 拼接所有修复建议
+            std::stringstream recommendStream;
+            recommendStream << "建议修复操作：\n";
+            for (size_t i = 0; i < recommends.size(); ++i) {
+                recommendStream << i + 1 << ". " << recommends[i] << "\n";
+            }
+            e.recommend = recommendStream.str();
+        }
+        else {
+            e.result = "基于应用协议和应用内容的访问控制机制符合要求";
+            e.IsComply = "true";
+        }
+
+        return e;
+    }
 
 
 
