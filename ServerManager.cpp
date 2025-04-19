@@ -200,6 +200,9 @@ void ServerManager::handle_request(http_request request) {
     else if (first_segment == _XPLATSTR("getWeakPasswordByIp") && request.method() == methods::GET) {
         handle_get_weak_password_by_ip(request);
     }
+    else if (first_segment == _XPLATSTR("getAllWeakPassword") && request.method() == methods::GET) {
+        handle_get_all_weak_passwords(request);
+        }
     else {
         request.reply(status_codes::NotFound, _XPLATSTR("Path not found"));
     }
@@ -991,6 +994,55 @@ void ServerManager::handle_get_weak_password_by_ip(http_request request) {
     }
     catch (const std::exception& e) {
         std::cerr << "处理弱密码请求时出错: " << e.what() << std::endl;
+        request.reply(status_codes::InternalError,
+            web::json::value::string(utility::conversions::to_string_t("内部服务器错误: " + std::string(e.what()))));
+    }
+}
+
+// 在 ServerManager.cpp 中添加新函数
+void ServerManager::handle_get_all_weak_passwords(http_request request) {
+    try {
+        // 获取所有存活主机
+        std::vector<std::string> alive_hosts;
+        dbHandler_.readAliveHosts(alive_hosts, pool);
+
+        // 创建一个JSON数组来存储所有主机的弱口令信息
+        web::json::value all_results = web::json::value::array();
+        int index = 0;
+
+        // 遍历每个存活主机
+        for (const auto& ip : alive_hosts) {
+            // 从数据库中获取该IP的所有端口信息
+            std::vector<PortInfo> port_infos = dbHandler_.getAllPortInfoByIp(ip, pool);
+
+            // 筛选出有弱密码的端口信息
+            std::vector<PortInfo> weak_password_ports;
+            for (const auto& port_info : port_infos) {
+                if (!port_info.weak_username.empty() && !port_info.weak_password.empty() && port_info.password_verified) {
+                    weak_password_ports.push_back(port_info);
+                }
+            }
+
+            // 如果该主机有弱密码，则添加到结果数组中
+            if (!weak_password_ports.empty()) {
+                web::json::value host_result = web::json::value::object();
+                host_result[_XPLATSTR("ip")] = web::json::value::string(utility::conversions::to_string_t(ip));
+                host_result[_XPLATSTR("weak_passwords")] = convertPortsToJson(weak_password_ports);
+
+                all_results[index++] = host_result;
+            }
+        }
+
+        // 返回结果
+        http_response response(status_codes::OK);
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+        response.set_body(all_results);
+        request.reply(response);
+    }
+    catch (const std::exception& e) {
+        std::cerr << "处理所有主机弱密码请求时出错: " << e.what() << std::endl;
         request.reply(status_codes::InternalError,
             web::json::value::string(utility::conversions::to_string_t("内部服务器错误: " + std::string(e.what()))));
     }

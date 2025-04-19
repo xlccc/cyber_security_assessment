@@ -190,6 +190,7 @@ private:
     void handle_get_level3UserInfo(http_request request);
     void handle_get_level3TmpUserInfo(http_request request);
     void handle_get_weak_password_by_ip(http_request request);
+    void handle_get_all_weak_passwords(http_request request);
 };
 
 #endif // SERVERMANAGER_H
