@@ -1637,18 +1637,15 @@ void DatabaseHandler::saveWeakPasswordResult(
 {
     try {
         auto conn = pool.getConnection();
-
         // 首先获取scan_host_result表中的id
         mysqlx::SqlResult hostResult = conn->sql("SELECT id FROM scan_host_result WHERE ip = ?")
             .bind(ip)
             .execute();
-
         mysqlx::Row hostRow = hostResult.fetchOne();
         if (!hostRow) {
             std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
             return;
         }
-
         int shr_id = hostRow[0]; // 获取shr_id
 
         // 查找对应的端口记录
@@ -1656,21 +1653,29 @@ void DatabaseHandler::saveWeakPasswordResult(
             .bind(shr_id)
             .bind(port)
             .execute();
-
         mysqlx::Row portRow = portResult.fetchOne();
-        if (!portRow) {
-            std::cerr << "未找到对应的端口记录: " << ip << ":" << port << std::endl;
-            return;
+
+        if (portRow) {
+            // 如果找到对应的端口记录，则更新
+            int port_id = portRow[0];
+            conn->sql("UPDATE open_ports SET weak_username = ?, weak_password = ?, password_verified = 'true', verify_time = CURRENT_TIMESTAMP WHERE id = ?")
+                .bind(login)
+                .bind(password)
+                .bind(port_id)
+                .execute();
+        }
+        else {
+            // 如果没找到对应的端口记录，则插入
+            conn->sql("INSERT INTO open_ports (shr_id, port, protocol, status, service_name, weak_username, weak_password, password_verified, verify_time) VALUES (?, ?, 'tcp', 'open', ?, ?, ?, 'true', CURRENT_TIMESTAMP)")
+                .bind(shr_id)
+                .bind(port)
+                .bind(service)
+                .bind(login)
+                .bind(password)
+                .execute();
         }
 
-        int port_id = portRow[0];
-
-        // 更新端口表中的弱口令信息
-        conn->sql("UPDATE open_ports SET weak_username = ?, weak_password = ?, password_verified = 'true', verify_time = CURRENT_TIMESTAMP WHERE id = ?")
-            .bind(login)
-            .bind(password)
-            .bind(port_id)
-            .execute();
+        std::cout << "弱口令结果保存成功: " << ip << ":" << port << " - " << login << ":" << password << std::endl;
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "保存弱口令结果时数据库错误: " << err.what() << std::endl;
