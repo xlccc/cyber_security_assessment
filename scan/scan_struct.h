@@ -132,13 +132,6 @@ struct PortInfo {
     std::string verify_time;          // 验证时间
 };
 
-//// 定义一个新的结构体，包含IP的所有资产信息
-//struct AssetInfo {
-//    std::string ip;
-//    std::vector<PortInfo> ports;                          // 端口信息
-//    std::vector<VulnerabilityInfo> host_vulnerabilities;  // 主机漏洞
-//    std::vector<PortVulnerabilityInfo> port_vulnerabilities; // 端口漏洞
-//};
 
 // 基线检测统计摘要
 struct BaselineCheckSummary {

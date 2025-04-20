@@ -83,6 +83,10 @@ public:
     // 根据IP地址获取安全检查结果
     std::vector<event> getSecurityCheckResults(const std::string& ip, ConnectionPool& pool);
 
+    // 在DatabaseHandler类的public部分添加以下声明
+    std::vector<event> getSecurityCheckResultsByIds(const std::string& ip, const std::vector<int>& ids, ConnectionPool& pool);
+
+    //根据ip地址以及ids获取安全检查结果
     // 计算基线检测摘要
     BaselineCheckSummary calculateBaselineSummary(const std::vector<event>& check_results);
 
@@ -90,6 +94,13 @@ public:
     void insertServerInfo(const ServerInfo& info, const std::string& ip, ConnectionPool& pool);
 
     ServerInfo getServerInfoByIp(const std::string& ip, ConnectionPool& pool);
+
+    void saveLevel3SecurityCheckResult(const std::string& ip, const event& checkEvent, ConnectionPool& pool);
+
+    std::vector<event> getLevel3SecurityCheckResults(const std::string& ip, ConnectionPool& pool);
+
+    // 在DatabaseHandler类的public部分添加以下声明
+    std::vector<event> getLevel3SecurityCheckResultsByIds(const std::string& ip, const std::vector<int>& ids, ConnectionPool& pool);
 
     //获取所有支持的漏洞类型
     std::vector<std::string> getAllVulnTypes(ConnectionPool& pool);

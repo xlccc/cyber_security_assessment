@@ -9,12 +9,43 @@
 #include <map>
 #include <algorithm>   // std::remove_if
 #include <cctype>      // ::isspace
-
+#include <regex>
+#include <sstream>
+#include"utils/utils.h"
 class EventChecker {
 public:
     EventChecker(size_t threadCount, SSHConnectionPool& pool)
         : threadPool(threadCount), sshPool(pool) {
         initializeCheckFunctions();
+    }
+
+    // 检查三级等保合规性
+    void checkLevel3Events(std::vector<event>& events, const std::vector<int>& ids = {}) {
+        std::vector<std::future<event>> futures;
+        if (ids.empty()) {
+            // 如果没有指定 ID，执行所有三级等保检查
+            for (const auto& pair : level3ComplianceFunctions) {
+                futures.push_back(threadPool.enqueue(pair.second));
+            }
+        }
+        else {
+            // 只执行指定 ID 的三级等保检查
+            for (int id : ids) {
+                auto it = level3ComplianceFunctions.find(id);
+                if (it != level3ComplianceFunctions.end()) {
+                    futures.push_back(threadPool.enqueue(it->second));
+                }
+                else {
+                    std::cerr << "Warning: Level 3 Compliance Check ID " << id << " not found" << std::endl;
+                }
+            }
+        }
+
+        // 收集结果
+        for (auto& future : futures) {
+            event eventResult = future.get();
+            events.push_back(eventResult);
+        }
     }
 
     void checkEvents(std::vector<event>& events, const std::vector<int>& ids = {}) {
@@ -59,6 +90,9 @@ private:
     string soft_ware;
 
     std::map<int, std::function<event()>> checkFunctions;
+
+    // 三级等保检查函数映射
+    std::map<int, std::function<event()>> level3ComplianceFunctions;
 
     void initializeCheckFunctions() {
         checkFunctions = {
@@ -152,103 +186,364 @@ private:
             {88, [this] { event e = checkFtpDirectory(); e.item_id = 88; return e; }},
             {89, [this] { event e = checkKernel_cve_2021_43267(); e.item_id = 89; return e; }},
         };
+
+        // 三级等保检查条目初始化
+        level3ComplianceFunctions = {
+            {1, [this] { event e = checkFirewallCompliance(); e.item_id = 1;  return e; }},
+            {2, [this] { event e = checkFirewallRedundancy(); e.item_id = 2;  return e; }},
+            {4, [this] { event e = checkSessionControlCompliance(); e.item_id = 4;  return e; }},
+            {5, [this] { event e = checkApplicationControlCompliance(); e.item_id = 5;  return e; }},
+            // 可以继续添加更多三级等保检查项
+        };
+
+    }
+
+    event checkFirewallCompliance() {
+        SSHConnectionGuard guard(sshPool);//guard 从 sshPool 获取一个空闲的 SSH 连接
+        event e;
+        e.description = "8.1.3.2.a";
+        e.importantLevel = "3";
+        e.basis = "应在网络边界或区域之间根据访问控制策略设置访问控制规则，默认情况下除允许通信外受控接口拒绝所有通信";
+        e.IsComply = "false";
+        // 1. 检查防火墙是否开启
+        std::string command = "sudo ufw status verbose";
+        std::string statusOutput = execute_commands(guard.get(), command);
+        if (statusOutput.find("状态：激活") == std::string::npos &&
+            statusOutput.find("Status: active") == std::string::npos) {
+            e.result = "防火墙未开启";
+            e.recommend = "应开启防火墙";
+            std::cout << "防火墙未开启" << std::endl;
+            return e;
+        }
+        // 2. 检查默认策略是否符合要求
+        // 检查入站默认策略是否为拒绝
+        if (statusOutput.find("默认：deny (incoming)") == std::string::npos &&
+            statusOutput.find("Default: deny (incoming)") == std::string::npos) {
+            e.result = "入站默认策略不是deny";
+            e.recommend = "应符合入站默认策略是deny";
+            std::cout << "入站默认策略不是deny" << std::endl;
+            return e;
+        }
+
+        // 检查出站默认策略是否为允许
+        if (statusOutput.find("allow (outgoing)") == std::string::npos) {
+            e.result = "出站默认策略不是allow";
+            e.recommend = "应符合出站默认策略是allow";
+            std::cout << "出站默认策略不是allow" << std::endl;
+            return e;
+        }
+
+        // 检查路由默认策略是否为拒绝
+        if (statusOutput.find("deny (routed)") == std::string::npos) {
+            e.result = "路由默认策略不是deny";
+            e.recommend = "应符合路由默认策略是deny";
+            std::cout << "路由默认策略不是deny" << std::endl;
+            return e;
+        }
+
+        // 3. 检查是否存在Anywhere规则
+        command = "sudo ufw status numbered";
+        std::string rulesOutput = execute_commands(guard.get(), command);
+
+        // 使用正则表达式检查入站规则中是否有Anywhere
+        std::regex incomingAnywherePattern("ALLOW\\s+IN\\s+Anywhere");
+        std::smatch matches;
+        if (std::regex_search(rulesOutput, matches, incomingAnywherePattern)) {
+            e.result = "发现入站规则允许Anywhere访问，不符合白名单机制";
+            e.recommend = "应符合白名单机制";
+            
+            std::cout << "发现入站规则允许Anywhere访问，不符合白名单机制" << std::endl;
+            return e;
+        }
+
+        // 所有检查都通过
+        e.result = "防火墙配置符合三级等保要求";
+        e.IsComply = "true";
+        return e;
+
+
+    }
+
+    event checkFirewallRedundancy() {
+        SSHConnectionGuard guard(sshPool);  // guard 从 sshPool 获取一个空闲的 SSH 连接
+        event e;
+        e.description = "8.1.3.2.b";
+        e.importantLevel = "3";
+        e.basis = "应删除多余或无效的访问控制规则，优化访问控制列表，并保证访问控制规则数量最小化";
+        e.IsComply = "false";
+
+        try {
+            // 获取UFW防火墙规则
+            std::string ufwOutput;
+
+            // 尝试从命令执行获取规则
+            std::string command = "sudo ufw status numbered";
+            ufwOutput = execute_commands(guard.get(), command);
+
+            // 确保输出不为空
+            if (ufwOutput.empty()) {
+                e.result = "无法获取防火墙规则，请确保UFW已启用且有规则存在";
+                e.recommend = "应开启防火墙";
+                return e;
+            }
+
+            // 过滤出带编号的规则
+            std::string numberedRulesStr = filterNumberedRules(ufwOutput);
+
+            if (numberedRulesStr.empty()) {
+                e.result = "未找到UFW规则，防火墙可能未启用或没有配置规则";
+                e.recommend = "应开启防火墙或配置规则";
+                return e;
+            }
+
+            // 解析UFW规则
+            std::vector<UfwRule> rules = parseUfwRules(numberedRulesStr);
+
+            if (rules.empty()) {
+                e.result = "没有解析到任何规则，可能是解析失败或防火墙没有规则";
+                e.recommend = "应开启防火墙或配置规则";
+                return e;
+            }
+
+            // 查找冗余规则
+            std::vector<UfwRule> redundantRules = findRedundantRules(rules);
+
+            if (redundantRules.empty()) {
+                e.result = "防火墙规则配置已优化，没有发现冗余规则";
+                e.IsComply = "true";
+            }
+            else {
+                // 构建冗余规则编号的字符串
+                std::stringstream redundantInfo;
+                redundantInfo << "发现 " << redundantRules.size() << " 条冗余规则，编号: ";
+
+                for (size_t i = 0; i < redundantRules.size(); ++i) {
+                    if (i > 0) redundantInfo << ", ";
+                    redundantInfo << redundantRules[i].number;
+                }
+
+                // 生成删除建议命令
+                std::stringstream recommendCommands;
+                recommendCommands << "建议执行以下命令删除冗余规则:\n";
+
+                // 按照从大到小的顺序删除，避免删除一条规则后编号变化导致删错规则
+                std::sort(redundantRules.begin(), redundantRules.end(),
+                    [](const UfwRule& a, const UfwRule& b) { return a.number > b.number; });
+
+                for (const auto& rule : redundantRules) {
+                    recommendCommands << "sudo ufw delete " << rule.number << "\n";
+                }
+
+                e.result = redundantInfo.str();
+                e.recommend = recommendCommands.str();
+            }
+
+        }
+        catch (const std::exception& err) {
+            e.result = "检查防火墙冗余规则过程中发生错误: " + std::string(err.what());
+        }
+
+        return e;
+    }
+
+    event checkSessionControlCompliance() {
+        SSHConnectionGuard guard(sshPool);
+        event e;
+        e.description = "8.1.3.2.d";
+        e.importantLevel = "3";
+        e.basis = "应能根据会话状态信息为进出数据流提供明确的允许/拒绝访问能力";
+        e.IsComply = "false";
+        std::vector<std::string> problems;   // 存储所有问题描述
+        std::vector<std::string> recommends; // 存储所有修复建议
+
+        // 1. 防火墙服务状态检查 - 最基础的要求
+        std::string fw_status = execute_commands(guard.get(), "systemctl is-active firewalld 2>/dev/null || systemctl is-active iptables 2>/dev/null || systemctl is-active nftables 2>/dev/null || echo 'inactive'");
+        if (fw_status.find("active") == std::string::npos) {
+            problems.emplace_back("防火墙服务未运行");
+            recommends.emplace_back("启动防火墙服务：systemctl start firewalld 或 systemctl start iptables 或 systemctl start nftables");
+        }
+
+        // 2. 防火墙默认策略检查 - 核心要求：明确的拒绝能力
+        std::string default_policy = execute_commands(guard.get(), "iptables -L -vn | grep policy");
+        bool hasDefaultDrop = false;
+
+        if (default_policy.find("policy DROP") != std::string::npos ||
+            default_policy.find("policy REJECT") != std::string::npos) {
+            hasDefaultDrop = true;
+        }
+        else {
+            std::string nft_policy = execute_commands(guard.get(), "nft list ruleset | grep -E 'policy (drop|reject)'");
+            if (!nft_policy.empty()) {
+                hasDefaultDrop = true;
+            }
+        }
+
+        if (!hasDefaultDrop) {
+            problems.emplace_back("防火墙未配置默认拒绝策略");
+            recommends.emplace_back("配置默认拒绝策略：iptables -P INPUT DROP 和 iptables -P FORWARD DROP");
+        }
+
+        // 3. 状态防火墙规则检查 - 核心要求：基于会话状态的允许能力
+        bool hasStateRule = false;
+
+        // 检查iptables状态规则
+        std::string state_rules = execute_commands(guard.get(), "iptables -L -vn | grep -E 'RELATED,ESTABLISHED|ESTABLISHED,RELATED'");
+        if (!state_rules.empty()) {
+            hasStateRule = true;
+        }
+        else {
+            // 检查nftables状态规则
+            std::string nft_state = execute_commands(guard.get(), "nft list ruleset | grep 'ct state'");
+            if (!nft_state.empty()) {
+                hasStateRule = true;
+            }
+        }
+
+        if (!hasStateRule) {
+            problems.emplace_back("未配置基于会话状态的访问控制规则");
+            recommends.emplace_back("添加规则：iptables -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT");
+        }
+
+        // 4. 明确的允许规则检查 - 明确的允许能力
+        std::string accept_rules = execute_commands(guard.get(), "iptables -L -vn | grep ACCEPT");
+        if (accept_rules.empty()) {
+            std::string nft_accept = execute_commands(guard.get(), "nft list ruleset | grep accept");
+            if (nft_accept.empty()) {
+                problems.emplace_back("未配置明确的允许规则");
+                recommends.emplace_back("配置明确的服务允许规则，例如：iptables -A INPUT -p tcp --dport 22 -j ACCEPT");
+            }
+        }
+
+        // 5. 会话跟踪模块检查 - 状态防火墙的基础
+        std::string conntrack_check = execute_commands(guard.get(), "lsmod | grep -E 'nf_conntrack|ip_conntrack'");
+        if (conntrack_check.empty()) {
+            problems.emplace_back("连接跟踪模块未加载");
+            recommends.emplace_back("加载模块：modprobe nf_conntrack && echo 'nf_conntrack' >> /etc/modules");
+        }
+
+        // 结果合成
+        if (!problems.empty()) {
+            std::stringstream result;
+            result << "发现" << problems.size() << "个不符合项：\n";
+            for (size_t i = 0; i < problems.size(); ++i) {
+                result << i + 1 << ". " << problems[i] << "\n";
+            }
+            e.result = result.str();
+            // 拼接所有修复建议
+            std::stringstream recommendStream;
+            recommendStream << "建议修复操作：\n";
+            for (size_t i = 0; i < recommends.size(); ++i) {
+                recommendStream << i + 1 << ". " << recommends[i] << "\n";
+            }
+            e.recommend = recommendStream.str();
+        }
+        else {
+            e.result = "会话状态访问控制机制符合要求";
+            e.IsComply = "true";
+        }
+        return e;
+    }
+
+    event checkApplicationControlCompliance() {
+        SSHConnectionGuard guard(sshPool);
+        event e;
+        e.description = "8.1.3.2.e";
+        e.importantLevel = "3";
+        e.basis = "应对进出网络的数据流实现基于应用协议和应用内容的访问控制";
+        e.IsComply = "false";
+
+        std::vector<std::string> problems;    // 存储所有问题描述
+        std::vector<std::string> recommends;  // 存储所有修复建议
+
+        // 1. 检查防火墙服务是否运行
+        std::string fw_status = execute_commands(guard.get(),
+            "systemctl is-active firewalld 2>/dev/null || "
+            "systemctl is-active iptables 2>/dev/null || "
+            "systemctl is-active nftables 2>/dev/null || "
+            "echo 'inactive'");
+
+        if (fw_status.find("active") == std::string::npos) {
+            problems.emplace_back("防火墙服务未运行");
+            recommends.emplace_back("启动防火墙服务：systemctl start firewalld 或 systemctl start iptables");
+        }
+
+        // 2. 检查是否有基于应用协议的访问控制规则
+        bool hasProtocolRules = false;
+
+        // 检查iptables中的协议规则
+        std::string port_rules = execute_commands(guard.get(),
+            "iptables -L -vn | grep -E 'dpt:(21|22|25|53|80|110|143|443|993|995)'");
+        if (!port_rules.empty()) {
+            hasProtocolRules = true;
+        }
+
+        if (!hasProtocolRules) {
+            problems.emplace_back("未配置基于应用协议的访问控制规则");
+            recommends.emplace_back("添加基于协议的访问控制规则，例如：iptables -A INPUT -p tcp --dport 80 -j ACCEPT");
+        }
+
+        // 3. 检查是否有内容检测能力
+        bool hasContentInspection = false;
+
+        // 检查是否安装了应用层防火墙
+        std::string app_fw_check = execute_commands(guard.get(),
+            "dpkg -l | grep -E '(squid|snort|suricata)' || "
+            "which squid snort suricata 2>/dev/null");
+
+        // 过滤掉错误信息
+        if (!app_fw_check.empty() && app_fw_check.find("not found") == std::string::npos) {
+            hasContentInspection = true;
+        }
+
+        // 检查iptables是否有字符串匹配能力和相关规则
+        std::string string_match_support = execute_commands(guard.get(),
+            "iptables -m string --help 2>&1 | grep 'string match'");
+
+        if (!string_match_support.empty()) {
+            std::string l7_rules = execute_commands(guard.get(),
+                "iptables -L -vn | grep -E '(string|content)'");
+
+            if (!l7_rules.empty()) {
+                hasContentInspection = true;
+            }
+        }
+
+        if (!hasContentInspection) {
+            problems.emplace_back("未配置基于应用内容的访问控制能力");
+            if (!string_match_support.empty()) {
+                recommends.emplace_back("添加基于内容的访问控制规则：iptables -A INPUT -p tcp --dport 80 -m string --string \"malicious\" --algo bm -j DROP");
+            }
+            else {
+                recommends.emplace_back("安装应用层防火墙：apt install suricata");
+            }
+        }
+
+        // 结果合成
+        if (!problems.empty()) {
+            std::stringstream result;
+            result << "发现" << problems.size() << "个不符合项：\n";
+            for (size_t i = 0; i < problems.size(); ++i) {
+                result << i + 1 << ". " << problems[i] << "\n";
+            }
+            e.result = result.str();
+
+            // 拼接所有修复建议
+            std::stringstream recommendStream;
+            recommendStream << "建议修复操作：\n";
+            for (size_t i = 0; i < recommends.size(); ++i) {
+                recommendStream << i + 1 << ". " << recommends[i] << "\n";
+            }
+            e.recommend = recommendStream.str();
+        }
+        else {
+            e.result = "基于应用协议和应用内容的访问控制机制符合要求";
+            e.IsComply = "true";
+        }
+
+        return e;
     }
 
 
-    //void initializeCheckFunctions() {
-    //    // 使用ID映射每个检查函数
-    //    checkFunctions = {
-    //        {1, std::bind(&EventChecker::checkPasswordLifetime, this)},
-    //        {2, std::bind(&EventChecker::checkPasswordMinLength, this)},
-    //        {3, std::bind(&EventChecker::checkPasswordWarnDays, this)},
-    //        {4, std::bind(&EventChecker::checkPasswordComplex, this)},
-    //        {5, std::bind(&EventChecker::checkEmptyPassword, this)},
-    //        {6, std::bind(&EventChecker::checkUID0ExceptRoot, this)},
-    //        {7, std::bind(&EventChecker::checkUmaskCshrc, this)},
-    //        {8, std::bind(&EventChecker::checkUmaskBashrc, this)},
-    //        {9, std::bind(&EventChecker::checkUmaskProfile, this)},
-    //        {10, std::bind(&EventChecker::checkModXinetd, this)},
-    //        {11, std::bind(&EventChecker::checkModGroup, this)},
-    //        {12, std::bind(&EventChecker::checkModShadow, this)},
-    //        {13, std::bind(&EventChecker::checkModServices, this)},
-    //        {14, std::bind(&EventChecker::checkModSecurity, this)},
-    //        {15, std::bind(&EventChecker::checkModPasswd, this)},
-    //        {16, std::bind(&EventChecker::checkModRc6, this)},
-    //        {17, std::bind(&EventChecker::checkModRc0, this)},
-    //        {18, std::bind(&EventChecker::checkModRc1, this)},
-    //        {19, std::bind(&EventChecker::checkModRc2, this)},
-    //        {20, std::bind(&EventChecker::checkModEtc, this)},
-    //        {21, std::bind(&EventChecker::checkModRc4, this)},
-    //        {22, std::bind(&EventChecker::checkModRc5, this)},
-    //        {23, std::bind(&EventChecker::checkModRc3, this)},
-    //        {24, std::bind(&EventChecker::checkModInit, this)},
-    //        {25, std::bind(&EventChecker::checkModTmp, this)},
-    //        {26, std::bind(&EventChecker::checkModGrub, this)},
-    //        {27, std::bind(&EventChecker::checkModGrubGrub, this)},
-    //        {28, std::bind(&EventChecker::checkModLilo, this)},
-    //        {29, std::bind(&EventChecker::checkAttributePasswd, this)},
-    //        {30, std::bind(&EventChecker::checkAttributeShadow, this)},
-    //        {31, std::bind(&EventChecker::checkAttributeGroup, this)},
-    //        {32, std::bind(&EventChecker::checkAttributeGshadow, this)},
-    //        {33, std::bind(&EventChecker::checkUmaskLogin, this)},
-    //        {34, std::bind(&EventChecker::checkSshBanner, this)},
-    //        {35, std::bind(&EventChecker::checkeNg, this)},
-    //        {36, std::bind(&EventChecker::checkRsyslog, this)},
-    //        {37, std::bind(&EventChecker::checkSyslog, this)},
-    //        {38, std::bind(&EventChecker::checkSyslogNgSafe, this)},
-    //        {39, std::bind(&EventChecker::checkRsyslogSafe, this)},
-    //        {40, std::bind(&EventChecker::checkSyslogSafe, this)},
-    //        {41, std::bind(&EventChecker::checkCron, this)},
-    //        {42, std::bind(&EventChecker::checkSecure, this)},
-    //        {43, std::bind(&EventChecker::checkMessage, this)},
-    //        {44, std::bind(&EventChecker::checkBootLog, this)},
-    //        {45, std::bind(&EventChecker::checkMail, this)},
-    //        {46, std::bind(&EventChecker::checkSpooler, this)},
-    //        {47, std::bind(&EventChecker::checkLocalMessages, this)},
-    //        {48, std::bind(&EventChecker::checkMaillog, this)},
-    //        {49, std::bind(&EventChecker::checkLast, this)},
-    //        {50, std::bind(&EventChecker::checkSuLog, this)},
-    //        {51, std::bind(&EventChecker::checkOpensshConfig, this)},
-    //        {52, std::bind(&EventChecker::checkRunningSnmp, this)},
-    //        {53, std::bind(&EventChecker::checkSnmpConfig, this)},
-    //        {54, std::bind(&EventChecker::checkSshConfig, this)},
-    //        {55, std::bind(&EventChecker::checkTelnetConfig, this)},
-    //        {56, std::bind(&EventChecker::checkRunningFtp, this)},
-    //        {57, std::bind(&EventChecker::checkFtpConfig, this)},
-    //        {58, std::bind(&EventChecker::checkAnonymousFtp, this)},
-    //        {59, std::bind(&EventChecker::checkCmdTimeout, this)},
-    //        {60, std::bind(&EventChecker::checkPasswordBootloader, this)},
-    //        {61, std::bind(&EventChecker::checkCoreDump, this)},
-    //        {62, std::bind(&EventChecker::checkHistSize, this)},
-    //        {63, std::bind(&EventChecker::checkGroupWheel, this)},
-    //        {64, std::bind(&EventChecker::checkInterLogin, this)},
-    //        {65, std::bind(&EventChecker::checkPasswordRepeatlimit, this)},
-    //        {66, std::bind(&EventChecker::checkAuthFailtimes, this)},
-    //        {67, std::bind(&EventChecker::checkMultiIp, this)},
-    //        {68, std::bind(&EventChecker::checkLoginRemoteIp, this)},
-    //        {69, std::bind(&EventChecker::checkAliasesUnnecessary, this)},
-    //        {70, std::bind(&EventChecker::checkPermSuidSgid, this)},
-    //        {71, std::bind(&EventChecker::checkScreenAutolock, this)},
-    //        {72, std::bind(&EventChecker::checkTcpSyncookies, this)},
-    //        {73, std::bind(&EventChecker::checkGroupManage, this)},
-    //        {74, std::bind(&EventChecker::checkRootPathCheck, this)},
-    //        {75, std::bind(&EventChecker::checkCtrlAltDelDisabled, this)},
-    //        {76, std::bind(&EventChecker::checkSysTrustMechanism, this)},
-    //        {77, std::bind(&EventChecker::checkDiskPartitionUsageRate, this)},
-    //        {78, std::bind(&EventChecker::checkPotentialRiskFiles, this)},
-    //        {79, std::bind(&EventChecker::checkUserMinPermission, this)},
-    //        {80, std::bind(&EventChecker::checkPacketForwardFunc, this)},
-    //        {81, std::bind(&EventChecker::checkNtpSyncStatus, this)},
-    //        {82, std::bind(&EventChecker::checkNfsServer, this)},
-    //        {83, std::bind(&EventChecker::checkSshBanner2, this)},
-    //        {84, std::bind(&EventChecker::checkUploadFtp, this)},
-    //        {85, std::bind(&EventChecker::checkFtpBaner, this)},
-    //        {86, std::bind(&EventChecker::checkBinOwner, this)},
-    //        {87, std::bind(&EventChecker::checkTelnetBanner, this)},
-    //        {88, std::bind(&EventChecker::checkFtpDirectory, this)},
-    //        {89, std::bind(&EventChecker::checkKernel_cve_2021_43267, this)}
-    //    };
-    //}
 
     event checkPasswordLifetime() {
         SSHConnectionGuard guard(sshPool);//guard 从 sshPool 获取一个空闲的 SSH 连接

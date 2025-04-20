@@ -64,12 +64,14 @@ private:
     DBConfig localConfig;
     // ´æ´¢portIdºÍservice_nameµÄmap
     std::map<std::string, std::string> port_services;
+    //缓存 ip 和上次检测的临时ids的映射
+    std::map<std::string, std::vector<int>> lastCheckedIds;
 
+    std::map<std::string, std::vector<int>> lastLevel3CheckedIds;
     std::unique_ptr<http_listener> listener;
     void handle_options(http_request request);
     void handle_request(http_request request);
 
-    void handle_get_userinfo(http_request request);
     void handle_post_login(http_request request);
     void handle_get_cve_scan(http_request request);
 
@@ -161,11 +163,6 @@ private:
     std::string global_ip;
     std::string global_pd;
 
-    // Placeholder for SSH session and info
-    // Define your own info_new and new_Event structures and initialize_ssh_session, fun, ConvertEvents, ServerInfo_Padding, convert functions accordingly.
-    ServerInfo_t info_new;
-    std::vector<event_t> new_Event;
-    vector<event> Event;
     vector<scoreMeasure> vecScoreMeasure;
 
     //当前扫描结果
@@ -175,7 +172,8 @@ private:
 
     // 将资产信息转换为JSON格式
     web::json::value convertAssetInfoToJson(const AssetInfo& assetInfo);
-
+    // 将ports信息转换为JSON格式
+    web::json::value convertPortsToJson(const std::vector<PortInfo>& ports);
     // 处理获取所有资产信息的HTTP请求
     void handle_get_all_assets_info(http_request request);
 
@@ -189,6 +187,13 @@ private:
     void handle_get_security_check_by_ip(http_request request);
 
     void handle_get_userInfo(http_request request);
+    void handle_get_tmpUserInfo(http_request request);
+
+    void handle_post_level3(http_request request);
+    void handle_get_level3UserInfo(http_request request);
+    void handle_get_level3TmpUserInfo(http_request request);
+    void handle_get_weak_password_by_ip(http_request request);
+    void handle_get_all_weak_passwords(http_request request);
 
     //获取所有支持的漏洞类型
     void handle_get_vuln_types(http_request request);

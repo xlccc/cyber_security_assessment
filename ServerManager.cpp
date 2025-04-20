@@ -12,11 +12,6 @@ ServerManager::ServerManager()
         CONFIG.getDbUser(),
         CONFIG.getDbPassword(),
         CONFIG.getDbSchema()
-        //"192.168.136.128",  // host
-        //33060,            // port
-        //"root",           // user
-        //"123456", // password
-        //"test_db"         // schema
     },
     pool(localConfig),    // 使用 localConfig 初始化 pool
     //dbManager(CONFIG.getPocDatabasePath())    // 原有的 dbManager 初始化
@@ -24,7 +19,6 @@ ServerManager::ServerManager()
 {
 
     utility::string_t address = utility::conversions::to_string_t(CONFIG.getServerUrl());
-    //utility::string_t address = _XPLATSTR("http://192.168.136.128:8081/");
     uri_builder uri(address);
     auto addr = uri.to_uri().to_string();
     listener = std::make_unique<http_listener>(addr);
@@ -89,13 +83,29 @@ void ServerManager::handle_request(http_request request) {
         log_poc_callback(request);
     }
     //返回基线检测的结果
-    if (first_segment == _XPLATSTR("userinfo") && request.method() == methods::GET) {
+    else if (first_segment == _XPLATSTR("userinfo") && request.method() == methods::GET) {
         handle_get_userInfo(request);
+    }
+    else if (first_segment == _XPLATSTR("tmpUserinfo") && request.method() == methods::GET) {
+        handle_get_tmpUserInfo(request);
     }
     //基线检测的账号密码登录
     else if (first_segment == _XPLATSTR("login") && request.method() == methods::POST) {
         handle_post_login(request);
     }
+    //三级等保检测的账号密码登录
+    else if (first_segment == _XPLATSTR("level3Login") && request.method() == methods::POST) {
+        handle_post_level3(request);
+    }
+    //返回三级等保检测的结果
+    else if (first_segment == _XPLATSTR("level3Userinfo") && request.method() == methods::GET) {
+        handle_get_level3UserInfo(request);
+    }
+    //返回三级等保当前检测的结果
+    else if (first_segment == _XPLATSTR("level3TmpUserinfo") && request.method() == methods::GET) {
+        handle_get_level3TmpUserInfo(request);
+    }
+
     //主机发现
     else if (first_segment == _XPLATSTR("host_discovery") && request.method() == methods::POST) {
         handle_host_discovery(request);
@@ -188,12 +198,18 @@ void ServerManager::handle_request(http_request request) {
     else if (first_segment == _XPLATSTR("getSecurityCheckByIp") && request.method() == methods::GET) {
         handle_get_security_check_by_ip(request);
     }
-    else if (first_segment == _XPLATSTR("poc") && second_segment == _XPLATSTR("getAllVulnTypes") && request.method() == methods::GET) {
-        handle_get_vuln_types(request);
+    else if (first_segment == _XPLATSTR("getWeakPasswordByIp") && request.method() == methods::GET) {
+        handle_get_weak_password_by_ip(request);
     }
-    else if (first_segment == _XPLATSTR("poc") && second_segment == _XPLATSTR("editVulnType") && request.method() == methods::POST) {
-        handle_edit_vuln_type(request);
+    else if (first_segment == _XPLATSTR("getAllWeakPassword") && request.method() == methods::GET) {
+        handle_get_all_weak_passwords(request);
         }
+    else if (first_segment == _XPLATSTR("poc") && second_segment == _XPLATSTR("getAllVulnTypes") && request.method() == methods::GET) {
+            handle_get_vuln_types(request);
+            }
+    else if (first_segment == _XPLATSTR("poc") && second_segment == _XPLATSTR("editVulnType") && request.method() == methods::POST) {
+                handle_edit_vuln_type(request);
+                }
     else {
         request.reply(status_codes::NotFound, _XPLATSTR("Path not found"));
     }
@@ -433,6 +449,37 @@ web::json::value ServerManager::convertAssetInfoToJson(const AssetInfo& assetInf
 }
 
 
+web::json::value ServerManager::convertPortsToJson(const std::vector<PortInfo>& ports)
+{
+    web::json::value portsArray = web::json::value::array(ports.size());
+    for (size_t i = 0; i < ports.size(); i++) {
+        web::json::value portObj = web::json::value::object();
+        const PortInfo& port = ports[i];
+
+        portObj["port"] = web::json::value::number(port.port);
+        portObj["protocol"] = web::json::value::string(port.protocol);
+        portObj["status"] = web::json::value::string(port.status);
+        portObj["service_name"] = web::json::value::string(port.service_name);
+        portObj["product"] = web::json::value::string(port.product);
+        portObj["version"] = web::json::value::string(port.version);
+        portObj["software_type"] = web::json::value::string(port.software_type);
+
+        // 添加弱口令相关信息
+        portObj["weak_username"] = web::json::value::string(port.weak_username);
+        portObj["weak_password"] = web::json::value::string(port.weak_password);
+        portObj["password_verified"] = web::json::value::boolean(port.password_verified);
+
+        // 仅当验证时间不为空时添加
+        if (!port.verify_time.empty()) {
+            portObj["verify_time"] = web::json::value::string(port.verify_time);
+        }
+
+        portsArray[i] = portObj;
+    }
+    return portsArray;
+}
+
+
 // 处理获取所有资产信息的HTTP请求
 void ServerManager::handle_get_all_assets_info(http_request request)
 {
@@ -582,6 +629,105 @@ void ServerManager::handle_get_userInfo(http_request request) {
     }
 }
 
+void ServerManager::handle_get_tmpUserInfo(http_request request) {
+    try {
+        // 解析请求中的IP参数
+        auto query = uri::split_query(request.request_uri().query());
+        auto it = query.find(_XPLATSTR("ip"));
+        if (it == query.end()) {
+            request.reply(status_codes::BadRequest, _XPLATSTR("Missing 'ip' parameter"));
+            return;
+        }
+
+        // 获取IP地址
+        std::string ip = utility::conversions::to_utf8string(it->second);
+
+        // 检查IP是否为空
+        if (ip.empty()) {
+            request.reply(status_codes::BadRequest, _XPLATSTR("Empty IP parameter"));
+            return;
+        }
+
+        // 从lastCheckedIds获取该IP最近检查的项目IDs
+        std::vector<int> selectedIds;
+        auto lastIdsIt = lastCheckedIds.find(ip);
+        if (lastIdsIt != lastCheckedIds.end()) {
+            selectedIds = lastIdsIt->second;
+        }
+        else {
+            // 如果没有找到该IP的最近检查记录，返回空结果
+            web::json::value response_json = web::json::value::object();
+            response_json[_XPLATSTR("checkResults")] = web::json::value::array();
+            response_json[_XPLATSTR("serverInfo")] = web::json::value::object();
+
+            // 构造HTTP响应
+            http_response response(status_codes::OK);
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+            response.set_body(response_json);
+
+            // 返回响应
+            request.reply(response);
+            return;
+        }
+
+        // 获取选定IDs的安全检查结果
+        std::vector<event> check_results = dbHandler_.getSecurityCheckResultsByIds(ip, selectedIds, pool);
+
+        // 获取服务器信息
+        ServerInfo server_info = dbHandler_.getServerInfoByIp(ip, pool);
+
+        // 创建返回的JSON对象
+        web::json::value response_json = web::json::value::object();
+
+        // 将安全检查结果添加到JSON中
+        web::json::value results_array = web::json::value::array();
+        for (size_t i = 0; i < check_results.size(); ++i) {
+            web::json::value result = web::json::value::object();
+            result[_XPLATSTR("item_id")] = web::json::value::number(check_results[i].item_id);
+            result[_XPLATSTR("description")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].description));
+            result[_XPLATSTR("basis")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].basis));
+            result[_XPLATSTR("command")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].command));
+            result[_XPLATSTR("result")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].result));
+            result[_XPLATSTR("IsComply")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].IsComply));
+            result[_XPLATSTR("recommend")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].recommend));
+            result[_XPLATSTR("importantLevel")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].importantLevel));
+            results_array[i] = result;
+        }
+        response_json[_XPLATSTR("checkResults")] = results_array;
+
+        // 将服务器信息添加到JSON中
+        web::json::value server_info_json = web::json::value::object();
+        server_info_json[_XPLATSTR("hostname")] = web::json::value::string(utility::conversions::to_string_t(server_info.hostname));
+        server_info_json[_XPLATSTR("arch")] = web::json::value::string(utility::conversions::to_string_t(server_info.arch));
+        server_info_json[_XPLATSTR("cpu")] = web::json::value::string(utility::conversions::to_string_t(server_info.cpu));
+        server_info_json[_XPLATSTR("cpuPhysical")] = web::json::value::string(utility::conversions::to_string_t(server_info.cpuPhysical));
+        server_info_json[_XPLATSTR("cpuCore")] = web::json::value::string(utility::conversions::to_string_t(server_info.cpuCore));
+        server_info_json[_XPLATSTR("free")] = web::json::value::string(utility::conversions::to_string_t(server_info.free));
+        server_info_json[_XPLATSTR("ProductName")] = web::json::value::string(utility::conversions::to_string_t(server_info.ProductName));
+        server_info_json[_XPLATSTR("version")] = web::json::value::string(utility::conversions::to_string_t(server_info.version));
+        server_info_json[_XPLATSTR("osName")] = web::json::value::string(utility::conversions::to_string_t(server_info.osName));
+        server_info_json[_XPLATSTR("isInternet")] = web::json::value::string(utility::conversions::to_string_t(server_info.isInternet));
+        response_json[_XPLATSTR("serverInfo")] = server_info_json;
+
+        // 构造HTTP响应
+        http_response response(status_codes::OK);
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+        response.set_body(response_json);
+
+        // 返回响应
+        request.reply(response);
+    }
+    catch (const std::exception& e) {
+        std::cerr << "处理临时用户信息请求时出错: " << e.what() << std::endl;
+        request.reply(status_codes::InternalError,
+            web::json::value::string(utility::conversions::to_string_t("内部服务器错误: " + std::string(e.what()))));
+    }
+}
+
 
 // 在 ServerManager.cpp 中实现该函数
 void ServerManager::handle_get_security_check_by_ip(http_request request) {
@@ -637,71 +783,11 @@ void ServerManager::handle_get_security_check_by_ip(http_request request) {
     }
 }
 
-void ServerManager::handle_get_userinfo(http_request request) {
-    json::value main_body = json::value::object();
-    json::value ServerInfo = json::value::object();
-    ServerInfo[_XPLATSTR("arch")] = json::value::string(info_new.arch);
-    ServerInfo[_XPLATSTR("cpu")] = json::value::string(info_new.cpu);
-    ServerInfo[_XPLATSTR("cpuCore")] = json::value::string(info_new.cpuCore);
-    ServerInfo[_XPLATSTR("cpuPhysical")] = json::value::string(info_new.cpuPhysical);
-    ServerInfo[_XPLATSTR("free")] = json::value::string(info_new.free);
-    ServerInfo[_XPLATSTR("hostname")] = json::value::string(info_new.hostname);
-    ServerInfo[_XPLATSTR("isInternet")] = json::value::string(info_new.isInternet);
-    ServerInfo[_XPLATSTR("ProductName")] = json::value::string(info_new.ProductName);
-    ServerInfo[_XPLATSTR("version")] = json::value::string(info_new.version);
-    
-    // 对 Event 根据 description 去重，保留最后一个
-    map<string, event> lastEventMap;
-    for (const auto& event : Event) {
-        lastEventMap[event.description] = event;
-    }
-
-    // 将 map 中的值转换回 vector
-    vector<event> uniqueEvent;
-    for (const auto& pair : lastEventMap) {
-        uniqueEvent.push_back(pair.second);
-    }
-
-    json::value response_data = json::value::array();
-    for (size_t i = 0; i < uniqueEvent.size(); ++i) {
-        json::value user_data;
-        user_data[_XPLATSTR("basis")] = json::value::string(utility::conversions::to_string_t(uniqueEvent[i].basis));
-        user_data[_XPLATSTR("command")] = json::value::string(utility::conversions::to_string_t(uniqueEvent[i].command));
-        user_data[_XPLATSTR("description")] = json::value::string(utility::conversions::to_string_t(uniqueEvent[i].description));
-        user_data[_XPLATSTR("IsComply")] = json::value::string(utility::conversions::to_string_t(uniqueEvent[i].IsComply));
-        user_data[_XPLATSTR("recommend")] = json::value::string(utility::conversions::to_string_t(uniqueEvent[i].recommend));
-        user_data[_XPLATSTR("result")] = json::value::string(utility::conversions::to_string_t(uniqueEvent[i].result));
-        user_data[_XPLATSTR("importantLevel")] = json::value::string(utility::conversions::to_string_t(uniqueEvent[i].importantLevel));
-        response_data[i] = user_data;
-    }
-
-    /*
-    json::value response_data = json::value::array();
-    for (size_t i = 0; i < Event.size(); ++i) {
-        json::value user_data;
-
-        user_data[_XPLATSTR("basis")] = json::value::string(utility::conversions::to_string_t(Event[i].basis));
-        user_data[_XPLATSTR("command")] = json::value::string(utility::conversions::to_string_t(Event[i].command));
-        user_data[_XPLATSTR("description")] = json::value::string(utility::conversions::to_string_t(Event[i].description));
-        user_data[_XPLATSTR("IsComply")] = json::value::string(utility::conversions::to_string_t(Event[i].IsComply));
-        user_data[_XPLATSTR("recommend")] = json::value::string(utility::conversions::to_string_t(Event[i].recommend));
-        user_data[_XPLATSTR("result")] = json::value::string(utility::conversions::to_string_t(Event[i].result));
-        user_data[_XPLATSTR("importantLevel")] = json::value::string(utility::conversions::to_string_t(Event[i].importantLevel));
-        response_data[i] = user_data;
-    }
-    */
-    main_body[_XPLATSTR("ServerInfo")] = ServerInfo;
-    main_body[_XPLATSTR("Event_result")] = response_data;
-    http_response response(status_codes::OK);
-    response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
-    response.set_body(main_body);
-    request.reply(response);
-}
-
-void ServerManager::handle_post_login(http_request request) {
+void ServerManager::handle_post_level3(http_request request) {
     request.extract_json().then([&](json::value jsonReq) {
         this->global_ip = jsonReq[_XPLATSTR("ip")].as_string();
         this->global_pd = jsonReq[_XPLATSTR("pd")].as_string();
+
 
         //pd是密码
         string ip = (global_ip);
@@ -715,7 +801,281 @@ void ServerManager::handle_post_login(http_request request) {
                 selectedIds.push_back(id.as_integer());
             }
         }
+        // 缓存该 IP 最后检测的 IDs
+        lastLevel3CheckedIds[ip] = selectedIds;
 
+        level3Fun(ip, "root", pd, pool, dbHandler_, selectedIds);
+
+        http_response response(status_codes::OK);
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+        json::value response_data = json::value::object();
+        response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("Received"));
+        response.set_body(response_data);
+        request.reply(response);
+        }).wait();
+}
+
+void ServerManager::handle_get_level3UserInfo(http_request request)
+{
+    try {
+        // 解析请求中的IP参数
+        auto query = uri::split_query(request.request_uri().query());
+        auto it = query.find(_XPLATSTR("ip"));
+        if (it == query.end()) {
+            request.reply(status_codes::BadRequest, _XPLATSTR("Missing 'ip' parameter"));
+            return;
+        }
+
+        // 获取IP地址
+        std::string ip = utility::conversions::to_utf8string(it->second);
+
+        // 检查IP是否为空
+        if (ip.empty()) {
+            request.reply(status_codes::BadRequest, _XPLATSTR("Empty IP parameter"));
+            return;
+        }
+
+        // 获取三级等保结果
+        std::vector<event> check_results = dbHandler_.getLevel3SecurityCheckResults(ip, pool);
+
+
+        // 创建返回的JSON对象
+        web::json::value response_json = web::json::value::object();
+
+        // 将安全检查结果添加到JSON中
+        web::json::value results_array = web::json::value::array();
+        for (size_t i = 0; i < check_results.size(); ++i) {
+            web::json::value result = web::json::value::object();
+            result[_XPLATSTR("item_id")] = web::json::value::number(check_results[i].item_id);
+            result[_XPLATSTR("description")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].description));
+            result[_XPLATSTR("basis")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].basis));
+            result[_XPLATSTR("command")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].command));
+            result[_XPLATSTR("result")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].result));
+            result[_XPLATSTR("IsComply")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].IsComply));
+            result[_XPLATSTR("recommend")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].recommend));
+            result[_XPLATSTR("importantLevel")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].importantLevel));
+            results_array[i] = result;
+        }
+        response_json[_XPLATSTR("checkResults")] = results_array;
+
+
+        // 构造HTTP响应
+        http_response response(status_codes::OK);
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+        response.set_body(response_json);
+
+        // 返回响应
+        request.reply(response);
+    }
+    catch (const std::exception& e) {
+        std::cerr << "处理用户信息请求时出错: " << e.what() << std::endl;
+        request.reply(status_codes::InternalError,
+            web::json::value::string(utility::conversions::to_string_t("内部服务器错误: " + std::string(e.what()))));
+    }
+}
+
+void ServerManager::handle_get_level3TmpUserInfo(http_request request)
+{
+    try {
+        // 解析请求中的IP参数
+        auto query = uri::split_query(request.request_uri().query());
+        auto it = query.find(_XPLATSTR("ip"));
+        if (it == query.end()) {
+            request.reply(status_codes::BadRequest, _XPLATSTR("Missing 'ip' parameter"));
+            return;
+        }
+
+        // 获取IP地址
+        std::string ip = utility::conversions::to_utf8string(it->second);
+
+        // 检查IP是否为空
+        if (ip.empty()) {
+            request.reply(status_codes::BadRequest, _XPLATSTR("Empty IP parameter"));
+            return;
+        }
+
+        // 从lastCheckedIds获取该IP最近检查的项目IDs
+        std::vector<int> selectedIds;
+        auto lastIdsIt = lastLevel3CheckedIds.find(ip);
+        if (lastIdsIt != lastLevel3CheckedIds.end()) {
+            selectedIds = lastIdsIt->second;
+        }
+        else {
+            // 如果没有找到该IP的最近检查记录，返回空结果
+            web::json::value response_json = web::json::value::object();
+            response_json[_XPLATSTR("checkResults")] = web::json::value::array();
+
+            // 构造HTTP响应
+            http_response response(status_codes::OK);
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+            response.set_body(response_json);
+
+            // 返回响应
+            request.reply(response);
+            return;
+        }
+
+        // 获取选定IDs的安全检查结果
+        std::vector<event> check_results = dbHandler_.getLevel3SecurityCheckResultsByIds(ip, selectedIds, pool);
+
+
+        // 创建返回的JSON对象
+        web::json::value response_json = web::json::value::object();
+
+        // 将安全检查结果添加到JSON中
+        web::json::value results_array = web::json::value::array();
+        for (size_t i = 0; i < check_results.size(); ++i) {
+            web::json::value result = web::json::value::object();
+            result[_XPLATSTR("item_id")] = web::json::value::number(check_results[i].item_id);
+            result[_XPLATSTR("description")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].description));
+            result[_XPLATSTR("basis")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].basis));
+            result[_XPLATSTR("command")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].command));
+            result[_XPLATSTR("result")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].result));
+            result[_XPLATSTR("IsComply")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].IsComply));
+            result[_XPLATSTR("recommend")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].recommend));
+            result[_XPLATSTR("importantLevel")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].importantLevel));
+            results_array[i] = result;
+        }
+        response_json[_XPLATSTR("checkResults")] = results_array;
+
+
+        // 构造HTTP响应
+        http_response response(status_codes::OK);
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+        response.set_body(response_json);
+
+        // 返回响应
+        request.reply(response);
+    }
+    catch (const std::exception& e) {
+        std::cerr << "处理临时用户信息请求时出错: " << e.what() << std::endl;
+        request.reply(status_codes::InternalError,
+            web::json::value::string(utility::conversions::to_string_t("内部服务器错误: " + std::string(e.what()))));
+    }
+}
+
+// 在 ServerManager.cpp 中实现该函数
+void ServerManager::handle_get_weak_password_by_ip(http_request request) {
+    try {
+        // 解析请求中的IP参数
+        auto query = uri::split_query(request.request_uri().query());
+        auto it = query.find(_XPLATSTR("ip"));
+        if (it == query.end()) {
+            request.reply(status_codes::BadRequest, _XPLATSTR("Missing 'ip' parameter"));
+            return;
+        }
+        // 获取IP地址
+        std::string ip = utility::conversions::to_utf8string(it->second);
+        // 检查IP是否为空
+        if (ip.empty()) {
+            request.reply(status_codes::BadRequest, _XPLATSTR("Empty IP parameter"));
+            return;
+        }
+        // 从数据库中获取该IP的所有端口信息
+        std::vector<PortInfo> port_infos = dbHandler_.getAllPortInfoByIp(ip, pool);
+
+        // 筛选出有弱密码的端口信息
+        std::vector<PortInfo> weak_password_ports;
+        for (const auto& port_info : port_infos) {
+            if (!port_info.weak_username.empty() && !port_info.weak_password.empty() && port_info.password_verified) {
+                weak_password_ports.push_back(port_info);
+            }
+        }
+
+        // 使用已有的convertPortsToJson函数转换为JSON
+        web::json::value results_array = convertPortsToJson(weak_password_ports);
+
+        // 返回结果
+        http_response response(status_codes::OK);
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+        response.set_body(results_array);
+        request.reply(response);
+    }
+    catch (const std::exception& e) {
+        std::cerr << "处理弱密码请求时出错: " << e.what() << std::endl;
+        request.reply(status_codes::InternalError,
+            web::json::value::string(utility::conversions::to_string_t("内部服务器错误: " + std::string(e.what()))));
+    }
+}
+
+// 在 ServerManager.cpp 中添加新函数
+void ServerManager::handle_get_all_weak_passwords(http_request request) {
+    try {
+        // 获取所有存活主机
+        std::vector<std::string> alive_hosts;
+        dbHandler_.readAliveHosts(alive_hosts, pool);
+
+        // 创建一个JSON数组来存储所有主机的弱口令信息
+        web::json::value all_results = web::json::value::array();
+        int index = 0;
+
+        // 遍历每个存活主机
+        for (const auto& ip : alive_hosts) {
+            // 从数据库中获取该IP的所有端口信息
+            std::vector<PortInfo> port_infos = dbHandler_.getAllPortInfoByIp(ip, pool);
+
+            // 筛选出有弱密码的端口信息
+            std::vector<PortInfo> weak_password_ports;
+            for (const auto& port_info : port_infos) {
+                if (!port_info.weak_username.empty() && !port_info.weak_password.empty() && port_info.password_verified) {
+                    weak_password_ports.push_back(port_info);
+                }
+            }
+
+            // 如果该主机有弱密码，则添加到结果数组中
+            if (!weak_password_ports.empty()) {
+                web::json::value host_result = web::json::value::object();
+                host_result[_XPLATSTR("ip")] = web::json::value::string(utility::conversions::to_string_t(ip));
+                host_result[_XPLATSTR("weak_passwords")] = convertPortsToJson(weak_password_ports);
+
+                all_results[index++] = host_result;
+            }
+        }
+
+        // 返回结果
+        http_response response(status_codes::OK);
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+        response.set_body(all_results);
+        request.reply(response);
+    }
+    catch (const std::exception& e) {
+        std::cerr << "处理所有主机弱密码请求时出错: " << e.what() << std::endl;
+        request.reply(status_codes::InternalError,
+            web::json::value::string(utility::conversions::to_string_t("内部服务器错误: " + std::string(e.what()))));
+    }
+}
+
+
+void ServerManager::handle_post_login(http_request request) {
+    request.extract_json().then([&](json::value jsonReq) {
+        this->global_ip = jsonReq[_XPLATSTR("ip")].as_string();
+        this->global_pd = jsonReq[_XPLATSTR("pd")].as_string();
+
+
+        //pd是密码
+        string ip = (global_ip);
+        string pd = (global_pd);
+
+        // 从请求体获取 ids
+        vector<int> selectedIds;
+        if (jsonReq.has_field(_XPLATSTR("ids"))) {
+            const json::array& ids = jsonReq[_XPLATSTR("ids")].as_array();
+            for (const auto& id : ids) {
+                selectedIds.push_back(id.as_integer());
+            }
+        }
+        // 缓存该 IP 最后检测的 IDs
+        lastCheckedIds[ip] = selectedIds;
         /*
         vector<int> selectedIds = {
         1,  // 密码生命周期检查
@@ -724,20 +1084,18 @@ void ServerManager::handle_post_login(http_request request) {
         };
         */
 
-        fun2(Event, ip, "root", pd,  pool, dbHandler_, selectedIds);
+        fun2( ip, "root", pd,  pool, dbHandler_, selectedIds);
         // Create connection pool for ServerInfo
+        auto start = std::chrono::high_resolution_clock::now();
         SSHConnectionPool sshPool(ip, "root", pd, 1); // Single connection is enough for sequential operations
         ServerInfo info;
         ServerInfo_Padding2(info, ip, sshPool, pool, dbHandler_);
-        info_new = convert(info);
-
-        /*
-        for (int i = 0; i < Event.size(); i++) {
-            cout << "描述信息：" << Event[i].description << " "
-                << "执行指令:  " << Event[i].command << " 执行结果：" << Event[i].result << " "
-                << "是否符合基线：  " << Event[i].IsComply
-                << endl;
-        }*/
+        // 获取结束时间（用于测试）
+        auto end = std::chrono::high_resolution_clock::now();
+        // 计算时间差（以毫秒为单位）
+        std::chrono::duration<double, std::milli> elapsed = end - start;
+        // 输出时间差
+        std::cout << "代码执行时间: " << elapsed.count() << " 毫秒" << std::endl;
 
         http_response response(status_codes::OK);
         response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
@@ -2022,86 +2380,6 @@ void ServerManager::handle_get_classify_protect(http_request request) {
     // 发送响应
     request.reply(response);
 }
-//void ServerManager::handle_post_hydra(http_request request)
-//{
-//    request.extract_json().then([this, &request](json::value body) {
-//        std::string ip = body[_XPLATSTR("ip")].as_string();
-//        std::string service_name = body[_XPLATSTR("service_name")].as_string();
-//        std::string portId_name = body[_XPLATSTR("portId_name")].as_string();
-//
-//        std::string usernameFile = "/hydra/usernames.txt";
-//        std::string passwordFile = "/hydra/passwords.txt";
-//
-//        //说明有这个服务
-//        if (port_services.find(service_name) != port_services.end()) {
-//            // Construct the hydra command
-//            std::string command = "hydra -L " + usernameFile + " -P " + passwordFile + " -f" + service_name + "://" + ip;
-//
-//            // Execute the command and get the output
-//            std::string output = exec(command.c_str());
-//
-//
-//            string res = extract_login_info(output);
-//
-//
-//            std::regex pattern(R"(\[(\d+)\]\[([^\]]+)\] host:\s*([^\s]+)\s+login:\s*([^\s]+)\s+password:\s*([^\s]+))");
-//            std::smatch match;
-//            int port = 0;
-//            string service = "";
-//            string host = "";
-//            string login = "";
-//            string password = "";
-//            // Search for the pattern in the input string
-//            if (std::regex_search(res, match, pattern)) {
-//                port = std::stoi(match[1].str());
-//                service = match[2].str();
-//                host = match[3].str();
-//                login = match[4].str();
-//                password = match[5].str();
-//            }
-//            else {
-//                throw std::runtime_error("No matching info found");
-//            }
-//            json::value json_obj = json::value::object();
-//            json_obj[_XPLATSTR("port")] = json::value::number(port);
-//            json_obj[_XPLATSTR("service")] = json::value::string(service);
-//            json_obj[_XPLATSTR("host")] = json::value::string(host);
-//            json_obj[_XPLATSTR("login")] = json::value::string(login);
-//            json_obj[_XPLATSTR("password")] = json::value::string(password);
-//
-//            // Create a JSON array and add the JSON object to it
-//            json::value json_array = json::value::array();
-//            json_array[0] = json_obj;
-//
-//            // 创建响应
-//            http_response response(status_codes::OK);
-//            response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
-//            response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
-//            response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
-//
-//            //json::value response_data;
-//            //response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR(res));
-//            response.set_body(json_array);
-//            request.reply(response);
-//        }
-//        else {
-//            // 服务不存在，返回错误信息
-//            json::value error_response = json::value::object();
-//            error_response[_XPLATSTR("error")] = json::value::string(_XPLATSTR("Service not found"));
-//            error_response[_XPLATSTR("service_name")] = json::value::string(service_name);
-//
-//            // 创建响应
-//            http_response response(status_codes::NotFound);
-//            response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
-//            response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
-//            response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
-//
-//            response.set_body(error_response);
-//            request.reply(response);
-//        }
-//        }).wait();
-//}
-
 
 
 

@@ -2,6 +2,7 @@
 // utils.h
 #ifndef UTILS_H
 #define UTILS_H
+#include <arpa/inet.h>
 #include <Python.h>
 #include <string>
 #include<chrono>    //用于获取当前系统时间和处理时间相关的操作。
@@ -23,6 +24,7 @@
 #include <signal.h>  // 用于 SIGTERM, SIGKILL 和 kill 函数
 #include <unistd.h>  // 用于 usleep 函数和 pid_t 类型
 #include"CommonDefs.h"    //配置文件
+#include"../Event.h"
 extern PyObject* global_importlib; // 仅声明，不定义
 extern PyObject* global_io;         // 仅声明，不定义
 
@@ -66,7 +68,39 @@ std::string matchVulnType(const std::string& vulnSummary, const std::unordered_m
 // 终止Python解释器
 void finalizePython();
 
+// 检查字符串是否是括号内容
+bool isParenthesisContent(const std::string& str);
 
+// 从括号中提取内容
+std::string extractFromParenthesis(const std::string& str);
+
+// 解析端口字符串
+std::tuple<std::string, std::string, bool> parsePortString(const std::string& portStr);
+
+// 解析UFW规则
+std::vector<UfwRule> parseUfwRules(const std::string& rulesStr);
+
+// 从文件读取UFW状态
+std::string readUfwStatusFromFile(const std::string& filePath);
+
+// 从字符串解析UFW规则
+std::vector<UfwRule> parseUfwRulesFromString(const std::string& str);
+
+std::string filterNumberedRules(const std::string& statusOutput);
+
+//判断子网包含的情况
+bool isNetworkContained(const std::string& networkA, const std::string& networkB);
+
+// 判断端口范围A是否包含端口范围B
+bool isPortRangeContained(const std::string& portRangeA, const std::string& portRangeB);
+
+// 判断规则A是否包含规则B（B是否是冗余的）
+bool isRuleContained(const UfwRule& ruleA, const UfwRule& ruleB);
+
+// 查找所有冗余规则（被其他规则包含的规则）
+std::vector<UfwRule> findRedundantRules(const std::vector<UfwRule>& rules);
+// 打印冗余规则及包含它们的规则
+void printRedundantRules(const std::vector<UfwRule>& rules);
 enum class PasswordStrength {
     WEAK,
     MEDIUM,

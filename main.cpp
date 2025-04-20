@@ -1,5 +1,6 @@
 #define _TURN_OFF_PLATFORM_STRING  // 禁用cpprest的U宏
 //main函数
+#include<iostream>
 #include <mysqlx/xdevapi.h>
 #include"ServerManager.h"
 #include <unistd.h>
@@ -7,15 +8,19 @@
 #include "utils/CommonDefs.h"
 #include "utils_scan.h"
 #include "log/log.h"
+#include "Event.h"
+#include <vector>
+#include <string>
+#include <sstream>
+#include <regex>
+#include <fstream>
+
 using namespace utility;          // Common utilities like string conversions
 using namespace web;              // Common features like URIs.
 using namespace web::http;        // Common HTTP functionality
 using namespace web::http::client;// HTTP client features
 using namespace concurrency::streams; // Asynchronous streams
 using namespace std;
-
-
-
 
 int main()
 {
@@ -56,3 +61,5 @@ int main()
     finalizePython();
     return 0;
 }
+
+
