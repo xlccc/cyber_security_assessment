@@ -2771,7 +2771,6 @@ void ServerManager::handle_post_poc_verify(http_request request) {
             // 将新的扫描结果保存为历史数据
             string ip = scan_host_result[0].ip;
             historicalData.data[ip] = scan_host_result[0];  // 目前只支持单个主机，取第一个string ip = scan_host_result[0].ip;
-            //dbHandler_.executeUpdateOrInsert(scan_host_result[0], pool);
 
             // 使用 handle_get_cve_scan 返回验证结果
             handle_get_cve_scan(request);
