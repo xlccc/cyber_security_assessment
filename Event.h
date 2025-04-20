@@ -2,12 +2,13 @@
 #include<vector>
 #include<string>
 using namespace std;
+
 struct event {
 	string description; //待检查项
 	string basis;//判定依据
 	string command;//待检查口令
 	string result;//待检查的结果
-    string IsComply = "false";//返回true还是false
+    string IsComply = "false";//返回true还是false（旧版）
 	string recommend; //建议
     string importantLevel;// 重要程度，分为1，2，3
 	int item_id; //检查项id

@@ -39,7 +39,7 @@ struct DBConfig {
         std::string password_ = CONFIG.getDbPassword(),
         std::string schema_ = CONFIG.getDbSchema(),
         size_t initial_size_ = 5,
-        size_t max_size_ = 20,
+        size_t max_size_ = 20,                                     
         std::chrono::seconds connection_timeout_ = std::chrono::seconds(30),
         int max_retries_ = 3,
         std::chrono::milliseconds retry_delay_ = std::chrono::milliseconds(500)

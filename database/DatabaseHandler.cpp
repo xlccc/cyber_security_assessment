@@ -2165,3 +2165,466 @@ ServerInfo DatabaseHandler::getServerInfoByIp(const std::string& ip, ConnectionP
 
     return info;
 }
+
+//获取所有支持的漏洞类型
+std::vector<std::string> DatabaseHandler::getAllVulnTypes(ConnectionPool& pool)
+{
+    std::vector<std::string> types;
+
+    try {
+        auto conn = pool.getConnection();
+
+        mysqlx::SqlResult result = conn->sql("SELECT TypeName FROM VulnType")
+            .execute();
+
+        while (mysqlx::Row row = result.fetchOne()) {
+            std::string type = static_cast<std::string>(row[0]);
+            types.push_back(type);
+        }
+    }
+    catch (const mysqlx::Error& err) {
+        std::cerr << "[DB] 获取漏洞类型出错: " << err.what() << std::endl;
+    }
+    catch (std::exception& ex) {
+        std::cerr << "[DB] 异常: " << ex.what() << std::endl;
+    }
+    catch (...) {
+        std::cerr << "[DB] 未知错误" << std::endl;
+    }
+
+    return types;
+}
+
+// 添加/删除漏洞类型（统一入口）
+bool DatabaseHandler::editVulnType(const std::string& type, const std::string& action, ConnectionPool& pool) {
+    try {
+        auto conn = pool.getConnection();
+        if (action == "add") {
+            conn->sql("INSERT INTO VulnType (TypeName) VALUES (?)")
+                .bind(type)
+                .execute();
+            system_logger->info("[editVulnType] 添加漏洞类型成功：{}", type);
+            console->info("[editVulnType] 添加漏洞类型成功：{}", type);
+        }
+        else if (action == "delete") {
+            conn->sql("DELETE FROM VulnType WHERE TypeName = ?")
+                .bind(type)
+                .execute();
+            system_logger->info("[editVulnType] 删除漏洞类型成功：{}", type);
+            console->info("[editVulnType] 删除漏洞类型成功：{}", type);
+        }
+        else {
+            system_logger->warn("[editVulnType] 无效操作: {}", action);
+            console->warn("[editVulnType] 无效操作: {}", action);
+            return false;
+        }
+        return true;
+    }
+    catch (const mysqlx::Error& err) {
+        system_logger->error("[editVulnType] MySQL 错误: {}", err.what());
+        console->error("[editVulnType] MySQL 错误: {}", err.what());
+        return false;
+    }
+}
+
+//插入POC
+bool DatabaseHandler::insertData(const POC& poc, ConnectionPool& pool) {
+    try {
+        auto conn = pool.getConnection();
+
+        conn->sql(R"(
+            INSERT INTO POC (Vuln_id, Vul_name, Type, Description, Affected_infra, Script_type, Script, Timestamp)
+            VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+        )")
+            .bind(
+                poc.vuln_id,
+                poc.vul_name,
+                poc.type,
+                poc.description,
+                poc.affected_infra,
+                poc.script_type,
+                poc.script
+            )
+            .execute();
+
+        system_logger->info("成功插入POC: {} - {}", poc.vuln_id, poc.vul_name);
+        console->info("成功插入POC: {} - {}", poc.vuln_id, poc.vul_name);
+        return true;
+    }
+    catch (const mysqlx::Error& err) {
+        system_logger->error("[insertData] MySQL 错误: {}", err.what());  
+        console->error("[insertData] MySQL 错误: {}", err.what());
+        return false;
+    }
+}
+
+//删除POC
+bool DatabaseHandler::deleteDataById(int id, ConnectionPool& pool) {
+    try {
+        auto conn = pool.getConnection();
+
+        auto result = conn->sql("DELETE FROM POC WHERE ID = ?")
+            .bind(id)
+            .execute();
+
+        if (result.getAffectedItemsCount() > 0) {
+            system_logger->info("成功删除 POC，ID = {}", id);
+            console->info("成功删除 POC，ID = {}", id);
+            return true;
+        }
+        else {
+            system_logger->error("删除失败，未找到 ID = {}", id);
+            console->error("删除失败，未找到 ID = {}", id);
+            return false;
+        }
+    }
+    catch (const mysqlx::Error& err) {
+        system_logger->error("[deleteDataById] MySQL 错误: {}", err.what());
+        console->error("[deleteDataById] MySQL 错误: {}", err.what());
+        return false;
+    }
+}
+
+//更新POC
+
+bool DatabaseHandler::updateDataById(int id, const POC& poc, ConnectionPool& pool) {
+    try {
+        auto conn = pool.getConnection();
+
+        auto check = conn->sql("SELECT COUNT(*) FROM POC WHERE ID = ?")
+            .bind(id)
+            .execute();
+
+        int count = check.fetchOne()[0].get<int>();
+        if (count == 0) {
+            system_logger->error("[updateDataById] 错误：ID {} 不存在", id); 
+            console->error("[updateDataById] 错误：ID {} 不存在", id);
+            return false;
+        }
+
+        conn->sql(R"(
+            UPDATE POC SET
+                Vuln_id = ?,
+                Vul_name = ?,
+                Type = ?,
+                Description = ?,
+                Affected_infra = ?,
+                Script_type = ?,
+                Script = ?,
+                Timestamp = NOW()
+            WHERE ID = ?
+        )")
+            .bind(
+                poc.vuln_id,
+                poc.vul_name,
+                poc.type,
+                poc.description,
+                poc.affected_infra,
+                poc.script_type,
+                poc.script,
+                id
+            )
+            .execute();
+
+        system_logger->info("成功更新 POC: ID = {}, Vuln_id = {}", id, poc.vuln_id);
+        console->info("成功更新 POC: ID = {}, Vuln_id = {}", id, poc.vuln_id);
+        return true;
+    }
+    catch (const mysqlx::Error& err) {
+        system_logger->error("[updateDataById] MySQL 错误: {}", err.what());
+        console->error("[updateDataById] MySQL 错误: {}", err.what());
+        return false;
+    }
+}
+
+std::vector<POC> DatabaseHandler::searchData(const std::string& keyword, ConnectionPool& pool) {
+    std::vector<POC> records;
+    std::string pattern = "%" + keyword + "%";
+
+    try {
+        auto conn = pool.getConnection();
+
+        std::string sql = R"(
+            SELECT * FROM POC WHERE
+                Vuln_id LIKE ? OR
+                Vul_name LIKE ? OR
+                Type LIKE ? OR
+                Description LIKE ? OR
+                Affected_infra LIKE ? OR
+                Script_type LIKE ? OR
+                Timestamp LIKE ?
+        )";
+
+        auto stmt = conn->sql(sql)
+            .bind(pattern, pattern, pattern, pattern, pattern, pattern, pattern)
+            .execute();
+
+        while (mysqlx::Row row = stmt.fetchOne()) {
+            POC poc;
+            poc.id = row[0].get<int>();
+            poc.vuln_id = row[1].get<std::string>();
+            poc.vul_name = row[2].get<std::string>();
+            poc.type = row[3].get<std::string>();
+            poc.description = row[4].get<std::string>();
+            poc.affected_infra = row[5].get<std::string>();
+            poc.script_type = row[6].get<std::string>();
+            poc.script = row[7].isNull() ? "" : row[7].get<std::string>();
+            poc.timestamp = row[8].get<std::string>();
+            records.push_back(poc);
+        }
+
+        system_logger->info("成功搜索POC关键字：{}，匹配到 {} 条", keyword, records.size());
+        console->info("成功搜索POC关键字：{}，匹配到 {} 条", keyword, records.size());
+    }
+    catch (const mysqlx::Error& err) {
+        system_logger->error("[searchData] 错误: {}", err.what());  // ⛔ 原为 searchPoc
+        console->error("[searchData] 错误: {}", err.what());
+    }
+
+    return records;
+}
+
+std::vector<POC> DatabaseHandler::searchDataByIds(const std::vector<int>& ids, ConnectionPool& pool) {
+    std::vector<POC> records;
+    if (ids.empty()) return records;
+
+    try {
+        auto conn = pool.getConnection();
+
+        std::string placeholders = "";
+        for (size_t i = 0; i < ids.size(); ++i) {
+            placeholders += "?";
+            if (i < ids.size() - 1) placeholders += ",";
+        }
+
+        std::string sql = "SELECT * FROM POC WHERE ID IN (" + placeholders + ")";
+        auto stmt = conn->sql(sql);
+        for (int id : ids) stmt.bind(id);
+        auto result = stmt.execute();
+
+        while (mysqlx::Row row = result.fetchOne()) {
+            POC poc;
+            poc.id = row[0].get<int>();
+            poc.vuln_id = row[1].get<std::string>();
+            poc.vul_name = row[2].get<std::string>();
+            poc.type = row[3].get<std::string>();
+            poc.description = row[4].get<std::string>();
+            poc.affected_infra = row[5].get<std::string>();
+            poc.script_type = row[6].get<std::string>();
+            poc.script = row[7].isNull() ? "" : row[7].get<std::string>();
+            poc.timestamp = row[8].get<std::string>();
+            records.push_back(poc);
+        }
+
+        system_logger->info("根据ID列表查询POC成功，共 {} 条", records.size());
+        console->info("根据ID列表查询POC成功，共 {} 条", records.size());
+    }
+    catch (const mysqlx::Error& err) {
+        system_logger->error("[searchDataByIds] 错误: {}", err.what());
+        console->error("[searchDataByIds] 错误: {}", err.what());
+    }
+
+    return records;
+}
+std::vector<POC> DatabaseHandler::searchDataByCVE(const std::string& vuln_id, ConnectionPool& pool) {
+    std::vector<POC> records;
+
+    try {
+        auto conn = pool.getConnection();
+        auto result = conn->sql("SELECT * FROM POC WHERE Vuln_id = ?")
+            .bind(vuln_id)
+            .execute();
+
+        while (mysqlx::Row row = result.fetchOne()) {
+            POC poc;
+            poc.id = row[0].get<int>();
+            poc.vuln_id = row[1].get<std::string>();
+            poc.vul_name = row[2].get<std::string>();
+            poc.type = row[3].get<std::string>();
+            poc.description = row[4].get<std::string>();
+            poc.affected_infra = row[5].get<std::string>();
+            poc.script_type = row[6].get<std::string>();
+            poc.script = row[7].isNull() ? "" : row[7].get<std::string>();
+            poc.timestamp = row[8].get<std::string>();
+            records.push_back(poc);
+        }
+
+        system_logger->info("[searchDataByCVE] 找到 {} 条记录，vuln_id = {}", records.size(), vuln_id);
+        console->info("[searchDataByCVE] 找到 {} 条记录，vuln_id = {}", records.size(), vuln_id);
+    }
+    catch (const mysqlx::Error& err) {
+        system_logger->error("[searchDataByCVE] 错误: {}", err.what());
+        console->error("[searchDataByCVE] 错误: {}", err.what());
+    }
+
+    return records;
+}
+bool DatabaseHandler::isExistCVE(const std::string& vuln_id, ConnectionPool& pool) {
+    try {
+        auto conn = pool.getConnection();
+        auto result = conn->sql("SELECT COUNT(*) FROM POC WHERE Vuln_id = ?")
+            .bind(vuln_id)
+            .execute();
+
+        int count = result.fetchOne()[0].get<int>();
+
+        system_logger->info("isExistCVE: {} -> {}", vuln_id, count > 0 ? "存在" : "不存在");
+        console->info("isExistCVE: {} -> {}", vuln_id, count > 0 ? "存在" : "不存在");
+
+        return count > 0;
+    }
+    catch (const mysqlx::Error& err) {
+        system_logger->error("isExistCVE 错误: {}", err.what());
+        console->error("isExistCVE 错误: {}", err.what());
+        return false;
+    }
+}
+
+std::string DatabaseHandler::searchPOCById(const int& id, ConnectionPool& pool) {
+    std::string filename = "";
+    std::string pathPrefix = "../../../src/scan/scripts/";
+
+    try {
+        auto conn = pool.getConnection();
+        auto result = conn->sql("SELECT Script FROM POC WHERE ID = ?")
+            .bind(id)
+            .execute();
+
+        mysqlx::Row row = result.fetchOne();
+        if (!row || row[0].isNull()) {
+            system_logger->info("[searchPOCById] 未找到 ID={} 的脚本路径", id);
+            console->info("[searchPOCById] 未找到 ID={} 的脚本路径", id);
+            return "";
+        }
+
+        filename = row[0].get<std::string>();
+        return filename.empty() ? "" : pathPrefix + filename;
+    }
+    catch (const mysqlx::Error& err) {
+        system_logger->error("[searchPOCById] MySQL 错误: {}", err.what());
+        console->error("[searchPOCById] MySQL 错误: {}", err.what());
+        return "";
+    }
+}
+
+std::string DatabaseHandler::searchPOCById(const std::string& vuln_id, ConnectionPool& pool) {
+    std::string filename = "";
+    std::string pathPrefix = "../../../src/scan/scripts/";
+
+    try {
+        auto conn = pool.getConnection();
+        auto result = conn->sql("SELECT Script FROM POC WHERE Vuln_id = ?")
+            .bind(vuln_id)
+            .execute();
+
+        mysqlx::Row row = result.fetchOne();
+        if (!row || row[0].isNull()) {
+            system_logger->info("[searchPOCById] 未找到 Vuln_id={} 的脚本路径", vuln_id);
+            console->info("[searchPOCById] 未找到 Vuln_id={} 的脚本路径", vuln_id);
+            return "";
+        }
+
+        filename = row[0].get<std::string>();
+        return filename.empty() ? "" : pathPrefix + filename;
+    }
+    catch (const mysqlx::Error& err) {
+        system_logger->error("[searchPOCById] MySQL 错误: {}", err.what());
+        console->error("[searchPOCById] MySQL 错误: {}", err.what());
+        return "";
+    }
+}
+
+bool DatabaseHandler::searchDataById(const int& id, POC& poc, ConnectionPool& pool) {
+    try {
+        auto conn = pool.getConnection();
+        auto result = conn->sql("SELECT * FROM POC WHERE ID = ?")
+            .bind(id)
+            .execute();
+
+        mysqlx::Row row = result.fetchOne();
+        if (!row) {
+            system_logger->error("[searchDataById] POC ID {} 不存在", id);
+            console->error("[searchDataById] POC ID {} 不存在", id);
+            return false;
+        }
+
+        poc.id = row[0].get<int>();
+        poc.vuln_id = row[1].get<std::string>();
+        poc.vul_name = row[2].get<std::string>();
+        poc.type = row[3].get<std::string>();
+        poc.description = row[4].get<std::string>();
+        poc.affected_infra = row[5].get<std::string>();
+        poc.script_type = row[6].get<std::string>();
+        poc.script = row[7].isNull() ? "" : row[7].get<std::string>();
+        poc.timestamp = row[8].get<std::string>();
+
+        system_logger->info("[searchDataById] 成功查询 POC ID={}", id);
+        console->info("[searchDataById] 成功查询 POC ID={}", id);
+        return true;
+    }
+    catch (const mysqlx::Error& err) {
+        system_logger->error("[searchDataById] MySQL 错误: {}", err.what());
+        console->error("[searchDataById] MySQL 错误: {}", err.what());
+        return false;
+    }
+}
+std::vector<POC> DatabaseHandler::getAllData(ConnectionPool& pool) {
+    std::vector<POC> records;
+    try {
+        auto conn = pool.getConnection();
+        auto result = conn->sql("SELECT * FROM POC").execute();
+
+        while (mysqlx::Row row = result.fetchOne()) {
+            POC poc;
+            poc.id = row[0].get<int>();
+            poc.vuln_id = row[1].get<std::string>();
+            poc.vul_name = row[2].get<std::string>();
+            poc.type = row[3].get<std::string>();
+            poc.description = row[4].get<std::string>();
+            poc.affected_infra = row[5].get<std::string>();
+            poc.script_type = row[6].get<std::string>();
+            poc.script = row[7].isNull() ? "" : row[7].get<std::string>();
+            poc.timestamp = row[8].get<std::string>();
+            records.push_back(poc);
+        }
+
+        system_logger->info("[getAllData] 成功加载 {} 条POC数据", records.size());
+        console->info("[getAllData] 成功加载 {} 条POC数据", records.size());
+    }
+    catch (const mysqlx::Error& err) {
+        system_logger->error("[getAllData] MySQL 错误: {}", err.what());
+        console->error("[getAllData] MySQL 错误: {}", err.what());
+        exit(1);
+    }
+    return records;
+}
+std::vector<POC> DatabaseHandler::getVaildPOCData(ConnectionPool& pool) {
+    std::vector<POC> records;
+    try {
+        auto conn = pool.getConnection();
+        auto result = conn->sql("SELECT * FROM POC WHERE Script IS NOT NULL AND Script != ''").execute();
+
+        while (mysqlx::Row row = result.fetchOne()) {
+            POC poc;
+            poc.id = row[0].get<int>();
+            poc.vuln_id = row[1].get<std::string>();
+            poc.vul_name = row[2].get<std::string>();
+            poc.type = row[3].get<std::string>();
+            poc.description = row[4].get<std::string>();
+            poc.affected_infra = row[5].get<std::string>();
+            poc.script_type = row[6].get<std::string>();
+            poc.script = row[7].isNull() ? "" : row[7].get<std::string>();
+            poc.timestamp = row[8].get<std::string>();
+            records.push_back(poc);
+        }
+
+        system_logger->info("[getVaildPOCData] 成功加载有效POC {} 条", records.size());
+        console->info("[getVaildPOCData] 成功加载有效POC {} 条", records.size());
+    }
+    catch (const mysqlx::Error& err) {
+        system_logger->error("[getVaildPOCData] MySQL 错误: {}", err.what());
+        console->error("[getVaildPOCData] MySQL 错误: {}", err.what());
+        exit(1);
+    }
+    return records;
+}

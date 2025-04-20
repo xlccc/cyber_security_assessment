@@ -42,6 +42,7 @@
 #include"SSHConnectionPool.h"
 #include"redis_scan.h"
 #include"pgsql_scan.h"
+#include"DatabaseWrapper.h"
 using namespace web;
 using namespace web::http;
 using namespace web::http::experimental::listener;
@@ -151,7 +152,9 @@ private:
 
     ConnectionPool pool;
     DatabaseHandler dbHandler_;
-    DatabaseManager dbManager;
+    //旧版
+    //DatabaseManager dbManager;
+    DatabaseWrapper dbManager;
     std::vector<POC> poc_list;
      
     // Additional member variables
@@ -187,6 +190,11 @@ private:
 
     void handle_get_userInfo(http_request request);
 
+    //获取所有支持的漏洞类型
+    void handle_get_vuln_types(http_request request);
+
+    //增删支持的漏洞类型
+    void handle_edit_vuln_type(http_request request);
 };
 
 #endif // SERVERMANAGER_H

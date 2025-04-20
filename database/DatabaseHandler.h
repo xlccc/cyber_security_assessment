@@ -10,6 +10,8 @@
 #include "scan_struct.h"
 #include "../Event.h"
 #include <cmath> // 添加这个标准库头文件
+#include"database/poc.h"
+#include"log/log.h"
 using namespace std;
 class DatabaseHandler {
 public:
@@ -88,6 +90,47 @@ public:
     void insertServerInfo(const ServerInfo& info, const std::string& ip, ConnectionPool& pool);
 
     ServerInfo getServerInfoByIp(const std::string& ip, ConnectionPool& pool);
+
+    //获取所有支持的漏洞类型
+    std::vector<std::string> getAllVulnTypes(ConnectionPool& pool);
+
+    // 添加/删除漏洞类型（统一入口）
+    bool editVulnType(const std::string& type, const std::string& action, ConnectionPool& pool);
+
+    // ------  POC表 相关的操作 --------
+    //插入POC
+    bool insertData(const POC& poc, ConnectionPool& pool);
+    //删除POC
+    bool deleteDataById(int id, ConnectionPool& pool);
+    //更新POC
+    bool updateDataById(int id, const POC& poc, ConnectionPool& pool);
+    // 根据关键字搜索数据
+    std::vector<POC> searchData(const std::string& keyword, ConnectionPool& pool);
+
+    //根据CVE搜索对应POC
+    std::vector<POC> searchDataByCVE(const std::string& vuln_id, ConnectionPool& pool);
+    ////按id搜索POC数据，若没有，返回无对应POC
+    std::vector<POC> searchDataByIds(const std::vector<int>& ids, ConnectionPool& pool);
+
+    //搜索是否存在CVE编号的记录
+    bool isExistCVE(const std::string& vuln_id, ConnectionPool& pool);
+
+    //依据id搜索POC名称，用于删除对应POC
+    std::string searchPOCById(const int& id, ConnectionPool& pool);
+    //依据vuln_id搜索POC名称，用于删除对应POC
+    std::string searchPOCById(const std::string& vuln_id, ConnectionPool& pool);
+
+    //依据id搜索POC数据
+    bool searchDataById(const int& id, POC& poc, ConnectionPool& pool);
+
+    //获取所有数据
+    std::vector<POC> getAllData(ConnectionPool& pool);
+
+    // (新增）获取有效POC，即搜索 Script 字段不为空的记录
+    std::vector<POC> getVaildPOCData(ConnectionPool& pool);
+
+    // ------  POC表 相关的操作 --------
+
 };
 
 #endif // DATABASEHANDLER_H

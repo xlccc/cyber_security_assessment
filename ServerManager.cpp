@@ -19,7 +19,8 @@ ServerManager::ServerManager()
         //"test_db"         // schema
     },
     pool(localConfig),    // 使用 localConfig 初始化 pool
-    dbManager(CONFIG.getPocDatabasePath())    // 原有的 dbManager 初始化
+    //dbManager(CONFIG.getPocDatabasePath())    // 原有的 dbManager 初始化
+    dbManager(pool, dbHandler_)
 {
 
     utility::string_t address = utility::conversions::to_string_t(CONFIG.getServerUrl());
@@ -187,6 +188,12 @@ void ServerManager::handle_request(http_request request) {
     else if (first_segment == _XPLATSTR("getSecurityCheckByIp") && request.method() == methods::GET) {
         handle_get_security_check_by_ip(request);
     }
+    else if (first_segment == _XPLATSTR("poc") && second_segment == _XPLATSTR("getAllVulnTypes") && request.method() == methods::GET) {
+        handle_get_vuln_types(request);
+    }
+    else if (first_segment == _XPLATSTR("poc") && second_segment == _XPLATSTR("editVulnType") && request.method() == methods::POST) {
+        handle_edit_vuln_type(request);
+        }
     else {
         request.reply(status_codes::NotFound, _XPLATSTR("Path not found"));
     }
@@ -1664,8 +1671,8 @@ void ServerManager::handle_post_hydra(http_request request) {
             }
 
             // 默认文件路径
-            std::string usernameFile = "/hydra/usernames.txt";
-            std::string passwordFile = "/hydra/passwords.txt";
+            std::string usernameFile = "/home/c/hydra/usernames.txt";
+            std::string passwordFile = "/home/c/hydra/passwords.txt";
 
             // 检查文件扩展名函数
             auto is_txt_file = [](const std::string& filename) -> bool {
@@ -3472,6 +3479,85 @@ void ServerManager::handle_post_mysql_scan(http_request request)
     }
 }
 
+void ServerManager::handle_get_vuln_types(http_request request)
+{
+    try {
+        json::value response_data;
+        std::vector<std::string> types = dbHandler_.getAllVulnTypes(pool);
+
+        json::value type_array = json::value::array();
+        for (size_t i = 0; i < types.size(); ++i) {
+            type_array[i] = json::value::string(utility::conversions::to_string_t(types[i]));
+        }
+
+        response_data[_XPLATSTR("types")] = type_array;
+
+        http_response response(status_codes::OK);
+        response.set_body(response_data);
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, OPTIONS"));
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+        request.reply(response);
+    }
+    catch (const std::exception& e) {
+        std::cerr << "获取漏洞类型出错: " << e.what() << std::endl;
+        json::value response_data;
+        response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("服务器错误：") + utility::conversions::to_string_t(e.what()));
+
+        http_response response(status_codes::InternalError);
+        response.set_body(response_data);
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, OPTIONS"));
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+        request.reply(response);
+    }
+}
+
+//
+void ServerManager::handle_edit_vuln_type(http_request request)
+{
+    request.extract_json().then([this, &request](json::value body) {
+        try {
+            //type是漏洞类型，action是增还是删（即"add"或"delete"）
+            std::string type = utility::conversions::to_utf8string(body[_XPLATSTR("type")].as_string());
+            std::string action = utility::conversions::to_utf8string(body[_XPLATSTR("action")].as_string());
+
+            user_logger->info("接收到漏洞类型编辑请求：操作 = {}, 类型 = {}", action, type);
+
+            bool result = dbHandler_.editVulnType(type, action, pool);
+
+            json::value response_data;
+            if (result) {
+                response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("操作成功"));
+                user_logger->info("漏洞类型操作成功：{}", type);
+            }
+            else {
+                response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("操作失败，参数无效或数据库错误"));
+                user_logger->warn("漏洞类型操作失败：{}", type);
+            }
+
+            http_response response(result ? status_codes::OK : status_codes::BadRequest);
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, OPTIONS"));
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+            response.set_body(response_data);
+            request.reply(response);
+        }
+        catch (const std::exception& e) {
+            user_logger->error("处理漏洞类型编辑请求失败：{}", e.what());
+
+            json::value response_data;
+            response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("请求处理出错：") + utility::conversions::to_string_t(e.what()));
+
+            http_response response(status_codes::InternalError);
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, OPTIONS"));
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+            response.set_body(response_data);
+            request.reply(response);
+        }
+        }).wait(); // ✅ 与 handle_post_get_Nmap 一致
+}
 
 void ServerManager::start() {
     try {

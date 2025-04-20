@@ -117,10 +117,10 @@ set(HEADERS
     pgsql_scan.h
     "database/DatabaseHandler.h" "database/mysql_connection_pool.h" 
     "utils/ConfigManager.h"
-    "utils/CommonDefs.h")
+    "utils/CommonDefs.h" "database/DatabaseWrapper.h")
 
 # 添加可执行文件
-add_executable(MyCppProject ${SOURCES} ${HEADERS} "log/log.h" "log/log.cpp")
+add_executable(MyCppProject ${SOURCES} ${HEADERS} "log/log.h" "log/log.cpp" "database/DatabaseWrapper.h")
 
 # 链接必要的库到 C++ 项目
 target_link_libraries(MyCppProject PRIVATE 

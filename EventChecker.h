@@ -254,7 +254,7 @@ private:
         SSHConnectionGuard guard(sshPool);//guard 从 sshPool 获取一个空闲的 SSH 连接
         event e;
         e.description = "检查口令生存周期";
-        e.basis = "<=90";
+        e.basis = "<=90天";
         e.command = "cat /etc/login.defs | grep PASS_MAX_DAYS | grep -v ^# | awk '{print $2}' ";
         e.result = execute_commands(guard.get(), e.command);//guard.get() 获取 ssh_session 对象，在该对象上执行命令。
         e.recommend = "口令生存周期为不大于3个月的时间";
@@ -284,16 +284,18 @@ private:
             else {
                 e.IsComply = "false";
             }
-
+            e.result += "天";
         }
         else
         {
             e.result = "未开启";
+            e.IsComply = "pending";
             e.recommend = "开启口令生存周期要求";
         }
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        
         //std::cout << "Completed check: " << e.description
             //<< " [ThreadID: " << std::this_thread::get_id() << "]\n";
 
@@ -326,6 +328,7 @@ private:
         else
         {
             e.result = "未开启";
+            e.IsComply = "pending";
             e.recommend = "开启口令最小长度要求";
         }
 
@@ -343,7 +346,7 @@ private:
         event e;
 
         e.description = "检查口令过期前警告天数";
-        e.basis = ">=30";
+        e.basis = ">=30天";
         e.command = "cat /etc/login.defs | grep PASS_WARN_AGE | grep -v ^#| awk '{print $2}' ";
         e.result = execute_commands(guard.get(), e.command);
         e.recommend = "口令过期前应至少提前30天警告";
@@ -359,11 +362,13 @@ private:
             else {
                 e.IsComply = "false";
             }
+            e.result += "天";
 
         }
         else
         {
             e.result = "未开启";
+            e.IsComply = "pending";
             e.recommend = "开启口令过期前警告天数要求";
         }
 
@@ -416,10 +421,12 @@ private:
                 int num4 = atoi(lcredit.c_str());
                 if (num1 <= -1 && num2 <= -1 && num3 <= -1 && num4 <= -1)
                 {
+                    e.result = "密码复杂度达到要求";
                     e.IsComply = "true";
                 }
                 else
                 {
+                    e.result = "密码复杂度要求过低";
                     e.recommend = "密码复杂度提高，至少包含1个大写字母、1个小写字母、1个数字、1个特殊字符";
                 }
             }
@@ -450,6 +457,12 @@ private:
                     if (num >= 4)
                     {
                         e.IsComply = "true";
+                        e.result = "密码复杂度达到要求";
+                    }
+                    else
+                    {
+                        e.result = "密码复杂度要求过低";
+                        e.recommend = "密码复杂度提高，至少包含1个大写字母、1个小写字母、1个数字、1个特殊字符";
                     }
                 }
                 else
@@ -465,6 +478,8 @@ private:
         {
             //e.result = "未找到配置文件 'system-auth' 或者 'pwquality.conf'";
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
+
         }
 
         std::cout << "Completed check: " << e.description
@@ -493,6 +508,10 @@ private:
             e.IsComply = "true";
             e.result = "不存在空口令账号";
         }
+        else
+        {
+            e.result = "存在空口令账号";
+        }
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
             << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
@@ -517,9 +536,10 @@ private:
             e.result= "普通用户的UID全为非0";
             e.IsComply = "true";
         }
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        
         //cout << e.IsComply << endl;
         return e;
     }
@@ -601,6 +621,7 @@ private:
         if (!findFile)
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
         }
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
@@ -690,6 +711,7 @@ private:
         if (!findFile)
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
         }
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
@@ -792,6 +814,7 @@ private:
         if (!findFile)
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
         }
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
@@ -832,6 +855,7 @@ private:
         else
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
         }
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
@@ -871,6 +895,7 @@ private:
         else
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
         }
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
@@ -910,6 +935,7 @@ private:
         else
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
         }
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
@@ -949,6 +975,7 @@ private:
         else
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
         }
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
@@ -987,6 +1014,7 @@ private:
         else
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
         }
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
@@ -1025,6 +1053,7 @@ private:
         else
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
         }
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
@@ -1063,6 +1092,7 @@ private:
         else
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
         }
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
@@ -1102,11 +1132,12 @@ private:
         else
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
         }
 
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -1142,11 +1173,12 @@ private:
         else
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
         }
 
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -1182,10 +1214,11 @@ private:
         else
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
         }
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -1221,6 +1254,7 @@ private:
         else
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
         }
 
         std::cout << "Completed check: " << e.description
@@ -1261,10 +1295,11 @@ private:
         else
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
         }
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -1300,6 +1335,7 @@ private:
         else
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
         }
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
@@ -1339,6 +1375,7 @@ private:
         else
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
         }
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
@@ -1378,6 +1415,7 @@ private:
         else
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
         }
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
@@ -1420,6 +1458,7 @@ private:
         else
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
         }
 
         std::cout << "Completed check: " << e.description
@@ -1460,6 +1499,7 @@ private:
         else
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
         }
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
@@ -1499,10 +1539,11 @@ private:
         else
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
         }
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -1538,10 +1579,11 @@ private:
         else
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
         }
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -1581,6 +1623,7 @@ private:
         else
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
         }
 
         std::cout << "Completed check: " << e.description
@@ -1623,11 +1666,12 @@ private:
         else
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
         }
 
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -1666,10 +1710,11 @@ private:
         else
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
         }
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -1708,10 +1753,11 @@ private:
         else
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
         }
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -1760,11 +1806,12 @@ private:
         if (!findFile)
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
         }
 
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -1804,10 +1851,11 @@ private:
         if (!findFile)
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
         }
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -1854,9 +1902,9 @@ private:
             e.IsComply = "true";
         }
         e.recommend = "/etc/rsyslog.conf中配置远程日志功能";
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -1878,9 +1926,9 @@ private:
             e.IsComply = "true";
         }
         e.recommend = "syslog配置远程日志功能，/etc/syslog.conf末行添加相关配置";
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -1903,9 +1951,9 @@ private:
             e.IsComply = "true";
         }
         e.recommend = "应配置安全事件日志功能,/etc/syslog-ng/syslog-ng.conf文件中修改";
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -1927,9 +1975,9 @@ private:
             e.IsComply = "true";
         }
         e.recommend = "应该配置安全事件日志功能,/etc/rsyslog.conf中修改 ";
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -1951,9 +1999,9 @@ private:
             e.IsComply = "true";
         }
         e.recommend = "配置rsyslog安全事件日志功能,/etc/syslog.conf中修改";
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -1979,9 +2027,9 @@ private:
             e.result = "other用户可写";
         }
         e.recommend = "/var/log/cron日志文件other用户不可写";
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -2006,9 +2054,9 @@ private:
             e.result = "other用户可写";
         }
         e.recommend = "/var/log/secure日志文件other用户不可写";
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -2033,9 +2081,9 @@ private:
             e.result = "other用户可写";
         }
         e.recommend = "/var/log/messages日志文件other用户不可写";
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -2061,9 +2109,9 @@ private:
             e.result = "other用户可写";
         }
         e.recommend = "/var/log/boot.log日志文件other用户不可写";
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -2092,9 +2140,9 @@ private:
             e.recommend = "/var/log/boot日志文件other用户不可写";
         }
         
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -2119,9 +2167,9 @@ private:
             e.result = "other用户可写";
         }
         e.recommend = "/var/log/spooler日志文件other用户不可写";
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -2136,13 +2184,14 @@ private:
         e.result = execute_commands(guard.get(), e.command);
         if (e.result == "") {
             e.result = "没有这个文件";
+
         }
         string command_Iscomply = "ls -l /var/log/localmessages | grep -q \".\\{7\\}[^ w]\" && echo -n true || echo -n false";
         e.IsComply = execute_commands(guard.get(), command_Iscomply);
         e.recommend = "/var/log/spooler日志文件other用户不可写";
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -2157,19 +2206,24 @@ private:
         e.result = execute_commands(guard.get(), e.command);
         if (e.result == "") {
             e.result = "没有这个文件";
+            e.IsComply = "pending";
         }
-        string command_Iscomply = "ls -l /var/log/maillog | grep -q \".\\{7\\}[^ w]\" && echo -n true || echo -n false";
-        e.IsComply = execute_commands(guard.get(), command_Iscomply);
-        if (e.IsComply == "true") {
-            e.result = "other用户不可写";
+        else
+        {
+            string command_Iscomply = "ls -l /var/log/maillog | grep -q \".\\{7\\}[^ w]\" && echo -n true || echo -n false";
+            e.IsComply = execute_commands(guard.get(), command_Iscomply);
+            if (e.IsComply == "true") {
+                e.result = "other用户不可写";
+            }
+            else {
+                e.result = "other用户可写";
+            }
         }
-        else {
-            e.result = "other用户可写";
-        }
+
         e.recommend = "应/var/log/maillog日志文件other用户不可写";
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -2191,9 +2245,9 @@ private:
             e.IsComply = "true";
         }
         e.recommend = "要对登录进行日志记录";
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -2275,9 +2329,9 @@ private:
             temp = "false";
         }
         e.recommend = "无";
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -2355,9 +2409,9 @@ private:
             e.IsComply = "false";
         }
         e.recommend = "应该禁止配置telnet协议";
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -2410,9 +2464,9 @@ private:
             }
         }
         e.recommend = "应该禁止root用户登录ftp";
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -2433,9 +2487,9 @@ private:
             e.IsComply = "true";
         }
         e.recommend = "禁止匿名用户登录FTP  /etc/vsftpd/vsftpd.conf中检查相关配置";
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -2446,8 +2500,8 @@ private:
         event e;
         e.importantLevel = "3";
         e.description = "检查是否设置命令行界面超时退出";
-        e.basis = "开启TMOUT且TMOUNT<=600";
-        e.recommend = "建议命令行界面超时自动登出时间TMOUT应不大于600s，检查项建议系统管理员根据系统情况自行判断";
+        e.basis = "开启TMOUT且TMOUNT<=600秒";
+        e.recommend = "建议命令行界面超时自动登出时间TMOUT应不大于600秒，检查项建议系统管理员根据系统情况自行判断";
 
         //fileIsExist是判断配置文件是否存在，如果存在，则找到了配置文件，标记findFile为true;
         //将stderr（文件描述符2）重定向为stdout（文件描述符1）来根据返回信息判断文件是否存在。
@@ -2471,22 +2525,25 @@ private:
                 {
                     e.IsComply = "true";
                 }
+                e.result += "秒";
             }
             else
             {
                 e.result = "未开启TMOUT设置";
-                e.recommend = "开启/etc/profile中的TMOUT设置，且TMOUT值应不大于600";
+                e.recommend = "开启/etc/profile中的TMOUT设置，且TMOUT值应不大于600秒";
             }
         }
 
         if (!findFile)
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
+
         }
 
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -2566,14 +2623,15 @@ private:
         // 4. 处理各种情况，确保 e.result 不为空
         if (!findFile) {
             e.result = "未找到相关配置文件，系统可能使用了其他引导管理器或配置文件已被删除。";
+            e.IsComply = "pending";
         }
         else if (!passwordFound) {
             e.result = "已找到引导管理器配置文件，但未检测到密码设置，建议配置密码以增强安全性。";
         }
 
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
 
         return e;
     }
@@ -2715,11 +2773,12 @@ private:
         if (!findFile)
         {
             e.result = "未找到配置文件 `/etc/security/limits.conf`，系统可能未进行 Core Dump 限制。";
+            e.IsComply = "pending";
         }
 
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -2770,11 +2829,12 @@ private:
 
         if (!findFile) {
             e.result = "未找到配置文件 `/etc/profile`，请检查文件是否存在。";
+            e.IsComply = "pending";
         }
 
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
 
         return e;
     }
@@ -2835,11 +2895,12 @@ private:
 
         if (fileIsExist== "not_exist") {
             e.result = "未找到配置文件 `/etc/pam.d/su`，系统可能未启用 PAM 认证。";
+            e.IsComply = "pending";
         }
 
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
 
         return e;
     }
@@ -2899,10 +2960,11 @@ private:
         e.basis = "请手动检查文件文件/etc/passwd，/etc/shadow，并使用命令：usermod -s /sbin/nologin username";
         e.recommend = "对系统账户登录进行限制，禁止账户交互式登录。";
         e.result = "手动检查";
+        e.IsComply = "pending";
 
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -2949,6 +3011,7 @@ private:
         if (!findFile)
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
         }
         std::cout << "Completed check: " << e.description
             << " [ThreadID: " << std::this_thread::get_id()
@@ -3041,9 +3104,10 @@ private:
         e.basis = "请手工查看/etc/aliases和/etc/mail/aliases两个文件";
         e.recommend = "检查是否禁用不必要的别名，此检查项建议系统管理员根据系统情况自行判断。";
         e.result = "手动检查";
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        e.IsComply = "pending";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -3070,9 +3134,9 @@ private:
             e.result = "以下文件存在 SUID 或 SGID 权限，需要检查或移除：\n" + e.result;
         }
 
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -3085,9 +3149,10 @@ private:
         e.basis = "在屏幕上面的面板中，打开“系统”-->“首选项”-->“屏幕保护程序”";
         e.recommend = "对具有图形化界面的设备应配置定时自动屏幕锁定";
         e.result = "手动检查";
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        e.IsComply = "pending";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -3123,10 +3188,11 @@ private:
         if (!findFile)
         {
             e.result = "未找到配置文件";
+            e.IsComply = "pending";
         }
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -3139,9 +3205,10 @@ private:
         e.basis = "请手工查看/etc/group等文件";
         e.recommend = "此配置项主要偏向于对系统用户的管理，如账户已分组管理，该检查项可以跳过。此检查项建议系统管理员根据系统情况自行判断";
         e.result = "手动检查";
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        e.IsComply = "pending";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -3165,9 +3232,9 @@ private:
             e.IsComply = "true";
             e.result = "不包含（.和..）的路径";
         }
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -3196,9 +3263,9 @@ private:
         else {
             e.IsComply = "false";
         }
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -3220,9 +3287,9 @@ private:
         else {
             e.IsComply = "false";
         }
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -3246,9 +3313,9 @@ private:
             e.result = "系统磁盘分区使用率存在>80%的情况";
             e.IsComply = "false";
         }
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -3272,9 +3339,9 @@ private:
             e.IsComply = "false";
         }
 
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -3300,9 +3367,9 @@ private:
             e.result = "存在未配置用户最小权限："+ e.result;
             e.IsComply = "false";
         }
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -3337,9 +3404,9 @@ private:
             e.IsComply = "false";
         }
 
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -3372,9 +3439,9 @@ private:
             e.IsComply = "true";
         }
 
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -3405,9 +3472,9 @@ private:
             e.result = "已开启NFS服务并限制能够访问NFS服务的IP范围";
             e.IsComply = "true";
         }
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -3433,9 +3500,9 @@ private:
         else {
             e.IsComply = "false";
         }
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -3493,9 +3560,9 @@ private:
             e.recommend = "要安装vsftpd或者pure-ftpd并设置上传权限";
 
         }
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -3536,9 +3603,9 @@ private:
             e.IsComply = "false";
             e.recommend = "安装vsftpd或者pure-ftpd";
         }
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -3551,11 +3618,11 @@ private:
         e.basis = "所有含有“s”属性的文件，把不必要的“s”属性去掉，或者把不用的直接删除。";
         e.command = "find /usr/bin -type f \( -perm -04000 -o -perm -02000 \) -exec ls -lg {} \; ";
         e.result = "手动检查";
-        e.IsComply = "false";
+        e.IsComply = "pending";
         e.recommend = "s属性在运行时可以获得拥有者的权限，所以为了安全需要，需要做出修改";
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -3567,11 +3634,11 @@ private:
         e.description = "检查是否更改默认的telnet登录警告Banner";
         e.basis = "请手动检查修改文件/etc/issue 和/etc/issue.net中的内容";
         e.recommend = "请手动检查修改文件/etc/issue 和/etc/issue.net中的内容";
-        e.IsComply = "false";
+        e.IsComply = "pending";
         e.result = "手动检查";
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -3602,9 +3669,9 @@ private:
                 e.IsComply = "true";
             }
         }
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 
@@ -3629,9 +3696,9 @@ private:
             e.recommend = "该内核范围存在漏洞，请升级内核或打上补丁";
         }
 
-        std::cout << "Completed check: " << e.description
-            << " [ThreadID: " << std::this_thread::get_id()
-            << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
+        //std::cout << "Completed check: " << e.description
+        //    << " [ThreadID: " << std::this_thread::get_id()
+        //    << ", SSHConnectionID: " << guard.getConnectionID() << "]\n";
         return e;
     }
 

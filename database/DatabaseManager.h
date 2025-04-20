@@ -57,6 +57,7 @@ public:
     // (新增）获取有效POC，即搜索 Script 字段不为空的记录
     std::vector<POC> getVaildPOCData();
 
+
 private:
 
     sqlite3* db; // SQLite数据库连接对象 

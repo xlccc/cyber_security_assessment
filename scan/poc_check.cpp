@@ -1,6 +1,6 @@
 ﻿#include"poc_check.h"
 //搜索POC是否存在、并加载POC插件路径
-void searchPOCs(ScanHostResult& hostResult, DatabaseManager& dbManager, DatabaseHandler& dbHandler, ConnectionPool& pool) {
+void searchPOCs(ScanHostResult& hostResult, DatabaseWrapper& dbManager, DatabaseHandler& dbHandler, ConnectionPool& pool) {
      
     // 搜索操作系统相关的POC
     for (auto& cpe : hostResult.cpes) {
