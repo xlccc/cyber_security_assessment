@@ -210,9 +210,11 @@ void ServerManager::handle_request(http_request request) {
     else if (first_segment == _XPLATSTR("getWeakPasswordByIp") && request.method() == methods::GET) {
         handle_get_weak_password_by_ip(request);
     }
+    //获取等保分数
     else if (first_segment == _XPLATSTR("getlevel3ResultByIp") && request.method() == methods::GET) {
         handle_get_level3Result(request);
     }
+    //获取基线检测分数
     else if (first_segment == _XPLATSTR("getBaseLineResultByIp") && request.method() == methods::GET) {
         handle_get_baseLineResult(request);
     }
