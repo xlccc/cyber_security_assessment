@@ -204,6 +204,9 @@ private:
     void handle_get_level3Result(http_request request);
 
     void handle_post_updateLevel3_protect(http_request request);
+    //基线：从历史数据中取出来评估
+    void handle_get_baseLineResult(http_request  request);
+    void handle_post_updateBaseLine_protect(http_request request);
 };
 
 #endif // SERVERMANAGER_H

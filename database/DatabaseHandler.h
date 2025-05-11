@@ -139,6 +139,8 @@ public:
 
     // (新增）获取有效POC，即搜索 Script 字段不为空的记录
     std::vector<POC> getVaildPOCData(ConnectionPool& pool);
+    //更新基线检测结果
+    void updateBaseLineSecurityCheckResult(const std::string& ip, ConnectionPool& pool, std::vector<scoreMeasure>vec_score);
 
     // ------  POC表 相关的操作 --------
 
