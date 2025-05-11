@@ -198,6 +198,8 @@ private:
             {7, [this] { event e = checkIDSIPSWAFStatus2(); e.item_id = 7;  return e; }},
             {8, [this] { event e = checkIDSIPSWAFStatus3(); e.item_id = 8;  return e; }},
             {9, [this] { event e = checkIDSIPSWAFStatus4(); e.item_id = 9;  return e; }},
+            {10, [this] { event e = checkMalwareProtectionCompliance(); e.item_id = 10;  return e; }},
+            {11, [this] { event e = checkSpamMailProtectionCompliance(); e.item_id = 11;  return e; }},
             // 可以继续添加更多三级等保检查项
         };
 
@@ -825,6 +827,223 @@ private:
         return e;
     }
 
+    event checkMalwareProtectionCompliance() {
+        SSHConnectionGuard guard(sshPool);
+        event e;
+        e.description = "8.1.3.4.a";
+        e.importantLevel = "3";
+        e.basis = "应在关键网络节点处对恶意代码进行检测和清除，并维护恶意代码防护机制的升级和更新";
+        e.IsComply = "false";
+
+        // 1. 检查是否安装了防病毒软件
+        std::string command = "dpkg -l | grep -i \"clamav\\|sophos\\|rkhunter\\|chkrootkit\" || rpm -qa | grep -i \"clamav\\|sophos\\|rkhunter\\|chkrootkit\"";
+        std::string installedOutput = execute_commands(guard.get(), command);
+
+        // 检查是否安装了至少一种防病毒软件
+        bool hasClamAV = (installedOutput.find("clamav") != std::string::npos);
+        bool hasSophos = (installedOutput.find("sophos") != std::string::npos);
+        bool hasRkhunter = (installedOutput.find("rkhunter") != std::string::npos);
+        bool hasChkrootkit = (installedOutput.find("chkrootkit") != std::string::npos);
+
+        if (!hasClamAV && !hasSophos && !hasRkhunter && !hasChkrootkit) {
+            e.result = "未安装任何恶意代码防护软件";
+            e.recommend = "应安装恶意代码防护软件（如ClamAV、Sophos、rkhunter或chkrootkit）";
+            std::cout << "未安装任何恶意代码防护软件" << std::endl;
+            return e;
+        }
+
+        // 2. 检查防病毒软件是否运行
+        bool isRunning = false;
+        std::string runningService = "";
+
+        // 检查ClamAV服务
+        if (hasClamAV) {
+            command = "systemctl is-active --quiet clamav-daemon && echo 'active' || echo 'inactive'";
+            std::string clamavStatus = execute_commands(guard.get(), command);
+            if (clamavStatus.find("active") != std::string::npos) {
+                isRunning = true;
+                runningService = "ClamAV";
+            }
+        }
+
+        // 检查Sophos服务
+        if (hasSophos && !isRunning) {
+            command = "ps aux | grep -i sophos | grep -v grep";
+            std::string sophosStatus = execute_commands(guard.get(), command);
+            if (!sophosStatus.empty()) {
+                isRunning = true;
+                runningService = "Sophos";
+            }
+        }
+
+        // 检查rkhunter和chkrootkit（这些通常不是持续运行的服务）
+        if ((hasRkhunter || hasChkrootkit) && !isRunning) {
+            // 检查是否有定期扫描任务
+            command = "crontab -l | grep -i \"rkhunter\\|chkrootkit\" || cat /etc/cron.*/rkhunter || cat /etc/cron.*/chkrootkit";
+            std::string cronOutput = execute_commands(guard.get(), command);
+            if (!cronOutput.empty()) {
+                isRunning = true;
+                runningService = hasRkhunter ? "rkhunter (cron)" : "chkrootkit (cron)";
+            }
+        }
+
+        if (!isRunning) {
+            e.result = "已安装恶意代码防护软件但未运行";
+            e.recommend = "应启动恶意代码防护服务并确保其正常运行";
+            std::cout << "已安装恶意代码防护软件但未运行" << std::endl;
+            return e;
+        }
+
+        // 3. 检查病毒库更新
+        if (hasClamAV) {
+            command = "freshclam --version && systemctl is-active --quiet clamav-freshclam && echo 'update_active' || echo 'update_inactive'";
+            std::string updateStatus = execute_commands(guard.get(), command);
+            if (updateStatus.find("update_inactive") != std::string::npos) {
+                e.result = "恶意代码防护软件病毒库更新服务未运行";
+                e.recommend = "应启动病毒库自动更新服务以确保防护的有效性";
+                std::cout << "恶意代码防护软件病毒库更新服务未运行" << std::endl;
+                return e;
+            }
+        }
+
+        // 所有检查都通过
+        e.result = "恶意代码防护配置符合要求（" + runningService + "运行中）";
+        e.IsComply = "true";
+        return e;
+    }
+
+    event checkSpamMailProtectionCompliance() {
+        SSHConnectionGuard guard(sshPool);
+        event e;
+        e.description = "8.1.3.4.b";
+        e.importantLevel = "3";
+        e.basis = "应在关键网络节点处对垃圾邮件进行检测和防护，并维护垃圾邮件防护机制的升级和更新";
+        e.IsComply = "false";
+
+        // 1. 检查邮件服务器是否安装
+        std::string command = "dpkg -l | grep -i \"postfix\\|sendmail\\|exim\\|zimbra\\|dovecot\" || rpm -qa | grep -i \"postfix\\|sendmail\\|exim\\|zimbra\\|dovecot\"";
+        std::string mailServerOutput = execute_commands(guard.get(), command);
+
+        // 如果没有邮件服务器，则不适用此检查
+        if (mailServerOutput.empty()) {
+            e.result = "系统未安装邮件服务器，不适用垃圾邮件防护检查";
+            e.recommend = "应安装安装邮件服务器,并开启垃圾邮件的检测和防护";
+            e.IsComply = "false";
+            std::cout << "系统未安装邮件服务器，不适用垃圾邮件防护检查" << std::endl;
+            return e;
+        }
+
+        // 2. 检查是否安装了垃圾邮件防护软件
+        command = "dpkg -l | grep -i \"spamassassin\\|amavis\\|rspamd\\|mailscanner\\|postgrey\" || rpm -qa | grep -i \"spamassassin\\|amavis\\|rspamd\\|mailscanner\\|postgrey\"";
+        std::string spamFilterOutput = execute_commands(guard.get(), command);
+
+        bool hasSpamAssassin = (spamFilterOutput.find("spamassassin") != std::string::npos);
+        bool hasAmavis = (spamFilterOutput.find("amavis") != std::string::npos);
+        bool hasRspamd = (spamFilterOutput.find("rspamd") != std::string::npos);
+        bool hasMailScanner = (spamFilterOutput.find("mailscanner") != std::string::npos);
+        bool hasPostgrey = (spamFilterOutput.find("postgrey") != std::string::npos);
+
+        if (!hasSpamAssassin && !hasAmavis && !hasRspamd && !hasMailScanner && !hasPostgrey) {
+            e.result = "未安装垃圾邮件防护软件";
+            e.recommend = "应安装垃圾邮件防护软件（如SpamAssassin、Amavis、rspamd等）";
+            std::cout << "未安装垃圾邮件防护软件" << std::endl;
+            return e;
+        }
+
+        // 3. 检查垃圾邮件防护服务是否运行
+        bool isRunning = false;
+        std::string runningService = "";
+
+        // 检查SpamAssassin服务
+        if (hasSpamAssassin) {
+            command = "systemctl is-active --quiet spamassassin && echo 'active' || echo 'inactive'";
+            std::string spamassassinStatus = execute_commands(guard.get(), command);
+            if (spamassassinStatus.find("active") != std::string::npos) {
+                isRunning = true;
+                runningService = "SpamAssassin";
+            }
+            else {
+                // 检查spamd进程
+                command = "ps aux | grep -i spamd | grep -v grep";
+                spamassassinStatus = execute_commands(guard.get(), command);
+                if (!spamassassinStatus.empty()) {
+                    isRunning = true;
+                    runningService = "SpamAssassin (spamd)";
+                }
+            }
+        }
+
+        // 检查Amavis服务
+        if (hasAmavis && !isRunning) {
+            command = "systemctl is-active --quiet amavis && echo 'active' || echo 'inactive'";
+            std::string amavisStatus = execute_commands(guard.get(), command);
+            if (amavisStatus.find("active") != std::string::npos) {
+                isRunning = true;
+                runningService = "Amavis";
+            }
+        }
+
+        // 检查rspamd服务
+        if (hasRspamd && !isRunning) {
+            command = "systemctl is-active --quiet rspamd && echo 'active' || echo 'inactive'";
+            std::string rspamdStatus = execute_commands(guard.get(), command);
+            if (rspamdStatus.find("active") != std::string::npos) {
+                isRunning = true;
+                runningService = "rspamd";
+            }
+        }
+
+        // 检查Postgrey服务
+        if (hasPostgrey && !isRunning) {
+            command = "systemctl is-active --quiet postgrey && echo 'active' || echo 'inactive'";
+            std::string postgreyStatus = execute_commands(guard.get(), command);
+            if (postgreyStatus.find("active") != std::string::npos) {
+                isRunning = true;
+                runningService = "Postgrey";
+            }
+        }
+
+        if (!isRunning) {
+            e.result = "已安装垃圾邮件防护软件但未运行";
+            e.recommend = "应启动垃圾邮件防护服务并确保其正常运行";
+            std::cout << "已安装垃圾邮件防护软件但未运行" << std::endl;
+            return e;
+        }
+
+        // 4. 检查邮件服务器配置中是否集成了反垃圾邮件
+        command = "grep -i \"spamassassin\\|amavis\\|rspamd\\|content_filter\" /etc/postfix/main.cf";
+        std::string postfixIntegration = execute_commands(guard.get(), command);
+
+        if (postfixIntegration.empty()) {
+            // 再检查master.cf
+            command = "grep -i \"spamassassin\\|amavis\\|rspamd\\|content_filter\" /etc/postfix/master.cf";
+            postfixIntegration = execute_commands(guard.get(), command);
+
+            if (postfixIntegration.empty()) {
+                e.result = "垃圾邮件防护软件未与邮件服务器集成";
+                e.recommend = "应配置邮件服务器集成垃圾邮件防护功能";
+                std::cout << "垃圾邮件防护软件未与邮件服务器集成" << std::endl;
+                return e;
+            }
+        }
+
+        // 5. 检查更新机制
+        if (hasSpamAssassin) {
+            command = "crontab -l | grep -i \"sa-update\" || cat /etc/cron.*/sa-update || systemctl is-active --quiet sa-update.timer && echo 'update_active' || echo 'update_inactive'";
+            std::string updateStatus = execute_commands(guard.get(), command);
+            if (updateStatus.find("update_inactive") != std::string::npos && updateStatus.find("sa-update") == std::string::npos) {
+                e.result = "垃圾邮件防护规则库更新机制未配置";
+                e.recommend = "应配置垃圾邮件规则库自动更新机制";
+                std::cout << "垃圾邮件防护规则库更新机制未配置" << std::endl;
+                return e;
+            }
+        }
+
+        // 所有检查都通过
+        e.result = "垃圾邮件防护配置符合要求（" + runningService + "运行中）";
+        e.IsComply = "true";
+        return e;
+    }
     event checkPasswordLifetime() {
         SSHConnectionGuard guard(sshPool);//guard 从 sshPool 获取一个空闲的 SSH 连接
         event e;
