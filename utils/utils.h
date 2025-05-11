@@ -117,7 +117,8 @@ extern std::unordered_map<std::string, std::vector<std::string>> vulnTypes;
 PasswordStrength checkPasswordStrength(const std::string& password);
 std::string passwordStrengthToString(PasswordStrength strength);
 
-
+//// 判断规则是否包含所有必要参数
+bool isRuleComplete(const UfwRule& rule);
 // 判断路径是否为目录
 bool is_directory(const std::string& path);
 

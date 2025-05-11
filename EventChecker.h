@@ -191,8 +191,13 @@ private:
         level3ComplianceFunctions = {
             {1, [this] { event e = checkFirewallCompliance(); e.item_id = 1;  return e; }},
             {2, [this] { event e = checkFirewallRedundancy(); e.item_id = 2;  return e; }},
+            {3, [this] { event e = checkFirewallRuleCompleteness(); e.item_id = 3;  return e; }},
             {4, [this] { event e = checkSessionControlCompliance(); e.item_id = 4;  return e; }},
             {5, [this] { event e = checkApplicationControlCompliance(); e.item_id = 5;  return e; }},
+            {6, [this] { event e = checkIDSIPSWAFStatus(); e.item_id = 6;  return e; }},
+            {7, [this] { event e = checkIDSIPSWAFStatus2(); e.item_id = 7;  return e; }},
+            {8, [this] { event e = checkIDSIPSWAFStatus3(); e.item_id = 8;  return e; }},
+            {9, [this] { event e = checkIDSIPSWAFStatus4(); e.item_id = 9;  return e; }},
             // 可以继续添加更多三级等保检查项
         };
 
@@ -343,6 +348,76 @@ private:
             e.result = "检查防火墙冗余规则过程中发生错误: " + std::string(err.what());
         }
 
+        return e;
+    }
+
+    event checkFirewallRuleCompleteness() {
+        SSHConnectionGuard guard(sshPool);  // guard 从 sshPool 获取一个空闲的 SSH 连接
+        event e;
+        e.description = "8.1.3.2.c";
+        e.importantLevel = "3";
+        e.basis = "应对源地址、目的地址、源端口、目的端口和协议等进行检查，以允许/拒绝数据包进出。";
+        e.IsComply = "false";
+        try {
+            // 获取UFW防火墙规则
+            std::string ufwOutput;
+            // 尝试从命令执行获取规则
+            std::string command = "sudo ufw status numbered";
+            ufwOutput = execute_commands(guard.get(), command);
+            // 确保输出不为空
+            if (ufwOutput.empty()) {
+                e.result = "无法获取防火墙规则，请确保UFW已启用且有规则存在";
+                e.recommend = "应开启防火墙";
+                return e;
+            }
+            // 过滤出带编号的规则
+            std::string numberedRulesStr = filterNumberedRules(ufwOutput);
+            if (numberedRulesStr.empty()) {
+                e.result = "未找到UFW规则，防火墙可能未启用或没有配置规则";
+                e.recommend = "应开启防火墙或配置规则";
+                return e;
+            }
+            // 解析UFW规则
+            std::vector<UfwRule> rules = parseUfwRules(numberedRulesStr);
+            if (rules.empty()) {
+                e.result = "没有解析到任何规则，可能是解析失败或防火墙没有规则";
+                e.recommend = "应配置合规的防火墙规则";
+                return e;
+            }
+
+            // 检查每条规则是否包含完整参数
+            std::vector<UfwRule> incompleteRules;
+            for (const auto& rule : rules) {
+                if (!isRuleComplete(rule)) {
+                    incompleteRules.push_back(rule);
+                }
+            }
+
+            if (incompleteRules.empty()) {
+                e.result = "所有防火墙规则都包含完整的参数配置（源地址、目的地址、源端口、目的端口和协议）";
+                e.IsComply = "true";
+            }
+            else {
+                // 构建不完整规则编号的字符串
+                std::stringstream incompleteInfo;
+                incompleteInfo << "存在不合规的防火墙规则。不合规规则编号: ";
+                for (size_t i = 0; i < incompleteRules.size(); ++i) {
+                    if (i > 0) incompleteInfo << ", ";
+                    incompleteInfo << incompleteRules[i].number;
+                }
+
+                // 生成简单的修改建议
+                std::stringstream recommendStr;
+                recommendStr << "建议配置包含完整参数的防火墙规则，示例命令:\n";
+                recommendStr << "sudo ufw allow proto tcp from 192.168.1.0/24 port 1024:65535 to 10.0.0.1 port 22";
+
+                e.result = incompleteInfo.str();
+                e.recommend = recommendStr.str();
+            }
+        }
+        catch (const std::exception& err) {
+            e.result = "对防火墙源地址、目的地址、源端口、目的端口和协议等进行检查时发生错误 " + std::string(err.what());
+        }
         return e;
     }
 
@@ -543,7 +618,212 @@ private:
         return e;
     }
 
+    event checkIDSIPSWAFStatus() {
+        SSHConnectionGuard guard(sshPool);  // guard 从 sshPool 获取一个空闲的 SSH 连接
+        event e;
+        e.description = "8.1.3.3.a";
+        e.importantLevel = "3";
+        e.basis = "应在关键网络节点处检测、防止或限制从外部发起的网络攻击行为";
+        e.IsComply = "false";
 
+        try {
+            // 执行命令检查是否有IDS/IPS/WAF相关的进程
+            std::vector<std::string> services = { "snort", "suricata", "fail2ban", "apache2" };
+            std::vector<std::string> runningServices;
+
+            for (const auto& service : services) {
+                // 排除grep进程本身
+                std::string command = "ps aux | grep -v grep | grep " + service;
+                std::string output = execute_commands(guard.get(), command);
+
+                // 检查输出是否包含实际服务进程
+                if (!output.empty()) {
+                    runningServices.push_back(service);
+                }
+            }
+
+            // 判断哪些服务在运行
+            if (runningServices.empty()) {
+                e.result = "未发现任何IDS、IPS或WAF相关进程，可能没有安装或未启动相关服务。";
+                e.recommend = "建议安装并启动相关的IDS/IPS/WAF工具，例如Snort、Suricata、Fail2Ban、ModSecurity等。";
+            }
+            else {
+                // 构建运行中的服务字符串
+                std::stringstream runningInfo;
+                runningInfo << "以下IDS、IPS或WAF服务正在运行: ";
+                for (size_t i = 0; i < runningServices.size(); ++i) {
+                    if (i > 0) runningInfo << ", ";
+                    runningInfo << runningServices[i];
+                }
+                e.result = runningInfo.str();
+                e.IsComply = "true";
+            }
+        }
+        catch (const std::exception& err) {
+            e.result = "在检查IDS、IPS或WAF状态时发生错误: " + std::string(err.what());
+        }
+
+        return e;
+    }
+
+    event checkIDSIPSWAFStatus2() {
+        SSHConnectionGuard guard(sshPool);  // guard 从 sshPool 获取一个空闲的 SSH 连接
+        event e;
+        e.description = "8.1.3.3.b";
+        e.importantLevel = "3";
+        e.basis = "应在关键网络节点处检测、防止或限制从内部发起的网络政击行为";
+        e.IsComply = "false";
+
+        try {
+            // 执行命令检查是否有IDS/IPS/WAF相关的进程
+            std::vector<std::string> services = { "snort", "suricata", "fail2ban", "apache2" };
+            std::vector<std::string> runningServices;
+
+            for (const auto& service : services) {
+                // 排除grep进程本身
+                std::string command = "ps aux | grep -v grep | grep " + service;
+                std::string output = execute_commands(guard.get(), command);
+
+                // 检查输出是否包含实际服务进程
+                if (!output.empty()) {
+                    runningServices.push_back(service);
+                }
+            }
+
+            // 判断哪些服务在运行
+            if (runningServices.empty()) {
+                e.result = "未发现任何IDS、IPS或WAF相关进程，可能没有安装或未启动相关服务。";
+                e.recommend = "建议安装并启动相关的IDS/IPS/WAF工具，例如Snort、Suricata、Fail2Ban、ModSecurity等。";
+            }
+            else {
+                // 构建运行中的服务字符串
+                std::stringstream runningInfo;
+                runningInfo << "以下IDS、IPS或WAF服务正在运行: ";
+                for (size_t i = 0; i < runningServices.size(); ++i) {
+                    if (i > 0) runningInfo << ", ";
+                    runningInfo << runningServices[i];
+                }
+                e.result = runningInfo.str();
+                e.IsComply = "true";
+            }
+        }
+        catch (const std::exception& err) {
+            e.result = "在检查IDS、IPS或WAF状态时发生错误: " + std::string(err.what());
+        }
+
+        return e;
+    }
+
+
+    event checkIDSIPSWAFStatus3() {
+        SSHConnectionGuard guard(sshPool);  // guard 从 sshPool 获取一个空闲的 SSH 连接
+        event e;
+        e.description = "8.1.3.3.c";
+        e.importantLevel = "3";
+        e.basis = "应采取技术措施对网络行为进行分析实现对网络攻击特别是新型网络攻击行为的分析";
+        e.IsComply = "false";
+
+        try {
+            // 执行命令检查是否有IDS/IPS/WAF相关的进程
+            std::vector<std::string> services = {
+            "snort", "suricata", "fail2ban",
+            "zeek", "bro",         // 网络回溯系统
+            "ossec", "wazuh",      // 主机入侵检测/抗APT
+            "clamav-daemon",       // 反病毒/反恶意软件
+            "moloch", "arkime",    // 全流量捕获系统
+            "elastalert", "filebeat", "auditd"  // 日志和审计
+            };
+            std::vector<std::string> runningServices;
+
+            for (const auto& service : services) {
+                // 排除grep进程本身
+                std::string command = "ps aux | grep -v grep | grep " + service;
+                std::string output = execute_commands(guard.get(), command);
+
+                // 检查输出是否包含实际服务进程
+                if (!output.empty()) {
+                    runningServices.push_back(service);
+                }
+            }
+
+            // 判断哪些服务在运行
+            if (runningServices.empty()) {
+                e.result = "未发现任何回溯系统或抗APT攻击系统等相关进程，可能没有安装或未启动相关服务。";
+                e.recommend = "建议安装部署网络回溯系统，如Zeek(Bro)、Moloch(Arkime)，配置全流量捕获等。";
+            }
+            else {
+                // 构建运行中的服务字符串
+                std::stringstream runningInfo;
+                runningInfo << "以下网络回溯系统服务正在运行: ";
+                for (size_t i = 0; i < runningServices.size(); ++i) {
+                    if (i > 0) runningInfo << ", ";
+                    runningInfo << runningServices[i];
+                }
+                e.result = runningInfo.str();
+                e.IsComply = "true";
+            }
+        }
+        catch (const std::exception& err) {
+            e.result = "在检查网络回溯系统状态时发生错误: " + std::string(err.what());
+        }
+
+        return e;
+    }
+
+    event checkIDSIPSWAFStatus4() {
+        SSHConnectionGuard guard(sshPool);  // guard 从 sshPool 获取一个空闲的 SSH 连接
+        event e;
+        e.description = "8.1.3.3.d";
+        e.importantLevel = "3";
+        e.basis = "当检测到攻击行为时，记录攻击源IP、攻击类型、攻击目标、攻击时间，在发生严重入侵事件时应提供报警";
+        e.IsComply = "false";
+
+        try {
+            // 执行命令检查是否有IDS/IPS/WAF相关的进程
+            std::vector<std::string> services = {
+            "snort", "suricata", "fail2ban",
+            "zeek", "bro",         // 网络回溯系统
+            "ossec", "wazuh",      // 主机入侵检测/抗APT
+            "clamav-daemon",       // 反病毒/反恶意软件
+            "moloch", "arkime",    // 全流量捕获系统
+            "elastalert", "filebeat", "auditd"  // 日志和审计
+            };
+            std::vector<std::string> runningServices;
+
+            for (const auto& service : services) {
+                // 排除grep进程本身
+                std::string command = "ps aux | grep -v grep | grep " + service;
+                std::string output = execute_commands(guard.get(), command);
+
+                // 检查输出是否包含实际服务进程
+                if (!output.empty()) {
+                    runningServices.push_back(service);
+                }
+            }
+
+            // 判断哪些服务在运行
+            if (runningServices.empty()) {
+                e.result = "未发现任何发生严重入侵事件时应提供报警等相关进程，可能没有安装或未启动相关服务。";
+                e.recommend = "建议安装部署告警系统。";
+            }
+            else {
+                // 构建运行中的服务字符串
+                std::stringstream runningInfo;
+                runningInfo << "以下网络回溯系统服务正在运行: ";
+                for (size_t i = 0; i < runningServices.size(); ++i) {
+                    if (i > 0) runningInfo << ", ";
+                    runningInfo << runningServices[i];
+                }
+                e.result = runningInfo.str();
+                e.IsComply = "true";
+            }
+        }
+        catch (const std::exception& err) {
+            e.result = "在告警系统状态时发生错误: " + std::string(err.what());
+        }
+
+        return e;
+    }
 
     event checkPasswordLifetime() {
         SSHConnectionGuard guard(sshPool);//guard 从 sshPool 获取一个空闲的 SSH 连接

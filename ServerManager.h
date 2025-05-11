@@ -200,6 +200,10 @@ private:
 
     //增删支持的漏洞类型
     void handle_edit_vuln_type(http_request request);
+    //等保：从历史数据中取出来评估
+    void handle_get_level3Result(http_request request);
+
+    void handle_post_updateLevel3_protect(http_request request);
 };
 
 #endif // SERVERMANAGER_H

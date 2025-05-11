@@ -162,6 +162,10 @@ void ServerManager::handle_request(http_request request) {
     else if (first_segment == _XPLATSTR("classifyProtectGetRes") && request.method() == methods::GET) {
         handle_get_classify_protect(request);
     }
+    //根据前端传来的vecScore进行等级数据库操作修改
+    else if (first_segment == _XPLATSTR("updateLevel3Protect") && request.method() == methods::POST) {
+        handle_post_updateLevel3_protect(request);
+    }
     else if (first_segment == _XPLATSTR("pocExcute") && request.method() == methods::POST) {
         handle_post_poc_excute(request);
     }
@@ -201,15 +205,21 @@ void ServerManager::handle_request(http_request request) {
     else if (first_segment == _XPLATSTR("getWeakPasswordByIp") && request.method() == methods::GET) {
         handle_get_weak_password_by_ip(request);
     }
+    else if (first_segment == _XPLATSTR("getlevel3ResultByIp") && request.method() == methods::GET) {
+        handle_get_level3Result(request);
+    }
     else if (first_segment == _XPLATSTR("getAllWeakPassword") && request.method() == methods::GET) {
         handle_get_all_weak_passwords(request);
-        }
+    }
+
     else if (first_segment == _XPLATSTR("poc") && second_segment == _XPLATSTR("getAllVulnTypes") && request.method() == methods::GET) {
-            handle_get_vuln_types(request);
-            }
+        handle_get_vuln_types(request);
+    }
     else if (first_segment == _XPLATSTR("poc") && second_segment == _XPLATSTR("editVulnType") && request.method() == methods::POST) {
-                handle_edit_vuln_type(request);
-                }
+        handle_edit_vuln_type(request);
+    }
+    
+    
     else {
         request.reply(status_codes::NotFound, _XPLATSTR("Path not found"));
     }
@@ -2280,7 +2290,9 @@ void ServerManager::handle_post_classify_protect(http_request request) {
         try {
             // 清空现有数据
             vecScoreMeasure.clear();
-
+            //传ip, vector<object>.
+            // object包含 item_id, importantLevel, IsComplyLevel
+            // 根据ip和item_id修改数据库中对应的IsComply结果
             // 检查 JSON 结构
             if (body.is_object() && body.has_field(_XPLATSTR("scoreMeasures")) && body.at(_XPLATSTR("scoreMeasures")).is_array()) {
                 auto json_array = body.at(_XPLATSTR("scoreMeasures")).as_array();
@@ -2296,7 +2308,7 @@ void ServerManager::handle_post_classify_protect(http_request request) {
                 double sum = 0.0;
                 // 累加每一项的得分
                 for (int k = 0; k < n; k++) {
-                    double importantLevel = stod(vecScoreMeasure[k].importantLevelJson);
+                    double importantLevel = stod(vecScoreMeasure[k].importantLevelJson)/3;
                     double complyLevel = stod(vecScoreMeasure[k].IsComplyLevel);
                     sum += importantLevel * (1.0 - complyLevel);
 
@@ -2315,7 +2327,6 @@ void ServerManager::handle_post_classify_protect(http_request request) {
                 // 构造响应消息
                 json::value response_data;
                 response_data[_XPLATSTR("message")] = json::value::string("Scores received and processed successfully");
-                response_data[_XPLATSTR("score")] = json::value::number(M); // 将评分结果添加到响应中
                 // 创建响应
                 http_response response(status_codes::OK);
                 response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
@@ -3834,6 +3845,217 @@ void ServerManager::handle_edit_vuln_type(http_request request)
             request.reply(response);
         }
         }).wait(); // ✅ 与 handle_post_get_Nmap 一致
+}
+
+void ServerManager::handle_get_level3Result(http_request request)
+{
+    try {
+        // 解析请求中的IP参数
+        auto query = uri::split_query(request.request_uri().query());
+        auto it = query.find(_XPLATSTR("ip"));
+        if (it == query.end()) {
+            request.reply(status_codes::BadRequest, _XPLATSTR("Missing 'ip' parameter"));
+            return;
+        }
+
+        // 获取IP地址
+        std::string ip = utility::conversions::to_utf8string(it->second);
+
+        // 检查IP是否为空
+        if (ip.empty()) {
+            request.reply(status_codes::BadRequest, _XPLATSTR("Empty IP parameter"));
+            return;
+        }
+
+        // 获取三级等保结果
+        std::vector<event> check_results = dbHandler_.getLevel3SecurityCheckResults(ip, pool);
+
+        // 定义合规等级映射表
+        std::unordered_map<std::string, double> complyLevelMapping = {
+            {"true", 1.0},
+            {"false", 0.0},
+            {"half_true", 0.5},
+            {"pending", -1.0}  // pending状态可根据需要调整处理方式
+        };
+
+        // 计算评分
+        int n = check_results.size(); // 项数
+        double sum = 0.0;
+
+        // 累加每一项的得分
+        for (const auto& item : check_results) {
+            double importantLevel = std::stod(item.importantLevel)/3;
+
+            // 通过映射表获取合规等级
+            double complyLevel = 0.0; // 默认值
+            auto it = complyLevelMapping.find(item.IsComply);
+            if (it != complyLevelMapping.end()) {
+                complyLevel = it->second;
+            }
+
+            // 如果是pending状态，可以选择跳过或者作为不符合处理
+            if (complyLevel < 0) {
+                // 如果遇到pending状态，将其视为不符合(0.0)
+                complyLevel = 0.0;
+            }
+
+            sum += importantLevel * (1.0 - complyLevel);
+
+            // 输出每一项的计算值用于调试（可选）
+            std::cout << "Item " << item.item_id << ": importantLevel = " << importantLevel
+                << ", complyLevel = " << complyLevel
+                << ", contribution = " << importantLevel * (1.0 - complyLevel) << std::endl;
+        }
+
+        // 输出总和用于调试
+        std::cout << "Total sum: " << sum << std::endl;
+
+        // 计算最终评分
+        double M = 100.0 - (100.0 * sum / n);
+
+        // 输出最终评分用于调试
+        std::cout << "Final score (M): " << M << std::endl;
+
+        // 构造响应消息
+        json::value response_data;
+        response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("三级等保评估结果"));
+        response_data[_XPLATSTR("score")] = json::value::number(M);
+        response_data[_XPLATSTR("ip")] = json::value::string(utility::conversions::to_string_t(ip));
+        response_data[_XPLATSTR("totalItems")] = json::value::number(n);
+
+
+        // 构造HTTP响应
+        http_response response(status_codes::OK);
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+        response.set_body(response_data);
+
+        // 返回响应
+        request.reply(response);
+    }
+    catch (const std::exception& e) {
+        std::cerr << "处理三级等保结果请求时出错: " << e.what() << std::endl;
+
+        json::value error_response;
+        error_response[_XPLATSTR("error")] = json::value::string(utility::conversions::to_string_t("内部服务器错误: " + std::string(e.what())));
+
+        http_response response(status_codes::InternalError);
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+        response.set_body(error_response);
+
+        request.reply(response);
+    }
+}
+
+void ServerManager::handle_post_updateLevel3_protect(http_request request) {
+    request.extract_json().then([this, &request](json::value body) {
+        try {
+            // 检查 JSON 结构，必须包含 ip 和 scoreMeasures 字段
+            if (!body.is_object() || !body.has_field(_XPLATSTR("ip")) || !body.has_field(_XPLATSTR("scoreMeasures"))) {
+                json::value response_data;
+                response_data[_XPLATSTR("message")] = json::value::string("Missing required fields: ip and/or scoreMeasures");
+
+                http_response response(status_codes::BadRequest);
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+                response.set_body(response_data);
+
+                request.reply(response);
+                return;
+            }
+
+            // 获取 IP 地址
+            std::string ip = utility::conversions::to_utf8string(body.at(_XPLATSTR("ip")).as_string());
+
+            // 检查 scoreMeasures 是否为数组
+            if (!body.at(_XPLATSTR("scoreMeasures")).is_array()) {
+                json::value response_data;
+                response_data[_XPLATSTR("message")] = json::value::string("scoreMeasures must be an array");
+
+                http_response response(status_codes::BadRequest);
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+                response.set_body(response_data);
+
+                request.reply(response);
+                return;
+            }
+
+            // 清空现有数据并解析 scoreMeasures 数组
+            std::vector<scoreMeasure> vec_score;
+            auto json_array = body.at(_XPLATSTR("scoreMeasures")).as_array();
+
+            for (auto& item : json_array) {
+                if (item.is_object()) {
+                    scoreMeasure measure;
+
+                    // 检查必需的字段
+                    if (!item.has_field(_XPLATSTR("item_id")) ||
+                        !item.has_field(_XPLATSTR("importantLevelJson")) ||
+                        !item.has_field(_XPLATSTR("IsComplyLevel"))) {
+                        std::cerr << "警告：scoreMeasure 对象缺少必需字段，跳过该项" << std::endl;
+                        continue;
+                    }
+
+                    measure.item_id = item.at(_XPLATSTR("item_id")).as_integer();
+                    measure.importantLevelJson = utility::conversions::to_utf8string(item.at(_XPLATSTR("importantLevelJson")).as_string());
+                    measure.IsComplyLevel = utility::conversions::to_utf8string(item.at(_XPLATSTR("IsComplyLevel")).as_string());
+                    vec_score.push_back(measure);
+                }
+            }
+
+            // 检查是否有有效的评分数据
+            if (vec_score.empty()) {
+                json::value response_data;
+                response_data[_XPLATSTR("message")] = json::value::string("No valid score measures found");
+
+                http_response response(status_codes::BadRequest);
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+                response.set_body(response_data);
+
+                request.reply(response);
+                return;
+            }
+
+            // 调用数据库更新函数
+            dbHandler_.updateLevel3SecurityCheckResult(ip, pool, vec_score);
+
+            // 构造成功响应
+            json::value response_data;
+            response_data[_XPLATSTR("message")] = json::value::string("Level3 security check results updated successfully");
+            response_data[_XPLATSTR("ip")] = json::value::string(utility::conversions::to_string_t(ip));
+            response_data[_XPLATSTR("itemsUpdated")] = json::value::number(vec_score.size());
+
+            // 创建响应
+            http_response response(status_codes::OK);
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+            response.set_body(response_data);
+
+            // 发送响应
+            request.reply(response);
+        }
+        catch (const std::exception& e) {
+            std::cerr << "处理updateLevel3_protect请求时出错: " << e.what() << std::endl;
+
+            json::value response_data;
+            response_data[_XPLATSTR("message")] = json::value::string("Exception occurred: " + std::string(e.what()));
+
+            http_response response(status_codes::InternalError);
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+            response.set_body(response_data);
+
+            request.reply(response);
+        }
+        }).wait();
 }
 
 void ServerManager::start() {

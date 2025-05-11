@@ -96,7 +96,7 @@ public:
     ServerInfo getServerInfoByIp(const std::string& ip, ConnectionPool& pool);
 
     void saveLevel3SecurityCheckResult(const std::string& ip, const event& checkEvent, ConnectionPool& pool);
-
+    void updateLevel3SecurityCheckResult(const std::string& ip, ConnectionPool& pool, std::vector<scoreMeasure>vec_score);
     std::vector<event> getLevel3SecurityCheckResults(const std::string& ip, ConnectionPool& pool);
 
     // 在DatabaseHandler类的public部分添加以下声明
