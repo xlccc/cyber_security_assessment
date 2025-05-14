@@ -1764,6 +1764,82 @@ void DatabaseHandler::saveLevel3SecurityCheckResult(const std::string& ip, const
     }
 }
 
+void DatabaseHandler::updateLevel3SecurityCheckResult(const std::string& ip, ConnectionPool& pool, std::vector<scoreMeasure> vec_score)
+{
+    try {
+        auto conn = pool.getConnection();  // 获取连接
+
+        // 首先获取scan_host_result表中的id
+        mysqlx::SqlResult hostResult = conn->sql("SELECT id FROM scan_host_result WHERE ip = ?")
+            .bind(ip)
+            .execute();
+
+        mysqlx::Row hostRow = hostResult.fetchOne();
+        if (!hostRow) {
+            std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
+            return;
+        }
+
+        int shr_id = hostRow[0]; // 获取shr_id
+
+        // 定义IsComplyLevel到is_comply的映射
+        std::unordered_map<std::string, std::string> complyMapping = {
+            {"1", "true"},        // 1.0 对应 true
+            {"1.0", "true"},      // 1.0 对应 true
+            {"0", "false"},       // 0 对应 false
+            {"0.0", "false"},     // 0.0 对应 false
+            {"0.5", "half_true"}  // 0.5 对应 half_true
+        };
+
+        // 遍历所有的评分项
+        for (const auto& score : vec_score) {
+            // 获取对应的is_comply值
+            std::string isComply = "false"; // 默认值
+            auto it = complyMapping.find(score.IsComplyLevel);
+            if (it != complyMapping.end()) {
+                isComply = it->second;
+            }
+            else {
+                std::cerr << "警告：未知的IsComplyLevel值: " << score.IsComplyLevel
+                    << "，使用默认值 'false'" << std::endl;
+            }
+
+            // 更新level3_security_check_results表中的is_comply字段
+            mysqlx::SqlResult updateResult = conn->sql(
+                "UPDATE level3_security_check_results "
+                "SET is_comply = ? "
+                "WHERE shr_id = ? AND item_id = ?"
+            )
+                .bind(isComply)
+                .bind(shr_id)
+                .bind(score.item_id)
+                .execute();
+
+            // 检查更新是否成功
+            uint64_t affectedRows = updateResult.getAffectedItemsCount();
+            if (affectedRows > 0) {
+                std::cout << "成功更新item_id " << score.item_id
+                    << " 的合规状态为: " << isComply << std::endl;
+            }
+            else {
+                std::cerr << "警告：未找到item_id " << score.item_id
+                    << " 对应的记录，无法更新" << std::endl;
+            }
+        }
+
+        std::cout << "完成对IP " << ip << " 的安全检查结果合规状态更新" << std::endl;
+    }
+    catch (const mysqlx::Error& err) {
+        std::cerr << "updateLevel3SecurityCheckResult时数据库错误: " << err.what() << std::endl;
+    }
+    catch (std::exception& ex) {
+        std::cerr << "异常: " << ex.what() << std::endl;
+    }
+    catch (...) {
+        std::cerr << "未知错误发生" << std::endl;
+    }
+}
+
 std::vector<event> DatabaseHandler::getLevel3SecurityCheckResults(const std::string& ip, ConnectionPool& pool) {
     std::vector<event> checkResults;
 
@@ -2781,4 +2857,80 @@ std::vector<POC> DatabaseHandler::getVaildPOCData(ConnectionPool& pool) {
         exit(1);
     }
     return records;
+}
+
+void DatabaseHandler::updateBaseLineSecurityCheckResult(const std::string& ip, ConnectionPool& pool, std::vector<scoreMeasure> vec_score)
+{
+    try {
+        auto conn = pool.getConnection();  // 获取连接
+
+        // 首先获取scan_host_result表中的id
+        mysqlx::SqlResult hostResult = conn->sql("SELECT id FROM scan_host_result WHERE ip = ?")
+            .bind(ip)
+            .execute();
+
+        mysqlx::Row hostRow = hostResult.fetchOne();
+        if (!hostRow) {
+            std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
+            return;
+        }
+
+        int shr_id = hostRow[0]; // 获取shr_id
+
+        // 定义IsComplyLevel到is_comply的映射
+        std::unordered_map<std::string, std::string> complyMapping = {
+            {"1", "true"},        // 1.0 对应 true
+            {"1.0", "true"},      // 1.0 对应 true
+            {"0", "false"},       // 0 对应 false
+            {"0.0", "false"},     // 0.0 对应 false
+            {"0.5", "half_true"}  // 0.5 对应 half_true
+        };
+
+        // 遍历所有的评分项
+        for (const auto& score : vec_score) {
+            // 获取对应的is_comply值
+            std::string isComply = "false"; // 默认值
+            auto it = complyMapping.find(score.IsComplyLevel);
+            if (it != complyMapping.end()) {
+                isComply = it->second;
+            }
+            else {
+                std::cerr << "警告：未知的IsComplyLevel值: " << score.IsComplyLevel
+                    << "，使用默认值 'false'" << std::endl;
+            }
+
+            // 更新level3_security_check_results表中的is_comply字段
+            mysqlx::SqlResult updateResult = conn->sql(
+                "UPDATE security_check_results "
+                "SET is_comply = ? "
+                "WHERE shr_id = ? AND item_id = ?"
+            )
+                .bind(isComply)
+                .bind(shr_id)
+                .bind(score.item_id)
+                .execute();
+
+            // 检查更新是否成功
+            uint64_t affectedRows = updateResult.getAffectedItemsCount();
+            if (affectedRows > 0) {
+                std::cout << "成功更新item_id " << score.item_id
+                    << " 的合规状态为: " << isComply << std::endl;
+            }
+            else {
+                std::cerr << "警告：未找到item_id " << score.item_id
+                    << " 对应的记录，无法更新" << std::endl;
+            }
+        }
+
+        std::cout << "完成对IP " << ip << " 的安全检查结果合规状态更新" << std::endl;
+    }
+    catch (const mysqlx::Error& err) {
+        std::cerr << "updateBaseLineSecurityCheckResult时数据库错误: " << err.what() << std::endl;
+    }
+    catch (std::exception& ex) {
+        std::cerr << "异常: " << ex.what() << std::endl;
+    }
+    catch (...) {
+        std::cerr << "未知错误发生" << std::endl;
+    }
 }

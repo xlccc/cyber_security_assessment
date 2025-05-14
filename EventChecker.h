@@ -191,8 +191,15 @@ private:
         level3ComplianceFunctions = {
             {1, [this] { event e = checkFirewallCompliance(); e.item_id = 1;  return e; }},
             {2, [this] { event e = checkFirewallRedundancy(); e.item_id = 2;  return e; }},
+            {3, [this] { event e = checkFirewallRuleCompleteness(); e.item_id = 3;  return e; }},
             {4, [this] { event e = checkSessionControlCompliance(); e.item_id = 4;  return e; }},
             {5, [this] { event e = checkApplicationControlCompliance(); e.item_id = 5;  return e; }},
+            {6, [this] { event e = checkIDSIPSWAFStatus(); e.item_id = 6;  return e; }},
+            {7, [this] { event e = checkIDSIPSWAFStatus2(); e.item_id = 7;  return e; }},
+            {8, [this] { event e = checkIDSIPSWAFStatus3(); e.item_id = 8;  return e; }},
+            {9, [this] { event e = checkIDSIPSWAFStatus4(); e.item_id = 9;  return e; }},
+            {10, [this] { event e = checkMalwareProtectionCompliance(); e.item_id = 10;  return e; }},
+            {11, [this] { event e = checkSpamMailProtectionCompliance(); e.item_id = 11;  return e; }},
             // 可以继续添加更多三级等保检查项
         };
 
@@ -343,6 +350,76 @@ private:
             e.result = "检查防火墙冗余规则过程中发生错误: " + std::string(err.what());
         }
 
+        return e;
+    }
+
+    event checkFirewallRuleCompleteness() {
+        SSHConnectionGuard guard(sshPool);  // guard 从 sshPool 获取一个空闲的 SSH 连接
+        event e;
+        e.description = "8.1.3.2.c";
+        e.importantLevel = "3";
+        e.basis = "应对源地址、目的地址、源端口、目的端口和协议等进行检查，以允许/拒绝数据包进出。";
+        e.IsComply = "false";
+        try {
+            // 获取UFW防火墙规则
+            std::string ufwOutput;
+            // 尝试从命令执行获取规则
+            std::string command = "sudo ufw status numbered";
+            ufwOutput = execute_commands(guard.get(), command);
+            // 确保输出不为空
+            if (ufwOutput.empty()) {
+                e.result = "无法获取防火墙规则，请确保UFW已启用且有规则存在";
+                e.recommend = "应开启防火墙";
+                return e;
+            }
+            // 过滤出带编号的规则
+            std::string numberedRulesStr = filterNumberedRules(ufwOutput);
+            if (numberedRulesStr.empty()) {
+                e.result = "未找到UFW规则，防火墙可能未启用或没有配置规则";
+                e.recommend = "应开启防火墙或配置规则";
+                return e;
+            }
+            // 解析UFW规则
+            std::vector<UfwRule> rules = parseUfwRules(numberedRulesStr);
+            if (rules.empty()) {
+                e.result = "没有解析到任何规则，可能是解析失败或防火墙没有规则";
+                e.recommend = "应配置合规的防火墙规则";
+                return e;
+            }
+
+            // 检查每条规则是否包含完整参数
+            std::vector<UfwRule> incompleteRules;
+            for (const auto& rule : rules) {
+                if (!isRuleComplete(rule)) {
+                    incompleteRules.push_back(rule);
+                }
+            }
+
+            if (incompleteRules.empty()) {
+                e.result = "所有防火墙规则都包含完整的参数配置（源地址、目的地址、源端口、目的端口和协议）";
+                e.IsComply = "true";
+            }
+            else {
+                // 构建不完整规则编号的字符串
+                std::stringstream incompleteInfo;
+                incompleteInfo << "存在不合规的防火墙规则。不合规规则编号: ";
+                for (size_t i = 0; i < incompleteRules.size(); ++i) {
+                    if (i > 0) incompleteInfo << ", ";
+                    incompleteInfo << incompleteRules[i].number;
+                }
+
+                // 生成简单的修改建议
+                std::stringstream recommendStr;
+                recommendStr << "建议配置包含完整参数的防火墙规则，示例命令:\n";
+                recommendStr << "sudo ufw allow proto tcp from 192.168.1.0/24 port 1024:65535 to 10.0.0.1 port 22";
+
+                e.result = incompleteInfo.str();
+                e.recommend = recommendStr.str();
+            }
+        }
+        catch (const std::exception& err) {
+            e.result = "对防火墙源地址、目的地址、源端口、目的端口和协议等进行检查时发生错误 " + std::string(err.what());
+        }
         return e;
     }
 
@@ -543,8 +620,430 @@ private:
         return e;
     }
 
+    event checkIDSIPSWAFStatus() {
+        SSHConnectionGuard guard(sshPool);  // guard 从 sshPool 获取一个空闲的 SSH 连接
+        event e;
+        e.description = "8.1.3.3.a";
+        e.importantLevel = "3";
+        e.basis = "应在关键网络节点处检测、防止或限制从外部发起的网络攻击行为";
+        e.IsComply = "false";
+
+        try {
+            // 执行命令检查是否有IDS/IPS/WAF相关的进程
+            std::vector<std::string> services = { "snort", "suricata", "fail2ban", "apache2" };
+            std::vector<std::string> runningServices;
+
+            for (const auto& service : services) {
+                // 排除grep进程本身
+                std::string command = "ps aux | grep -v grep | grep " + service;
+                std::string output = execute_commands(guard.get(), command);
+
+                // 检查输出是否包含实际服务进程
+                if (!output.empty()) {
+                    runningServices.push_back(service);
+                }
+            }
+
+            // 判断哪些服务在运行
+            if (runningServices.empty()) {
+                e.result = "未发现任何IDS、IPS或WAF相关进程，可能没有安装或未启动相关服务。";
+                e.recommend = "建议安装并启动相关的IDS/IPS/WAF工具，例如Snort、Suricata、Fail2Ban、ModSecurity等。";
+            }
+            else {
+                // 构建运行中的服务字符串
+                std::stringstream runningInfo;
+                runningInfo << "以下IDS、IPS或WAF服务正在运行: ";
+                for (size_t i = 0; i < runningServices.size(); ++i) {
+                    if (i > 0) runningInfo << ", ";
+                    runningInfo << runningServices[i];
+                }
+                e.result = runningInfo.str();
+                e.IsComply = "true";
+            }
+        }
+        catch (const std::exception& err) {
+            e.result = "在检查IDS、IPS或WAF状态时发生错误: " + std::string(err.what());
+        }
+
+        return e;
+    }
+
+    event checkIDSIPSWAFStatus2() {
+        SSHConnectionGuard guard(sshPool);  // guard 从 sshPool 获取一个空闲的 SSH 连接
+        event e;
+        e.description = "8.1.3.3.b";
+        e.importantLevel = "3";
+        e.basis = "应在关键网络节点处检测、防止或限制从内部发起的网络政击行为";
+        e.IsComply = "false";
+
+        try {
+            // 执行命令检查是否有IDS/IPS/WAF相关的进程
+            std::vector<std::string> services = { "snort", "suricata", "fail2ban", "apache2" };
+            std::vector<std::string> runningServices;
+
+            for (const auto& service : services) {
+                // 排除grep进程本身
+                std::string command = "ps aux | grep -v grep | grep " + service;
+                std::string output = execute_commands(guard.get(), command);
+
+                // 检查输出是否包含实际服务进程
+                if (!output.empty()) {
+                    runningServices.push_back(service);
+                }
+            }
+
+            // 判断哪些服务在运行
+            if (runningServices.empty()) {
+                e.result = "未发现任何IDS、IPS或WAF相关进程，可能没有安装或未启动相关服务。";
+                e.recommend = "建议安装并启动相关的IDS/IPS/WAF工具，例如Snort、Suricata、Fail2Ban、ModSecurity等。";
+            }
+            else {
+                // 构建运行中的服务字符串
+                std::stringstream runningInfo;
+                runningInfo << "以下IDS、IPS或WAF服务正在运行: ";
+                for (size_t i = 0; i < runningServices.size(); ++i) {
+                    if (i > 0) runningInfo << ", ";
+                    runningInfo << runningServices[i];
+                }
+                e.result = runningInfo.str();
+                e.IsComply = "true";
+            }
+        }
+        catch (const std::exception& err) {
+            e.result = "在检查IDS、IPS或WAF状态时发生错误: " + std::string(err.what());
+        }
+
+        return e;
+    }
 
 
+    event checkIDSIPSWAFStatus3() {
+        SSHConnectionGuard guard(sshPool);  // guard 从 sshPool 获取一个空闲的 SSH 连接
+        event e;
+        e.description = "8.1.3.3.c";
+        e.importantLevel = "3";
+        e.basis = "应采取技术措施对网络行为进行分析实现对网络攻击特别是新型网络攻击行为的分析";
+        e.IsComply = "false";
+
+        try {
+            // 执行命令检查是否有IDS/IPS/WAF相关的进程
+            std::vector<std::string> services = {
+            "snort", "suricata", "fail2ban",
+            "zeek", "bro",         // 网络回溯系统
+            "ossec", "wazuh",      // 主机入侵检测/抗APT
+            "clamav-daemon",       // 反病毒/反恶意软件
+            "moloch", "arkime",    // 全流量捕获系统
+            "elastalert", "filebeat", "auditd"  // 日志和审计
+            };
+            std::vector<std::string> runningServices;
+
+            for (const auto& service : services) {
+                // 排除grep进程本身
+                std::string command = "ps aux | grep -v grep | grep " + service;
+                std::string output = execute_commands(guard.get(), command);
+
+                // 检查输出是否包含实际服务进程
+                if (!output.empty()) {
+                    runningServices.push_back(service);
+                }
+            }
+
+            // 判断哪些服务在运行
+            if (runningServices.empty()) {
+                e.result = "未发现任何回溯系统或抗APT攻击系统等相关进程，可能没有安装或未启动相关服务。";
+                e.recommend = "建议安装部署网络回溯系统，如Zeek(Bro)、Moloch(Arkime)，配置全流量捕获等。";
+            }
+            else {
+                // 构建运行中的服务字符串
+                std::stringstream runningInfo;
+                runningInfo << "以下网络回溯系统服务正在运行: ";
+                for (size_t i = 0; i < runningServices.size(); ++i) {
+                    if (i > 0) runningInfo << ", ";
+                    runningInfo << runningServices[i];
+                }
+                e.result = runningInfo.str();
+                e.IsComply = "true";
+            }
+        }
+        catch (const std::exception& err) {
+            e.result = "在检查网络回溯系统状态时发生错误: " + std::string(err.what());
+        }
+
+        return e;
+    }
+
+    event checkIDSIPSWAFStatus4() {
+        SSHConnectionGuard guard(sshPool);  // guard 从 sshPool 获取一个空闲的 SSH 连接
+        event e;
+        e.description = "8.1.3.3.d";
+        e.importantLevel = "3";
+        e.basis = "当检测到攻击行为时，记录攻击源IP、攻击类型、攻击目标、攻击时间，在发生严重入侵事件时应提供报警";
+        e.IsComply = "false";
+
+        try {
+            // 执行命令检查是否有IDS/IPS/WAF相关的进程
+            std::vector<std::string> services = {
+            "snort", "suricata", "fail2ban",
+            "zeek", "bro",         // 网络回溯系统
+            "ossec", "wazuh",      // 主机入侵检测/抗APT
+            "clamav-daemon",       // 反病毒/反恶意软件
+            "moloch", "arkime",    // 全流量捕获系统
+            "elastalert", "filebeat", "auditd"  // 日志和审计
+            };
+            std::vector<std::string> runningServices;
+
+            for (const auto& service : services) {
+                // 排除grep进程本身
+                std::string command = "ps aux | grep -v grep | grep " + service;
+                std::string output = execute_commands(guard.get(), command);
+
+                // 检查输出是否包含实际服务进程
+                if (!output.empty()) {
+                    runningServices.push_back(service);
+                }
+            }
+
+            // 判断哪些服务在运行
+            if (runningServices.empty()) {
+                e.result = "未发现任何发生严重入侵事件时应提供报警等相关进程，可能没有安装或未启动相关服务。";
+                e.recommend = "建议安装部署告警系统。";
+            }
+            else {
+                // 构建运行中的服务字符串
+                std::stringstream runningInfo;
+                runningInfo << "以下网络回溯系统服务正在运行: ";
+                for (size_t i = 0; i < runningServices.size(); ++i) {
+                    if (i > 0) runningInfo << ", ";
+                    runningInfo << runningServices[i];
+                }
+                e.result = runningInfo.str();
+                e.IsComply = "true";
+            }
+        }
+        catch (const std::exception& err) {
+            e.result = "在告警系统状态时发生错误: " + std::string(err.what());
+        }
+
+        return e;
+    }
+
+    event checkMalwareProtectionCompliance() {
+        SSHConnectionGuard guard(sshPool);
+        event e;
+        e.description = "8.1.3.4.a";
+        e.importantLevel = "3";
+        e.basis = "应在关键网络节点处对恶意代码进行检测和清除，并维护恶意代码防护机制的升级和更新";
+        e.IsComply = "false";
+
+        // 1. 检查是否安装了防病毒软件
+        std::string command = "dpkg -l | grep -i \"clamav\\|sophos\\|rkhunter\\|chkrootkit\" || rpm -qa | grep -i \"clamav\\|sophos\\|rkhunter\\|chkrootkit\"";
+        std::string installedOutput = execute_commands(guard.get(), command);
+
+        // 检查是否安装了至少一种防病毒软件
+        bool hasClamAV = (installedOutput.find("clamav") != std::string::npos);
+        bool hasSophos = (installedOutput.find("sophos") != std::string::npos);
+        bool hasRkhunter = (installedOutput.find("rkhunter") != std::string::npos);
+        bool hasChkrootkit = (installedOutput.find("chkrootkit") != std::string::npos);
+
+        if (!hasClamAV && !hasSophos && !hasRkhunter && !hasChkrootkit) {
+            e.result = "未安装任何恶意代码防护软件";
+            e.recommend = "应安装恶意代码防护软件（如ClamAV、Sophos、rkhunter或chkrootkit）";
+            std::cout << "未安装任何恶意代码防护软件" << std::endl;
+            return e;
+        }
+
+        // 2. 检查防病毒软件是否运行
+        bool isRunning = false;
+        std::string runningService = "";
+
+        // 检查ClamAV服务
+        if (hasClamAV) {
+            command = "systemctl is-active --quiet clamav-daemon && echo 'active' || echo 'inactive'";
+            std::string clamavStatus = execute_commands(guard.get(), command);
+            if (clamavStatus.find("active") != std::string::npos) {
+                isRunning = true;
+                runningService = "ClamAV";
+            }
+        }
+
+        // 检查Sophos服务
+        if (hasSophos && !isRunning) {
+            command = "ps aux | grep -i sophos | grep -v grep";
+            std::string sophosStatus = execute_commands(guard.get(), command);
+            if (!sophosStatus.empty()) {
+                isRunning = true;
+                runningService = "Sophos";
+            }
+        }
+
+        // 检查rkhunter和chkrootkit（这些通常不是持续运行的服务）
+        if ((hasRkhunter || hasChkrootkit) && !isRunning) {
+            // 检查是否有定期扫描任务
+            command = "crontab -l | grep -i \"rkhunter\\|chkrootkit\" || cat /etc/cron.*/rkhunter || cat /etc/cron.*/chkrootkit";
+            std::string cronOutput = execute_commands(guard.get(), command);
+            if (!cronOutput.empty()) {
+                isRunning = true;
+                runningService = hasRkhunter ? "rkhunter (cron)" : "chkrootkit (cron)";
+            }
+        }
+
+        if (!isRunning) {
+            e.result = "已安装恶意代码防护软件但未运行";
+            e.recommend = "应启动恶意代码防护服务并确保其正常运行";
+            std::cout << "已安装恶意代码防护软件但未运行" << std::endl;
+            return e;
+        }
+
+        // 3. 检查病毒库更新
+        if (hasClamAV) {
+            command = "freshclam --version && systemctl is-active --quiet clamav-freshclam && echo 'update_active' || echo 'update_inactive'";
+            std::string updateStatus = execute_commands(guard.get(), command);
+            if (updateStatus.find("update_inactive") != std::string::npos) {
+                e.result = "恶意代码防护软件病毒库更新服务未运行";
+                e.recommend = "应启动病毒库自动更新服务以确保防护的有效性";
+                std::cout << "恶意代码防护软件病毒库更新服务未运行" << std::endl;
+                return e;
+            }
+        }
+
+        // 所有检查都通过
+        e.result = "恶意代码防护配置符合要求（" + runningService + "运行中）";
+        e.IsComply = "true";
+        return e;
+    }
+
+    event checkSpamMailProtectionCompliance() {
+        SSHConnectionGuard guard(sshPool);
+        event e;
+        e.description = "8.1.3.4.b";
+        e.importantLevel = "3";
+        e.basis = "应在关键网络节点处对垃圾邮件进行检测和防护，并维护垃圾邮件防护机制的升级和更新";
+        e.IsComply = "false";
+
+        // 1. 检查邮件服务器是否安装
+        std::string command = "dpkg -l | grep -i \"postfix\\|sendmail\\|exim\\|zimbra\\|dovecot\" || rpm -qa | grep -i \"postfix\\|sendmail\\|exim\\|zimbra\\|dovecot\"";
+        std::string mailServerOutput = execute_commands(guard.get(), command);
+
+        // 如果没有邮件服务器，则不适用此检查
+        if (mailServerOutput.empty()) {
+            e.result = "系统未安装邮件服务器，不适用垃圾邮件防护检查";
+            e.recommend = "应安装安装邮件服务器,并开启垃圾邮件的检测和防护";
+            e.IsComply = "false";
+            std::cout << "系统未安装邮件服务器，不适用垃圾邮件防护检查" << std::endl;
+            return e;
+        }
+
+        // 2. 检查是否安装了垃圾邮件防护软件
+        command = "dpkg -l | grep -i \"spamassassin\\|amavis\\|rspamd\\|mailscanner\\|postgrey\" || rpm -qa | grep -i \"spamassassin\\|amavis\\|rspamd\\|mailscanner\\|postgrey\"";
+        std::string spamFilterOutput = execute_commands(guard.get(), command);
+
+        bool hasSpamAssassin = (spamFilterOutput.find("spamassassin") != std::string::npos);
+        bool hasAmavis = (spamFilterOutput.find("amavis") != std::string::npos);
+        bool hasRspamd = (spamFilterOutput.find("rspamd") != std::string::npos);
+        bool hasMailScanner = (spamFilterOutput.find("mailscanner") != std::string::npos);
+        bool hasPostgrey = (spamFilterOutput.find("postgrey") != std::string::npos);
+
+        if (!hasSpamAssassin && !hasAmavis && !hasRspamd && !hasMailScanner && !hasPostgrey) {
+            e.result = "未安装垃圾邮件防护软件";
+            e.recommend = "应安装垃圾邮件防护软件（如SpamAssassin、Amavis、rspamd等）";
+            std::cout << "未安装垃圾邮件防护软件" << std::endl;
+            return e;
+        }
+
+        // 3. 检查垃圾邮件防护服务是否运行
+        bool isRunning = false;
+        std::string runningService = "";
+
+        // 检查SpamAssassin服务
+        if (hasSpamAssassin) {
+            command = "systemctl is-active --quiet spamassassin && echo 'active' || echo 'inactive'";
+            std::string spamassassinStatus = execute_commands(guard.get(), command);
+            if (spamassassinStatus.find("active") != std::string::npos) {
+                isRunning = true;
+                runningService = "SpamAssassin";
+            }
+            else {
+                // 检查spamd进程
+                command = "ps aux | grep -i spamd | grep -v grep";
+                spamassassinStatus = execute_commands(guard.get(), command);
+                if (!spamassassinStatus.empty()) {
+                    isRunning = true;
+                    runningService = "SpamAssassin (spamd)";
+                }
+            }
+        }
+
+        // 检查Amavis服务
+        if (hasAmavis && !isRunning) {
+            command = "systemctl is-active --quiet amavis && echo 'active' || echo 'inactive'";
+            std::string amavisStatus = execute_commands(guard.get(), command);
+            if (amavisStatus.find("active") != std::string::npos) {
+                isRunning = true;
+                runningService = "Amavis";
+            }
+        }
+
+        // 检查rspamd服务
+        if (hasRspamd && !isRunning) {
+            command = "systemctl is-active --quiet rspamd && echo 'active' || echo 'inactive'";
+            std::string rspamdStatus = execute_commands(guard.get(), command);
+            if (rspamdStatus.find("active") != std::string::npos) {
+                isRunning = true;
+                runningService = "rspamd";
+            }
+        }
+
+        // 检查Postgrey服务
+        if (hasPostgrey && !isRunning) {
+            command = "systemctl is-active --quiet postgrey && echo 'active' || echo 'inactive'";
+            std::string postgreyStatus = execute_commands(guard.get(), command);
+            if (postgreyStatus.find("active") != std::string::npos) {
+                isRunning = true;
+                runningService = "Postgrey";
+            }
+        }
+
+        if (!isRunning) {
+            e.result = "已安装垃圾邮件防护软件但未运行";
+            e.recommend = "应启动垃圾邮件防护服务并确保其正常运行";
+            std::cout << "已安装垃圾邮件防护软件但未运行" << std::endl;
+            return e;
+        }
+
+        // 4. 检查邮件服务器配置中是否集成了反垃圾邮件
+        command = "grep -i \"spamassassin\\|amavis\\|rspamd\\|content_filter\" /etc/postfix/main.cf";
+        std::string postfixIntegration = execute_commands(guard.get(), command);
+
+        if (postfixIntegration.empty()) {
+            // 再检查master.cf
+            command = "grep -i \"spamassassin\\|amavis\\|rspamd\\|content_filter\" /etc/postfix/master.cf";
+            postfixIntegration = execute_commands(guard.get(), command);
+
+            if (postfixIntegration.empty()) {
+                e.result = "垃圾邮件防护软件未与邮件服务器集成";
+                e.recommend = "应配置邮件服务器集成垃圾邮件防护功能";
+                std::cout << "垃圾邮件防护软件未与邮件服务器集成" << std::endl;
+                return e;
+            }
+        }
+
+        // 5. 检查更新机制
+        if (hasSpamAssassin) {
+            command = "crontab -l | grep -i \"sa-update\" || cat /etc/cron.*/sa-update || systemctl is-active --quiet sa-update.timer && echo 'update_active' || echo 'update_inactive'";
+            std::string updateStatus = execute_commands(guard.get(), command);
+            if (updateStatus.find("update_inactive") != std::string::npos && updateStatus.find("sa-update") == std::string::npos) {
+                e.result = "垃圾邮件防护规则库更新机制未配置";
+                e.recommend = "应配置垃圾邮件规则库自动更新机制";
+                std::cout << "垃圾邮件防护规则库更新机制未配置" << std::endl;
+                return e;
+            }
+        }
+
+        // 所有检查都通过
+        e.result = "垃圾邮件防护配置符合要求（" + runningService + "运行中）";
+        e.IsComply = "true";
+        return e;
+    }
     event checkPasswordLifetime() {
         SSHConnectionGuard guard(sshPool);//guard 从 sshPool 获取一个空闲的 SSH 连接
         event e;

@@ -188,6 +188,13 @@ private:
 
     //增删支持的漏洞类型
     void handle_edit_vuln_type(http_request request);
+    //等保：从历史数据中取出来评估
+    void handle_get_level3Result(http_request request);
+
+    void handle_post_updateLevel3_protect(http_request request);
+    //基线：从历史数据中取出来评估
+    void handle_get_baseLineResult(http_request  request);
+    void handle_post_updateBaseLine_protect(http_request request);
 
     ConnectionPool pool;
     DatabaseHandler dbHandler_;
@@ -195,7 +202,7 @@ private:
     //DatabaseManager dbManager;
     DatabaseWrapper dbManager;
     std::vector<POC> poc_list;
-     
+
     // Additional member variables
     std::string global_ip;
     std::string global_pd;
@@ -208,8 +215,6 @@ private:
     vector<ScanHostResult> scan_host_result;
     //历史扫描结果
     HistoricalScanData historicalData;
-
-    
 };
 
 #endif // SERVERMANAGER_H

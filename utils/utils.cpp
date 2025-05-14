@@ -408,6 +408,27 @@ std::string passwordStrengthToString(PasswordStrength strength)
     }
 }
 
+// 判断规则是否包含所有必要参数
+bool isRuleComplete(const UfwRule& rule) {
+    // 检查源地址 - "Anywhere"表示未指定特定源地址
+    bool hasSourceAddr = (rule.from_ip != "Anywhere" && rule.from_ip != "Anywhere (v6)");
+
+    // 检查目的地址 - "Anywhere"表示未指定特定目的地址
+    bool hasDestAddr = (rule.to_ip != "Anywhere" && rule.to_ip != "Anywhere (v6)");
+
+    // 检查源端口 - 空字符串表示未指定源端口
+    bool hasSourcePort = !rule.from_port.empty();
+
+    // 检查目的端口 - 空字符串表示未指定目的端口
+    bool hasDestPort = !rule.to_port.empty();
+
+    // 检查协议 - 至少有一个端口指定了协议
+    bool hasProtocol = !rule.to_port_protocol.empty() || !rule.from_port_protocol.empty();
+
+    // 如果所有参数都存在，返回true
+    return hasSourceAddr && hasDestAddr && hasSourcePort && hasDestPort && hasProtocol;
+}
+
 // 判断路径是否为目录
 bool is_directory(const std::string& path) {
     struct stat s;
