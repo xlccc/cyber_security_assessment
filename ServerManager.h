@@ -75,6 +75,9 @@ private:
     void handle_post_login(http_request request);
     void handle_get_cve_scan(http_request request);
 
+    //新版：从数据库中获取扫描结果
+    void handle_get_ScanHostResult(http_request request);
+
     void handle_get_all_data(http_request request);
     void handle_get_vaild_poc_data(http_request request);    //获取POC代码存在的POC数据
     void handle_search_data(http_request request);
@@ -105,8 +108,11 @@ private:
 
     //POC搜索
     void handle_post_poc_search(http_request request);
-    //POC验证
+
+    //调试
     void handle_post_poc_verify(http_request request);
+    //POC验证
+    void handle_post_poc_verify_new(http_request request);
     //设置需要执行POC验证的CVE条目
     void setIfCheckByIds(ScanHostResult& hostResult, const std::vector<std::string>& cve_ids, bool value);
     //执行并回显poc代码
@@ -152,24 +158,6 @@ private:
     // 辅助函数：打印扫描结果详情
     void printScanHostResult(const ScanHostResult& result);
 
-    ConnectionPool pool;
-    DatabaseHandler dbHandler_;
-    //旧版
-    //DatabaseManager dbManager;
-    DatabaseWrapper dbManager;
-    std::vector<POC> poc_list;
-     
-    // Additional member variables
-    std::string global_ip;
-    std::string global_pd;
-
-    vector<scoreMeasure> vecScoreMeasure;
-
-    //当前扫描结果
-    vector<ScanHostResult> scan_host_result;
-    //历史扫描结果
-    HistoricalScanData historicalData;
-
     // 将资产信息转换为JSON格式
     web::json::value convertAssetInfoToJson(const AssetInfo& assetInfo);
     // 将ports信息转换为JSON格式
@@ -200,6 +188,28 @@ private:
 
     //增删支持的漏洞类型
     void handle_edit_vuln_type(http_request request);
+
+    ConnectionPool pool;
+    DatabaseHandler dbHandler_;
+    //旧版
+    //DatabaseManager dbManager;
+    DatabaseWrapper dbManager;
+    std::vector<POC> poc_list;
+     
+    // Additional member variables
+    std::string global_ip;
+    std::string global_pd;
+
+    vector<scoreMeasure> vecScoreMeasure;
+
+    //线程池
+    std::shared_ptr<ThreadPool> globalThreadPool;
+    //当前扫描结果
+    vector<ScanHostResult> scan_host_result;
+    //历史扫描结果
+    HistoricalScanData historicalData;
+
+    
 };
 
 #endif // SERVERMANAGER_H

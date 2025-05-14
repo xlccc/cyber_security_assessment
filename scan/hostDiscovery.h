@@ -16,14 +16,15 @@ class HostDiscovery {
 public:
     // 构造函数，接受网络网段
     HostDiscovery(const std::string& network);
-
+    // 构造函数，接受外部传进来的线程池
+    HostDiscovery(const std::string& network, std::shared_ptr<ThreadPool> threadPool); 
     // 扫描网络中存活的主机，返回 IP 列表
     std::vector<std::string> scan();
 
 private:
     std::string network;
     std::string subnet;
-    ThreadPool threadPool;
+    std::shared_ptr<ThreadPool> threadPool; //线程池
     std::mutex resultMutex;
 
     //判断是否为单个IP

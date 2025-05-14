@@ -63,3 +63,71 @@ int main()
 }
 
 
+//#include<iostream>
+//#include<vector>
+//#include<cmath>
+//using namespace std;
+//
+//class Point
+//{
+//private:
+//	float x;
+//	float y;
+//public:
+//	Point(float x, float y)
+//	{
+//		this->x = x;
+//		this->y = y;
+//	}
+//	float getX() const
+//	{
+//		return this->x;
+//	}
+//	float getY() const
+//	{
+//		return this->y;
+//	}
+//};
+//class Line
+//{
+//private:
+//	vector<Point> point;
+//	int count;
+//public:
+//	//int familarDegree(const Line& line2)
+//	//{
+//	//	//计算点数差距
+//	//	//计算采样间距差距
+//
+//	//	//综合
+//	//}
+//	////计算点数差距
+//	//int countDiff(const Line& line2)
+//	//{
+//	//	return abs(this->count - line2.count);
+//	//}
+//	//计算采样间距差距
+//	Line(const std::initializer_list<Point>& l):point(l),count(static_cast<int>(l.size())){}
+//
+//	int disDiff(const Line& line2)
+//	{
+//		float result = 0;
+//		
+//		for (int i = 0; i < count; i++)
+//		{
+//			int x_d = abs(this->point[i].getX() - line2.point[i].getX());
+//			int y_d = abs(this->point[i].getY() - line2.point[i].getY());
+//			result += x_d * x_d + y_d * y_d;
+//		}
+//		return result;
+//	}
+//};
+//int main()
+//{
+//	Line line1{ {0, 0}, {10, 0}, {20, 0} };
+//	Line line2{ {1, 3}, {8, 7}, {16, 25} };
+//
+//	cout << line1.disDiff(line2) << endl;
+//
+//	return 0;
+//}

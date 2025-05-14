@@ -68,7 +68,7 @@ struct ScanHostResult {
     std::map<std::string, std::vector<Vuln>> cpes; //操作系统的cpes与潜在CVEs对应信息
     std::vector<ScanResult> ports;  //端口扫描结果
     
-    std::string scan_time;      // 扫描时间
+    std::string scan_time = "";      // 扫描时间（如果为空，则代表没有进行过扫描，故数据库中也不会有该资产。）
     std::set<Vuln> vuln_result; //存放操作系统的漏洞扫描结果
     bool is_merged;             // 标识是否合并两种漏洞扫描方法的结果 
     bool allPorts = false;      //最近一次扫描是否为全端口扫描
