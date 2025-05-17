@@ -17,6 +17,8 @@ ServerManager::ServerManager()
     //dbManager(CONFIG.getPocDatabasePath())    // 原有的 dbManager 初始化
     dbManager(pool, dbHandler_)
 {
+    globalThreadPool = std::make_shared<ThreadPool>(CONFIG.getThreadCount());// 线程池创建
+    system_logger->info("Global ThreadPool initialized with {} threads.", CONFIG.getThreadCount());
 
     utility::string_t address = utility::conversions::to_string_t(CONFIG.getServerUrl());
     uri_builder uri(address);
@@ -114,6 +116,10 @@ void ServerManager::handle_request(http_request request) {
     else if (first_segment == _XPLATSTR("cveScan") && request.method() == methods::GET) {
         handle_get_cve_scan(request);
     }
+    //返回目标IP主机的结果
+    else if (first_segment == _XPLATSTR("ScanHostResult") && request.method() == methods::GET) {
+        handle_get_ScanHostResult(request);
+    }
     else if (first_segment == _XPLATSTR("getAllData") && request.method() == methods::GET) {
         handle_get_all_data(request);
     }
@@ -148,8 +154,11 @@ void ServerManager::handle_request(http_request request) {
     else if (first_segment == _XPLATSTR("pocSearch") && request.method() == methods::POST) {
         handle_post_poc_search(request);
     }
+    //else if (first_segment == _XPLATSTR("pocVerify") && request.method() == methods::POST) {
+    //    handle_post_poc_verify(request);
+    //}
     else if (first_segment == _XPLATSTR("pocVerify") && request.method() == methods::POST) {
-        handle_post_poc_verify(request);
+        handle_post_poc_verify_new(request);
     }
     else if (first_segment == _XPLATSTR("updatePoc") && request.method() == methods::PUT) {
         update_poc_by_cve(request);
@@ -1130,6 +1139,7 @@ void ServerManager::handle_post_login(http_request request) {
         }).wait();
 }
 
+//旧版：从局部变量中获取扫描结果
 void ServerManager::handle_get_cve_scan(http_request request) {
     web::json::value result = web::json::value::array();
     int index = 0;
@@ -1139,6 +1149,55 @@ void ServerManager::handle_get_cve_scan(http_request request) {
     //std::cout << result.serialize() << std::endl;
 
     request.reply(web::http::status_codes::OK, result);
+}
+
+//新版：从数据库中获取扫描结果
+void ServerManager::handle_get_ScanHostResult(http_request request) {
+    try {
+        // 解析查询参数
+        auto query = uri::split_query(request.request_uri().query());
+        auto it = query.find(_XPLATSTR("ip"));
+        if (it == query.end()) {
+            request.reply(status_codes::BadRequest, _XPLATSTR("Missing 'ip' parameter"));
+            return;
+        }
+
+        std::string ip = utility::conversions::to_utf8string(it->second);
+        //user_logger->info("[INFO] 查询扫描结果，目标IP: {}", ip);
+        console->info("[INFO] 查询扫描结果，目标IP: {}", ip);
+
+        // 查询数据库
+        ScanHostResult scan_host_result = dbHandler_.getScanHostResult(ip, pool);
+
+        if (!scan_host_result.ports.empty()) {
+            // 有结果，转换为JSON
+            json::value json_result = ScanHostResult_to_json(scan_host_result);
+
+            json::value response_data;
+            response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("成功获取扫描结果"));
+            response_data[_XPLATSTR("scan_result")] = json_result;
+
+            http_response response(status_codes::OK);
+            response.set_body(response_data);
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+            request.reply(response);
+        }
+        else {
+            // 无数据，返回错误信息
+            std::string error_msg = "No scan result found for IP: " + ip;
+            user_logger->warn("[WARN] {}", error_msg);
+            console->warn("[WARN] {}", error_msg);
+            request.reply(status_codes::NotFound, json::value::string(utility::conversions::to_string_t(error_msg)));
+        }
+    }
+    catch (const std::exception& e) {
+        std::string error_msg = std::string("Internal server error: ") + e.what();
+        //user_logger->error("[ERROR] {}", error_msg);
+        console->error("[ERROR] {}", error_msg);
+        request.reply(status_codes::InternalError, json::value::string(utility::conversions::to_string_t(error_msg)));
+    }
 }
 
 void ServerManager::handle_get_all_data(http_request request) {
@@ -1928,6 +1987,37 @@ void ServerManager::handle_post_get_Nmap(http_request request)
         }
 
         // 比对历史数据
+        // 使用从请求中获取的IP地址
+        //ScanHostResult old_scan_host_result = dbHandler_.getScanHostResult(ip, pool);
+        //if (!old_scan_host_result.scan_time.empty()) {
+        //    // 对比历史数据和当前数据，并更新增量
+        //    for (auto& scanHostResult : scan_host_result) {
+        //        compareAndUpdateResults(old_scan_host_result, scanHostResult, 10);  // 这里传递一个限制 limit 值
+        //    }
+        //}
+        //else {
+        //    // 没有历史数据，直接查询并保存
+        //    for (auto& scanHostResult : scan_host_result) {
+        //        // 查询主机层面的 CPE（操作系统 CPE）
+        //        std::vector<std::string> allCPEs;
+        //        for (const auto& cpe_pair : scanHostResult.cpes) {
+        //            allCPEs.push_back(cpe_pair.first);
+        //        }
+        //        fetch_and_padding_cves(scanHostResult.cpes, allCPEs, 10);  // 直接查询所有主机层面 CVE
+
+        //        // 查询每个端口的 CPE
+        //        for (auto& scanResult : scanHostResult.ports) {
+        //            std::vector<std::string> portCPEs;
+        //            for (const auto& cpe_pair : scanResult.cpes) {
+        //                portCPEs.push_back(cpe_pair.first);
+        //            }
+        //            if (!portCPEs.empty()) {
+        //                fetch_and_padding_cves(scanResult.cpes, portCPEs, 10);  // 查询端口层面 CVE
+        //            }
+        //        }
+        //    }
+
+        //}
         if (historicalData.data.find(ip) != historicalData.data.end()) {
             // 有历史数据，进行比对和增量扫描
             //改为判断数据库表中是否存在正在扫描的ip.有的话说明需要增量扫描
@@ -1991,6 +2081,7 @@ void ServerManager::handle_post_get_Nmap(http_request request)
 
         json::value response_data;
         response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("Nmap 扫描完成并获取 CVE 数据。"));
+        response_data[_XPLATSTR("scan_result")] = ScanHostResult_to_json(scan_host_result[0]);  // 返回扫描结果
         response.set_body(response_data);
         request.reply(response);
 
@@ -2799,6 +2890,9 @@ void ServerManager::handle_post_poc_verify(http_request request) {
 
             // 使用 handle_get_cve_scan 返回验证结果
             handle_get_cve_scan(request);
+            
+            //返回验证结果
+            //handler_get_ScanHostResult(request);
             }).wait();
     }
     catch (const std::exception& e) {
@@ -2815,6 +2909,97 @@ void ServerManager::handle_post_poc_verify(http_request request) {
         request.reply(response);
     }
 }
+void ServerManager::handle_post_poc_verify_new(http_request request) {
+    try {
+        request.extract_json().then([this, &request](json::value body) {
+            // ========== 第一步：检查 IP 参数 ==========
+            if (!body.has_field(_XPLATSTR("ip"))) {
+                json::value response_data;
+                response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("Missing 'ip' field in request body."));
+                http_response response(status_codes::BadRequest);
+                response.set_body(response_data);
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+                request.reply(response);
+                return;
+            }
+
+            std::string ip = body[_XPLATSTR("ip")].as_string();
+
+            // ========== 第二步：从数据库中获取 scan_host_result ==========
+            ScanHostResult result = dbHandler_.getScanHostResult(ip, pool);
+            if (result.ports.empty()) {
+                json::value response_data;
+                string message = "No scan result found for IP: " +ip;
+                response_data[_XPLATSTR("message")] = json::value::string(utility::conversions::to_string_t(message));
+                http_response response(status_codes::NotFound);
+                response.set_body(response_data);
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+                request.reply(response);
+                return;
+            }
+
+            std::vector<ScanHostResult> scan_host_result_vec;
+            scan_host_result_vec.push_back(result);  // 为兼容之前逻辑，转为 vector
+
+            // ========== 第三步：处理 cve_ids ==========
+            std::vector<std::string> cve_ids;
+            for (const auto& id : body[_XPLATSTR("cve_ids")].as_array()) {
+                cve_ids.push_back(id.as_string());
+                std::cout << "cve_id: " << id.as_string() << std::endl;
+            }
+
+            // ========== 第四步：搜索POC代码是否存在并装载 ==========
+            searchPOCs(scan_host_result_vec[0], dbManager, dbHandler_, pool);
+
+            // ========== 第五步：设置 ifCheck ==========
+            for (auto& scanHostResult : scan_host_result_vec) {
+                setIfCheckByIds(scanHostResult, cve_ids, true);
+            }
+
+            // ========== 第六步：POC 验证 ==========
+            verifyPOCs(scan_host_result_vec, dbHandler_, pool);
+
+            // ========== 第七步：清除 ifCheck ==========
+            for (auto& scanHostResult : scan_host_result_vec) {
+                setIfCheckByIds(scanHostResult, cve_ids, false);
+            }
+
+            // ========== 第八步：更新历史记录 ==========
+            dbHandler_.executeUpdateOrInsert(scan_host_result_vec[0], pool);
+
+            // ========== 第九步：返回验证结果 ==========
+            json::value response_data;
+            response_data[_XPLATSTR("message")] = json::value::string(utility::conversions::to_string_t("POC 验证完成"));
+            response_data[_XPLATSTR("ScanHostResult")] = ScanHostResult_to_json(scan_host_result_vec[0]);
+
+            http_response response(status_codes::OK);
+            response.set_body(response_data);
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+            request.reply(response);
+
+            }).wait();
+    }
+    catch (const std::exception& e) {
+        console->error("Error while processing POC verify request: {}", e.what());
+        system_logger->error("Error while processing POC verify request: {}", e.what());
+
+        json::value response_data;
+        response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("An error occurred during POC verification: ") + utility::conversions::to_string_t(e.what()));
+        http_response response(status_codes::InternalError);
+        response.set_body(response_data);
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+        request.reply(response);
+    }
+}
+
 
 
 // 设置需要执行POC验证的CVE条目
@@ -3364,13 +3549,10 @@ void ServerManager::handle_post_poc_scan(http_request request) {
             // 从数据库中获取指定 ID 的 POC 记录
             std::vector<POC> poc_list = dbManager.searchDataByIds(ids);
 
-            // 定义变量以存储扫描结果
-            ScanHostResult scan_host_result;
+            // 获取历史扫描结果
+            ScanHostResult scan_host_result = dbHandler_.getScanHostResult(ip, pool);
 
-            // 检查是否有历史扫描数据
-            if (historicalData.data.find(ip) != historicalData.data.end()) {
-                scan_host_result = historicalData.data[ip];
-                
+            if (!scan_host_result.ports.empty()) {
                 console->info("IP：{} 使用历史端口扫描数据。", ip);
                 user_logger->info("IP：{} 使用历史端口扫描数据。", ip);
             }
@@ -3392,9 +3574,43 @@ void ServerManager::handle_post_poc_scan(http_request request) {
                 historicalData.data[ip] = scan_host_result;
 
 
-                user_logger->info("IP：{} Nmap 扫描完成，更新历史数据。", ip);
+                console->info("IP：{} Nmap 扫描完成，更新历史数据。", ip);
             }
-            
+
+            //// 定义变量以存储扫描结果
+            //ScanHostResult scan_host_result;
+
+            //if (historicalData.data.find(ip) != historicalData.data.end()) {
+            //    scan_host_result = historicalData.data[ip];
+            //    
+            //    console->info("IP：{} 使用历史端口扫描数据。", ip);
+            //    user_logger->info("IP：{} 使用历史端口扫描数据。", ip);
+            //}
+            //else {
+            //    // 执行端口扫描
+            //    bool allPorts = json_data.has_field(_XPLATSTR("all_ports")) ? json_data[_XPLATSTR("all_ports")].as_bool() : false;
+            //    std::string outputPath = performPortScan(ip, allPorts);
+
+            //    // 解析 XML 文件获取扫描结果
+            //    auto scan_host_results = parseXmlFile(outputPath);
+
+            //    // 记录扫描时间并更新到历史数据
+            //    auto timestamp = getCurrentTimestamp(2);
+            //    for (auto& result : scan_host_results) {
+            //        result.scan_time = timestamp;
+            //        result.allPorts = allPorts; // 新增
+            //    }
+            //    scan_host_result = scan_host_results[0];
+            //    historicalData.data[ip] = scan_host_result;
+
+
+            //    user_logger->info("IP：{} Nmap 扫描完成，更新历史数据。", ip);
+            //}
+            //
+            //更新扫描时间
+            auto timestamp = getCurrentTimestamp(2);
+            scan_host_result.scan_time = timestamp;
+
             //搜索POC代码是否存在并装载。
             searchPOCs(scan_host_result, dbManager, dbHandler_, pool);
 
@@ -3418,6 +3634,8 @@ void ServerManager::handle_post_poc_scan(http_request request) {
 
             // 将新的扫描结果保存为历史数据
             historicalData.data[ip] = scan_host_result;
+
+
 
             // 将结果转换为 JSON 格式并返回
             json::value result_json = ScanHostResult_to_json(scan_host_result);
@@ -3450,12 +3668,20 @@ void ServerManager::handle_merge_vuln_results(http_request request) {
             }
             std::string ip = json_data[_XPLATSTR("ip")].as_string();
 
-            // 在历史数据中找到对应 IP 的扫描结果
-            if (historicalData.data.find(ip) == historicalData.data.end()) {
+            //// 在历史数据中找到对应 IP 的扫描结果
+            //if (historicalData.data.find(ip) == historicalData.data.end()) {
+            //    throw std::runtime_error("Scan result for the IP not found.");
+            //}
+
+
+            //ScanHostResult& scan_host_result = historicalData.data[ip];
+
+            // 获取历史扫描结果
+            ScanHostResult scan_host_result = dbHandler_.getScanHostResult(ip, pool);
+
+            if (scan_host_result.ports.empty()) {
                 throw std::runtime_error("Scan result for the IP not found.");
             }
-
-            ScanHostResult& scan_host_result = historicalData.data[ip];
 
             // 执行合并操作
             merge_vuln_results(scan_host_result);
@@ -3607,6 +3833,9 @@ void ServerManager::handle_get_all_assets_vuln_data(http_request request)
 void ServerManager::handle_host_discovery(http_request request) {
     std::string network;
     try {
+        // 记录模块开始时间
+        auto start_time = std::chrono::high_resolution_clock::now();
+
         // 从请求中提取查询参数
         auto query = uri::split_query(request.request_uri().query());
         auto it = query.find(_XPLATSTR("network"));
@@ -3620,7 +3849,8 @@ void ServerManager::handle_host_discovery(http_request request) {
         if (isValidIP(network) || isValidCIDR(network)) {
 
             user_logger->info("[INFO] Performing host discovery for network/IP: {}", network);
-            HostDiscovery hostDiscovery(network);
+            //HostDiscovery hostDiscovery(network);
+            HostDiscovery hostDiscovery(network, globalThreadPool); // 用全局线程池
             auto aliveHosts = hostDiscovery.scan();
             //将存活主机存入scan_host_result表中
             dbHandler_.insertAliveHosts2scanHostResult(aliveHosts, pool);
@@ -3630,6 +3860,11 @@ void ServerManager::handle_host_discovery(http_request request) {
         else {
             request.reply(status_codes::BadRequest, _XPLATSTR("Invalid 'network' parameter format"));
         }
+
+        // 记录模块结束时间并计算耗时
+        auto end_time = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+        console->info("[INFO] Host discovery for network/IP: {} completed in {} ms", network, duration);
 
     }
     catch (const std::exception& e) {
@@ -3691,7 +3926,7 @@ void ServerManager::sendHostDiscoveryResponse(http_request& request, const std::
 }
 bool ServerManager::pingIsAlive(const std::string& network)
 {
-    HostDiscovery hostDiscovery(network);
+    HostDiscovery hostDiscovery(network, globalThreadPool); // 用全局线程池
     auto aliveHosts = hostDiscovery.scan();
 	if (aliveHosts.size() > 0)
 	{
@@ -3858,7 +4093,7 @@ void ServerManager::handle_edit_vuln_type(http_request request)
             response.set_body(response_data);
             request.reply(response);
         }
-        }).wait(); // ✅ 与 handle_post_get_Nmap 一致
+        }).wait(); //与 handle_post_get_Nmap 一致
 }
 
 void ServerManager::handle_get_level3Result(http_request request)

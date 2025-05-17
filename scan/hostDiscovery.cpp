@@ -4,17 +4,29 @@
 #include <stdexcept>
 #include <unistd.h>
 
-HostDiscovery::HostDiscovery(const std::string& network)
-    :network(network), threadPool(CONFIG.getThreadCount()) {
+//HostDiscovery::HostDiscovery(const std::string& network)
+//    :network(network), threadPool(CONFIG.getThreadCount()) {
+//
+//    //若输入为网段，则提取子网掩码
+//    if (isValidCIDR(network)) {
+//        this->subnet = getSubnet(network);
+//
+//        system_logger->info("Initialized HostDiscovery with network: {}", network);
+//    }
+//    else
+//        system_logger->info("Initialized HostDiscovery with targeted IP: {}", network);
+//}
 
-    //若输入为网段，则提取子网掩码
+HostDiscovery::HostDiscovery(const std::string& network, std::shared_ptr<ThreadPool> threadPool)
+    : network(network), threadPool(threadPool) {  
+
     if (isValidCIDR(network)) {
         this->subnet = getSubnet(network);
-
         system_logger->info("Initialized HostDiscovery with network: {}", network);
     }
-    else
+    else {
         system_logger->info("Initialized HostDiscovery with targeted IP: {}", network);
+    }
 }
 
 bool HostDiscovery::isValidIP(const std::string& ip) {
@@ -106,7 +118,7 @@ std::pair<unsigned int, unsigned int> HostDiscovery::calculateIPRange() {
 }
 
 std::future<void> HostDiscovery::submitPingTask(const std::string& ipAddress, std::vector<std::string>& aliveHosts) {
-    return threadPool.enqueue([this, &aliveHosts, ipAddress] {
+    return threadPool->enqueue([this, &aliveHosts, ipAddress] {
         if (ping(ipAddress)) {
             std::lock_guard<std::mutex> lock(resultMutex);
             aliveHosts.push_back(ipAddress);
