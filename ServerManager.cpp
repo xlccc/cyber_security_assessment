@@ -2968,8 +2968,7 @@ void ServerManager::handle_post_poc_verify_new(http_request request) {
                 setIfCheckByIds(scanHostResult, cve_ids, false);
             }
 
-            // ========== 第八步：更新历史记录 ==========
-            //dbHandler_.executeUpdateOrInsert(scan_host_result_vec[0], pool);
+           
 
             // ========== 第九步：返回验证结果 ==========
             json::value response_data;
