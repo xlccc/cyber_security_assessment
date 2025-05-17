@@ -84,26 +84,26 @@ void ServerManager::handle_request(http_request request) {
     }
     //返回基线检测的结果
     else if (first_segment == _XPLATSTR("userinfo") && request.method() == methods::GET) {
-        handle_get_userInfo(request);
+        handle_get_userInfo(request);//
     }
     else if (first_segment == _XPLATSTR("tmpUserinfo") && request.method() == methods::GET) {
-        handle_get_tmpUserInfo(request);
+        handle_get_tmpUserInfo(request);//
     }
     //基线检测的账号密码登录
     else if (first_segment == _XPLATSTR("login") && request.method() == methods::POST) {
-        handle_post_login(request);
+        handle_post_login(request);//
     }
     //三级等保检测的账号密码登录
     else if (first_segment == _XPLATSTR("level3Login") && request.method() == methods::POST) {
-        handle_post_level3(request);
+        handle_post_level3(request);//
     }
     //返回三级等保检测的结果
     else if (first_segment == _XPLATSTR("level3Userinfo") && request.method() == methods::GET) {
-        handle_get_level3UserInfo(request);
+        handle_get_level3UserInfo(request);//
     }
     //返回三级等保当前检测的结果
     else if (first_segment == _XPLATSTR("level3TmpUserinfo") && request.method() == methods::GET) {
-        handle_get_level3TmpUserInfo(request);
+        handle_get_level3TmpUserInfo(request);//
     }
 
     //主机发现
@@ -164,11 +164,11 @@ void ServerManager::handle_request(http_request request) {
     }
     //根据前端传来的vecScore进行等级数据库操作修改
     else if (first_segment == _XPLATSTR("updateLevel3Protect") && request.method() == methods::POST) {
-        handle_post_updateLevel3_protect(request);
+        handle_post_updateLevel3_protect(request);//
     }
     //根据前端传来的vecScore进行等级数据库操作修改
     else if (first_segment == _XPLATSTR("updateBaseLineProtect") && request.method() == methods::POST) {
-        handle_post_updateBaseLine_protect(request);
+        handle_post_updateBaseLine_protect(request);//
     }
 
     else if (first_segment == _XPLATSTR("pocExcute") && request.method() == methods::POST) {
@@ -594,7 +594,7 @@ void ServerManager::handle_get_userInfo(http_request request) {
         }
 
         // 获取安全检查结果
-        std::vector<event> check_results = dbHandler_.getSecurityCheckResults(ip, pool);
+        std::vector<event> check_results = dbHandler_.getSecurityCheckResults(ip, pool);//
 
         // 获取服务器信息
         ServerInfo server_info = dbHandler_.getServerInfoByIp(ip, pool);
@@ -612,6 +612,7 @@ void ServerManager::handle_get_userInfo(http_request request) {
             result[_XPLATSTR("command")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].command));
             result[_XPLATSTR("result")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].result));
             result[_XPLATSTR("IsComply")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].IsComply));
+            result[_XPLATSTR("tmp_IsComply")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].tmp_IsComply));
             result[_XPLATSTR("recommend")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].recommend));
             result[_XPLATSTR("importantLevel")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].importantLevel));
             results_array[i] = result;
@@ -693,7 +694,7 @@ void ServerManager::handle_get_tmpUserInfo(http_request request) {
         }
 
         // 获取选定IDs的安全检查结果
-        std::vector<event> check_results = dbHandler_.getSecurityCheckResultsByIds(ip, selectedIds, pool);
+        std::vector<event> check_results = dbHandler_.getSecurityCheckResultsByIds(ip, selectedIds, pool);//
 
         // 获取服务器信息
         ServerInfo server_info = dbHandler_.getServerInfoByIp(ip, pool);
@@ -711,6 +712,7 @@ void ServerManager::handle_get_tmpUserInfo(http_request request) {
             result[_XPLATSTR("command")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].command));
             result[_XPLATSTR("result")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].result));
             result[_XPLATSTR("IsComply")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].IsComply));
+            result[_XPLATSTR("tmp_IsComply")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].tmp_IsComply));
             result[_XPLATSTR("recommend")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].recommend));
             result[_XPLATSTR("importantLevel")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].importantLevel));
             results_array[i] = result;
@@ -824,7 +826,7 @@ void ServerManager::handle_post_level3(http_request request) {
         // 缓存该 IP 最后检测的 IDs
         lastLevel3CheckedIds[ip] = selectedIds;
 
-        level3Fun(ip, "root", pd, pool, dbHandler_, selectedIds);
+        level3Fun(ip, "root", pd, pool, dbHandler_, selectedIds);//
 
         http_response response(status_codes::OK);
         response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
@@ -856,7 +858,7 @@ void ServerManager::handle_get_level3UserInfo(http_request request)
         }
 
         // 获取三级等保结果
-        std::vector<event> check_results = dbHandler_.getLevel3SecurityCheckResults(ip, pool);
+        std::vector<event> check_results = dbHandler_.getLevel3SecurityCheckResults(ip, pool);//
 
 
         // 创建返回的JSON对象
@@ -872,6 +874,7 @@ void ServerManager::handle_get_level3UserInfo(http_request request)
             result[_XPLATSTR("command")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].command));
             result[_XPLATSTR("result")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].result));
             result[_XPLATSTR("IsComply")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].IsComply));
+            result[_XPLATSTR("tmp_IsComply")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].tmp_IsComply));
             result[_XPLATSTR("recommend")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].recommend));
             result[_XPLATSTR("importantLevel")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].importantLevel));
             results_array[i] = result;
@@ -940,7 +943,7 @@ void ServerManager::handle_get_level3TmpUserInfo(http_request request)
         }
 
         // 获取选定IDs的安全检查结果
-        std::vector<event> check_results = dbHandler_.getLevel3SecurityCheckResultsByIds(ip, selectedIds, pool);
+        std::vector<event> check_results = dbHandler_.getLevel3SecurityCheckResultsByIds(ip, selectedIds, pool);//
 
 
         // 创建返回的JSON对象
@@ -956,6 +959,7 @@ void ServerManager::handle_get_level3TmpUserInfo(http_request request)
             result[_XPLATSTR("command")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].command));
             result[_XPLATSTR("result")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].result));
             result[_XPLATSTR("IsComply")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].IsComply));
+            result[_XPLATSTR("tmp_IsComply")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].tmp_IsComply));
             result[_XPLATSTR("recommend")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].recommend));
             result[_XPLATSTR("importantLevel")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].importantLevel));
             results_array[i] = result;
@@ -3898,7 +3902,7 @@ void ServerManager::handle_get_level3Result(http_request request)
 
             // 通过映射表获取合规等级
             double complyLevel = 0.0; // 默认值
-            auto it = complyLevelMapping.find(item.IsComply);
+            auto it = complyLevelMapping.find(item.tmp_IsComply);
             if (it != complyLevelMapping.end()) {
                 complyLevel = it->second;
             }
@@ -4109,7 +4113,7 @@ void ServerManager::handle_get_baseLineResult(http_request  request)
 
             // 通过映射表获取合规等级
             double complyLevel = 0.0; // 默认值
-            auto it = complyLevelMapping.find(item.IsComply);
+            auto it = complyLevelMapping.find(item.tmp_IsComply);
             if (it != complyLevelMapping.end()) {
                 complyLevel = it->second;
             }

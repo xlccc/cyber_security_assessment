@@ -1716,6 +1716,7 @@ void DatabaseHandler::saveLevel3SecurityCheckResult(const std::string& ip, const
                 "command = ?, "
                 "result = ?, "
                 "is_comply = ?, "
+                "tmp_is_comply = ?, "  // 添加tmp_is_comply字段
                 "recommend = ?, "
                 "important_level = ?, "
                 "check_time = CURRENT_TIMESTAMP "
@@ -1726,6 +1727,7 @@ void DatabaseHandler::saveLevel3SecurityCheckResult(const std::string& ip, const
                 .bind(checkEvent.command)
                 .bind(checkEvent.result)
                 .bind(checkEvent.IsComply)
+                .bind(checkEvent.tmp_IsComply)  // 绑定tmp_IsComply值
                 .bind(checkEvent.recommend)
                 .bind(checkEvent.importantLevel)
                 .bind(shr_id)
@@ -1737,8 +1739,8 @@ void DatabaseHandler::saveLevel3SecurityCheckResult(const std::string& ip, const
             // 不存在记录，进行插入
             conn->sql(
                 "INSERT INTO level3_security_check_results "
-                "(shr_id, item_id, description, basis, command, result, is_comply, recommend, important_level, check_time) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)"
+                "(shr_id, item_id, description, basis, command, result, is_comply, tmp_is_comply, recommend, important_level, check_time) "  // 添加tmp_is_comply字段
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)"
             )
                 .bind(shr_id)
                 .bind(checkEvent.item_id)
@@ -1747,6 +1749,7 @@ void DatabaseHandler::saveLevel3SecurityCheckResult(const std::string& ip, const
                 .bind(checkEvent.command)
                 .bind(checkEvent.result)
                 .bind(checkEvent.IsComply)
+                .bind(checkEvent.tmp_IsComply)  // 绑定tmp_IsComply值
                 .bind(checkEvent.recommend)
                 .bind(checkEvent.importantLevel)
                 .execute();
@@ -1804,10 +1807,10 @@ void DatabaseHandler::updateLevel3SecurityCheckResult(const std::string& ip, Con
                     << "，使用默认值 'false'" << std::endl;
             }
 
-            // 更新level3_security_check_results表中的is_comply字段
+            // 更新level3_security_check_results表中的tmp_is_comply字段
             mysqlx::SqlResult updateResult = conn->sql(
                 "UPDATE level3_security_check_results "
-                "SET is_comply = ? "
+                "SET tmp_is_comply = ? "
                 "WHERE shr_id = ? AND item_id = ?"
             )
                 .bind(isComply)
@@ -1861,27 +1864,25 @@ std::vector<event> DatabaseHandler::getLevel3SecurityCheckResults(const std::str
 
         // 查询安全检查结果
         mysqlx::SqlResult checkResult = conn->sql(
-            "SELECT item_id, description, basis, command, result, is_comply, recommend, "
+            "SELECT item_id, description, basis, command, result, is_comply, tmp_is_comply, recommend, "
             "important_level, DATE_FORMAT(check_time, '%Y-%m-%d %H:%i:%s') as formatted_check_time "
             "FROM level3_security_check_results "
             "WHERE shr_id = ? "
             "ORDER BY item_id")
             .bind(shr_id)
             .execute();
-
         // 处理查询结果
         while (mysqlx::Row row = checkResult.fetchOne()) {
             event checkEvent;
-
             checkEvent.item_id = row[0].get<int>();
             checkEvent.description = row[1].get<std::string>();
             checkEvent.basis = row[2].isNull() ? "" : row[2].get<std::string>();
             checkEvent.command = row[3].isNull() ? "" : row[3].get<std::string>();
             checkEvent.result = row[4].get<std::string>();
             checkEvent.IsComply = row[5].get<std::string>();
-            checkEvent.recommend = row[6].isNull() ? "" : row[6].get<std::string>();
-            checkEvent.importantLevel = row[7].get<std::string>();
-
+            checkEvent.tmp_IsComply = row[6].get<std::string>();  // 新增处理tmp_is_comply字段
+            checkEvent.recommend = row[7].isNull() ? "" : row[7].get<std::string>();
+            checkEvent.importantLevel = row[8].get<std::string>();  // 索引向后移一位
             checkResults.push_back(checkEvent);
         }
 
@@ -1927,7 +1928,7 @@ std::vector<event> DatabaseHandler::getLevel3SecurityCheckResultsByIds(const std
         }
 
         // 查询特定item_id的安全检查结果
-        std::string query = "SELECT item_id, description, basis, command, result, is_comply, recommend, "
+        std::string query = "SELECT item_id, description, basis, command, result, is_comply, tmp_is_comply, recommend, "
             "important_level, DATE_FORMAT(check_time, '%Y-%m-%d %H:%i:%s') as formatted_check_time "
             "FROM level3_security_check_results "
             "WHERE shr_id = ? AND item_id IN (" + placeholders + ") "
@@ -1948,16 +1949,15 @@ std::vector<event> DatabaseHandler::getLevel3SecurityCheckResultsByIds(const std
         // 处理查询结果
         while (mysqlx::Row row = checkResult.fetchOne()) {
             event checkEvent;
-
             checkEvent.item_id = row[0].get<int>();
             checkEvent.description = row[1].get<std::string>();
             checkEvent.basis = row[2].isNull() ? "" : row[2].get<std::string>();
             checkEvent.command = row[3].isNull() ? "" : row[3].get<std::string>();
             checkEvent.result = row[4].get<std::string>();
             checkEvent.IsComply = row[5].get<std::string>();
-            checkEvent.recommend = row[6].isNull() ? "" : row[6].get<std::string>();
-            checkEvent.importantLevel = row[7].get<std::string>();
-
+            checkEvent.tmp_IsComply = row[6].get<std::string>();  // 新增处理tmp_is_comply字段
+            checkEvent.recommend = row[7].isNull() ? "" : row[7].get<std::string>();
+            checkEvent.importantLevel = row[8].get<std::string>();  // 索引从7变为8
             checkResults.push_back(checkEvent);
         }
 
@@ -2005,6 +2005,7 @@ void DatabaseHandler::saveSecurityCheckResult(const std::string& ip, const event
                 "command = ?, "
                 "result = ?, "
                 "is_comply = ?, "
+                "tmp_is_comply = ?, "  // 添加tmp_is_comply字段
                 "recommend = ?, "
                 "important_level = ?, "
                 "check_time = CURRENT_TIMESTAMP "
@@ -2015,6 +2016,7 @@ void DatabaseHandler::saveSecurityCheckResult(const std::string& ip, const event
                 .bind(checkEvent.command)
                 .bind(checkEvent.result)
                 .bind(checkEvent.IsComply)
+                .bind(checkEvent.tmp_IsComply)  // 绑定tmp_IsComply值
                 .bind(checkEvent.recommend)
                 .bind(checkEvent.importantLevel)
                 .bind(shr_id)
@@ -2026,8 +2028,8 @@ void DatabaseHandler::saveSecurityCheckResult(const std::string& ip, const event
             // 不存在记录，进行插入
             conn->sql(
                 "INSERT INTO security_check_results "
-                "(shr_id, item_id, description, basis, command, result, is_comply, recommend, important_level, check_time) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)"
+                "(shr_id, item_id, description, basis, command, result, is_comply, tmp_is_comply, recommend, important_level, check_time) "  // 添加tmp_is_comply字段
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)"
             )
                 .bind(shr_id)
                 .bind(checkEvent.item_id)
@@ -2036,6 +2038,7 @@ void DatabaseHandler::saveSecurityCheckResult(const std::string& ip, const event
                 .bind(checkEvent.command)
                 .bind(checkEvent.result)
                 .bind(checkEvent.IsComply)
+                .bind(checkEvent.tmp_IsComply)  // 绑定tmp_IsComply值
                 .bind(checkEvent.recommend)
                 .bind(checkEvent.importantLevel)
                 .execute();
@@ -2074,7 +2077,7 @@ std::vector<event> DatabaseHandler::getSecurityCheckResults(const std::string& i
 
         // 查询安全检查结果
         mysqlx::SqlResult checkResult = conn->sql(
-            "SELECT item_id, description, basis, command, result, is_comply, recommend, "
+            "SELECT item_id, description, basis, command, result, is_comply, tmp_is_comply, recommend, "
             "important_level, DATE_FORMAT(check_time, '%Y-%m-%d %H:%i:%s') as formatted_check_time "
             "FROM security_check_results "
             "WHERE shr_id = ? "
@@ -2085,16 +2088,15 @@ std::vector<event> DatabaseHandler::getSecurityCheckResults(const std::string& i
         // 处理查询结果
         while (mysqlx::Row row = checkResult.fetchOne()) {
             event checkEvent;
-
             checkEvent.item_id = row[0].get<int>();
             checkEvent.description = row[1].get<std::string>();
             checkEvent.basis = row[2].isNull() ? "" : row[2].get<std::string>();
             checkEvent.command = row[3].isNull() ? "" : row[3].get<std::string>();
             checkEvent.result = row[4].get<std::string>();
             checkEvent.IsComply = row[5].get<std::string>();
-            checkEvent.recommend = row[6].isNull() ? "" : row[6].get<std::string>();
-            checkEvent.importantLevel = row[7].get<std::string>();
-
+            checkEvent.tmp_IsComply = row[6].get<std::string>();  // 新增处理tmp_is_comply字段
+            checkEvent.recommend = row[7].isNull() ? "" : row[7].get<std::string>();
+            checkEvent.importantLevel = row[8].get<std::string>();  // 索引从7变为8
             checkResults.push_back(checkEvent);
         }
 
@@ -2140,7 +2142,7 @@ std::vector<event> DatabaseHandler::getSecurityCheckResultsByIds(const std::stri
         }
 
         // 查询特定item_id的安全检查结果
-        std::string query = "SELECT item_id, description, basis, command, result, is_comply, recommend, "
+        std::string query = "SELECT item_id, description, basis, command, result, is_comply, tmp_is_comply, recommend, "
             "important_level, DATE_FORMAT(check_time, '%Y-%m-%d %H:%i:%s') as formatted_check_time "
             "FROM security_check_results "
             "WHERE shr_id = ? AND item_id IN (" + placeholders + ") "
@@ -2161,16 +2163,15 @@ std::vector<event> DatabaseHandler::getSecurityCheckResultsByIds(const std::stri
         // 处理查询结果
         while (mysqlx::Row row = checkResult.fetchOne()) {
             event checkEvent;
-
             checkEvent.item_id = row[0].get<int>();
             checkEvent.description = row[1].get<std::string>();
             checkEvent.basis = row[2].isNull() ? "" : row[2].get<std::string>();
             checkEvent.command = row[3].isNull() ? "" : row[3].get<std::string>();
             checkEvent.result = row[4].get<std::string>();
             checkEvent.IsComply = row[5].get<std::string>();
-            checkEvent.recommend = row[6].isNull() ? "" : row[6].get<std::string>();
-            checkEvent.importantLevel = row[7].get<std::string>();
-
+            checkEvent.tmp_IsComply = row[6].get<std::string>();  // 新增处理tmp_is_comply字段
+            checkEvent.recommend = row[7].isNull() ? "" : row[7].get<std::string>();
+            checkEvent.importantLevel = row[8].get<std::string>();  // 索引从7变为8
             checkResults.push_back(checkEvent);
         }
 
@@ -2899,10 +2900,10 @@ void DatabaseHandler::updateBaseLineSecurityCheckResult(const std::string& ip, C
                     << "，使用默认值 'false'" << std::endl;
             }
 
-            // 更新level3_security_check_results表中的is_comply字段
+            // 更新security_check_results表中的tmp_is_comply字段
             mysqlx::SqlResult updateResult = conn->sql(
                 "UPDATE security_check_results "
-                "SET is_comply = ? "
+                "SET tmp_is_comply = ? "
                 "WHERE shr_id = ? AND item_id = ?"
             )
                 .bind(isComply)

@@ -52,7 +52,7 @@ void level3Fun(const string& host, const string& username, const string& passwor
 		// 运行检测项
 		checker.checkLevel3Events(localEvent, ids);
 		for (auto& e : localEvent) {
-			dbHandler.saveLevel3SecurityCheckResult(host, e, mysqlPool);
+			dbHandler.saveLevel3SecurityCheckResult(host, e, mysqlPool);//
 		}
 
 	}
