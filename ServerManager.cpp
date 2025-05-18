@@ -154,9 +154,6 @@ void ServerManager::handle_request(http_request request) {
     else if (first_segment == _XPLATSTR("pocSearch") && request.method() == methods::POST) {
         handle_post_poc_search(request);
     }
-    //else if (first_segment == _XPLATSTR("pocVerify") && request.method() == methods::POST) {
-    //    handle_post_poc_verify(request);
-    //}
     else if (first_segment == _XPLATSTR("pocVerify") && request.method() == methods::POST) {
         handle_post_poc_verify_new(request);
     }
@@ -460,10 +457,11 @@ web::json::value ServerManager::convertAssetInfoToJson(const AssetInfo& assetInf
         portVulnArray[i] = vulnObj;
     }
     result["port_vulnerabilities"] = portVulnArray;
-    // 添加基线检测摘要
+    // 添加基线检测摘要（普通基线）
     web::json::value baseline_summary = web::json::value::object();
     baseline_summary[_XPLATSTR("total_checks")] = web::json::value::number(assetInfo.baseline_summary.total_checks);
     baseline_summary[_XPLATSTR("compliant_items")] = web::json::value::number(assetInfo.baseline_summary.compliant_items);
+    baseline_summary[_XPLATSTR("half_compliant_items")] = web::json::value::number(assetInfo.baseline_summary.half_compliant_items);
     baseline_summary[_XPLATSTR("non_compliant_items")] = web::json::value::number(assetInfo.baseline_summary.non_compliant_items);
     baseline_summary[_XPLATSTR("compliance_rate")] = web::json::value::number(assetInfo.baseline_summary.compliance_rate);
     baseline_summary[_XPLATSTR("critical_items")] = web::json::value::number(assetInfo.baseline_summary.critical_items);
@@ -472,8 +470,22 @@ web::json::value ServerManager::convertAssetInfoToJson(const AssetInfo& assetInf
     baseline_summary[_XPLATSTR("high_compliant")] = web::json::value::number(assetInfo.baseline_summary.high_compliant);
     baseline_summary[_XPLATSTR("medium_items")] = web::json::value::number(assetInfo.baseline_summary.medium_items);
     baseline_summary[_XPLATSTR("medium_compliant")] = web::json::value::number(assetInfo.baseline_summary.medium_compliant);
-
     result[_XPLATSTR("baseline_summary")] = baseline_summary;
+
+    // 添加三级等保基线检测摘要
+    web::json::value level3_baseline_summary = web::json::value::object();
+    level3_baseline_summary[_XPLATSTR("total_checks")] = web::json::value::number(assetInfo.level3_baseline_summary.total_checks);
+    level3_baseline_summary[_XPLATSTR("compliant_items")] = web::json::value::number(assetInfo.level3_baseline_summary.compliant_items);
+    level3_baseline_summary[_XPLATSTR("half_compliant_items")] = web::json::value::number(assetInfo.level3_baseline_summary.half_compliant_items);
+    level3_baseline_summary[_XPLATSTR("non_compliant_items")] = web::json::value::number(assetInfo.level3_baseline_summary.non_compliant_items);
+    level3_baseline_summary[_XPLATSTR("compliance_rate")] = web::json::value::number(assetInfo.level3_baseline_summary.compliance_rate);
+    level3_baseline_summary[_XPLATSTR("critical_items")] = web::json::value::number(assetInfo.level3_baseline_summary.critical_items);
+    level3_baseline_summary[_XPLATSTR("critical_compliant")] = web::json::value::number(assetInfo.level3_baseline_summary.critical_compliant);
+    level3_baseline_summary[_XPLATSTR("high_items")] = web::json::value::number(assetInfo.level3_baseline_summary.high_items);
+    level3_baseline_summary[_XPLATSTR("high_compliant")] = web::json::value::number(assetInfo.level3_baseline_summary.high_compliant);
+    level3_baseline_summary[_XPLATSTR("medium_items")] = web::json::value::number(assetInfo.level3_baseline_summary.medium_items);
+    level3_baseline_summary[_XPLATSTR("medium_compliant")] = web::json::value::number(assetInfo.level3_baseline_summary.medium_compliant);
+    result[_XPLATSTR("level3_baseline_summary")] = level3_baseline_summary;
     return result;
 }
 

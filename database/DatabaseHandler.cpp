@@ -1568,8 +1568,9 @@ std::vector<AssetInfo> DatabaseHandler::getAllAssetsInfo(ConnectionPool& pool)
             }
             // 获取该IP的基线检测结果并计算摘要
             std::vector<event> check_results = getSecurityCheckResults(ip, pool);
+            std::vector<event> level3_check_results = getLevel3SecurityCheckResults(ip, pool);
             assetInfo.baseline_summary = calculateBaselineSummary(check_results);
-
+            assetInfo.level3_baseline_summary = calculateBaselineSummary(level3_check_results);
             allAssets.push_back(assetInfo);
         }
     }
@@ -2198,8 +2199,13 @@ BaselineCheckSummary DatabaseHandler::calculateBaselineSummary(const std::vector
 
     for (const auto& result : check_results) {
         // 统计合规项
-        if (result.IsComply == "true") {
-            summary.compliant_items++;
+        if (result.tmp_IsComply == "true"|| result.tmp_IsComply == "half_true") {
+            if (result.tmp_IsComply == "true") {
+                summary.compliant_items++;
+            }
+            if (result.tmp_IsComply == "half_true") {
+                summary.half_compliant_items++;
+            }
 
             // 按重要程度统计合规项
             if (result.importantLevel == "1") {
@@ -2230,10 +2236,10 @@ BaselineCheckSummary DatabaseHandler::calculateBaselineSummary(const std::vector
 
 
 
-    // 计算合规率并保留两位小数(不使用round函数)
-    // 计算合规率并保留两位小数(不使用round函数)
+    
+    // 计算不合规率并保留两位小数(不使用round函数)
     summary.compliance_rate = summary.total_checks > 0 ?
-        (round(static_cast<double>(summary.compliant_items) / summary.total_checks * 10000.0) / 100.0) : 0.0;
+        (round(static_cast<double>(summary.non_compliant_items) / summary.total_checks * 10000.0) / 100.0) : 0.0;
     return summary;
 }
 
