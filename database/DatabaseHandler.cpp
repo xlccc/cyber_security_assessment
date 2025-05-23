@@ -157,44 +157,6 @@ void DatabaseHandler::alterVulnsAfterPocSearch(ConnectionPool& pool, const Vuln&
     }
 }
 
-//void DatabaseHandler::alterHostVulnResultAfterPocVerify(ConnectionPool& pool, const Vuln& vuln, std::string ip)
-//{
-//    try {
-//        auto conn = pool.getConnection();
-//        std::string vulExist = vuln.vulExist;
-//        std::string vuln_id = vuln.Vuln_id;
-//        // 假设 conn 是 MySQL X DevAPI 连接对象
-//        auto result = conn->sql("SELECT hvr.shr_id, v.id AS vuln_id "
-//            "FROM host_vuln_result hvr "
-//            "JOIN scan_host_result shr ON hvr.shr_id = shr.id "
-//            "JOIN vuln v ON hvr.vuln_id = v.id "
-//            "WHERE shr.ip = ? AND v.vuln_id = ?"
-//        ).bind(ip, vuln_id).execute();
-//
-//        // 获取查询结果
-//        for (auto row : result) {
-//            int shr_id = row[0].get<int>();  // host_vuln_result 表中的 shr_id
-//            int vuln_id_primary = row[1].get<int>();  // vuln 表中的主键 id
-//
-//            // 更新 host_vuln_result 表中的 vulExist 字段
-//            conn->sql("UPDATE host_vuln_result SET "
-//                "vulExist = ? "
-//                "WHERE shr_id = ? AND vuln_id = ?"
-//            ).bind(vulExist, shr_id, vuln_id_primary).execute();
-//        }
-//    }
-//    catch (const mysqlx::Error& err) {
-//        std::cerr << "alterHostVulnResultAfterPocVerify数据库错误: " << err.what() << std::endl;
-//    }
-//    catch (std::exception& ex) {
-//        std::cerr << "异常: " << ex.what() << std::endl;
-//    }
-//    catch (...) {
-//        std::cerr << "未知错误发生" << std::endl;
-//    }
-//
-//}
-
 void DatabaseHandler::alterHostVulnResultAfterPocVerify(ConnectionPool& pool, const Vuln& vuln, std::string ip)
 {
     try {
@@ -1569,8 +1531,55 @@ std::vector<AssetInfo> DatabaseHandler::getAllAssetsInfo(ConnectionPool& pool)
             // 获取该IP的基线检测结果并计算摘要
             std::vector<event> check_results = getSecurityCheckResults(ip, pool);
             std::vector<event> level3_check_results = getLevel3SecurityCheckResults(ip, pool);
+            
             assetInfo.baseline_summary = calculateBaselineSummary(check_results);
             assetInfo.level3_baseline_summary = calculateBaselineSummary(level3_check_results);
+            //计算等保得分
+            // 定义合规等级映射表
+            std::unordered_map<std::string, double> complyLevelMapping = {
+                {"true", 1.0},
+                {"false", 0.0},
+                {"half_true", 0.5},
+                {"pending", -1.0}  // pending状态可根据需要调整处理方式
+            };
+
+            // 计算评分
+            int n = check_results.size(); // 项数
+            double sum = 0.0;
+
+            // 累加每一项的得分
+            for (const auto& item : level3_check_results) {
+                double importantLevel = std::stod(item.importantLevel) / 3;
+
+                // 通过映射表获取合规等级
+                double complyLevel = 0.0; // 默认值
+                auto it = complyLevelMapping.find(item.tmp_IsComply);
+                if (it != complyLevelMapping.end()) {
+                    complyLevel = it->second;
+                }
+
+                // 如果是pending状态，可以选择跳过或者作为不符合处理
+                if (complyLevel < 0) {
+                    // 如果遇到pending状态，将其视为不符合(0.0)
+                    complyLevel = 0.0;
+                }
+
+                sum += importantLevel * (1.0 - complyLevel);
+
+                // 输出每一项的计算值用于调试（可选）
+                std::cout << "Item " << item.item_id << ": importantLevel = " << importantLevel
+                    << ", complyLevel = " << complyLevel
+                    << ", contribution = " << importantLevel * (1.0 - complyLevel) << std::endl;
+            }
+
+            // 输出总和用于调试
+            std::cout << "Total sum: " << sum << std::endl;
+
+            // 计算最终评分
+            assetInfo.M  = 100.0 - (100.0 * sum / n);
+
+            //获取有哪些检测项没做
+            assetInfo.undo_BaseLine = getUncheckedBaselineItems(ip, pool);
             allAssets.push_back(assetInfo);
         }
     }
@@ -2940,4 +2949,146 @@ void DatabaseHandler::updateBaseLineSecurityCheckResult(const std::string& ip, C
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
     }
+}
+// 根据IP获取未完成的基线检查项
+std::vector<event> DatabaseHandler::getUncheckedBaselineItems(const std::string& ip, ConnectionPool& pool)
+{
+    std::vector<event> uncheckedItems;
+
+    try {
+        auto conn = pool.getConnection();
+
+        // 1. 根据IP获取shr_id
+        mysqlx::SqlResult shrResult = conn->sql("SELECT id FROM scan_host_result WHERE ip = ?")
+            .bind(ip)
+            .execute();
+
+        mysqlx::Row shrRow = shrResult.fetchOne();
+        if (!shrRow) {
+            std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
+            return uncheckedItems;
+        }
+
+        int shr_id = shrRow[0];
+
+        // 2. 获取已检查的item_id列表
+        mysqlx::SqlResult checkedResult = conn->sql(
+            "SELECT DISTINCT item_id FROM security_check_results WHERE shr_id = ?")
+            .bind(shr_id)
+            .execute();
+
+        std::set<int> checkedItemIds;
+        while (mysqlx::Row checkedRow = checkedResult.fetchOne()) {
+            int itemId = checkedRow[0];
+            checkedItemIds.insert(itemId);
+        }
+
+        // 3. 获取所有基线检查项，排除已检查的项
+        std::string baselineQuery = "SELECT item_id, description, basis, important_level FROM baseline_check_items";
+
+        // 如果有已检查的项，添加WHERE条件排除它们
+        if (!checkedItemIds.empty()) {
+            baselineQuery += " WHERE item_id NOT IN (";
+            bool first = true;
+            for (int checkedId : checkedItemIds) {
+                if (!first) {
+                    baselineQuery += ",";
+                }
+                baselineQuery += std::to_string(checkedId);
+                first = false;
+            }
+            baselineQuery += ")";
+        }
+
+        baselineQuery += " ORDER BY item_id";
+
+        mysqlx::SqlResult baselineResult = conn->sql(baselineQuery).execute();
+
+        // 4. 将未检查的基线项转换为event结构
+        while (mysqlx::Row baselineRow = baselineResult.fetchOne()) {
+            event uncheckedEvent;
+
+            uncheckedEvent.item_id = baselineRow[0];
+            uncheckedEvent.description = static_cast<std::string>(baselineRow[1]);
+            uncheckedEvent.basis = baselineRow[2].isNull() ? "" : static_cast<std::string>(baselineRow[2]);
+            uncheckedEvent.importantLevel = static_cast<std::string>(baselineRow[3]);
+
+            // 设置未检查项的默认值
+            uncheckedEvent.command = "";
+            uncheckedEvent.result = "";
+            uncheckedEvent.IsComply = "false";
+            uncheckedEvent.tmp_IsComply = "false";
+            uncheckedEvent.recommend = "";
+
+            uncheckedItems.push_back(uncheckedEvent);
+        }
+
+        std::cout << "IP: " << ip << " 未完成的基线检查项数量: " << uncheckedItems.size() << std::endl;
+
+    }
+    catch (const mysqlx::Error& err) {
+        std::cerr << "获取未完成基线检查项时数据库错误: " << err.what() << std::endl;
+    }
+    catch (std::exception& ex) {
+        std::cerr << "异常: " << ex.what() << std::endl;
+    }
+    catch (...) {
+        std::cerr << "未知错误发生" << std::endl;
+    }
+
+    return uncheckedItems;
+}
+
+// 辅助函数：获取指定IP已完成的检查项ID列表
+std::vector<int> DatabaseHandler::getCheckedItemIds(const std::string& ip, ConnectionPool& pool)
+{
+    std::vector<int> checkedIds;
+
+    try {
+        auto conn = pool.getConnection();
+
+        // 根据IP获取shr_id，然后获取已检查的item_id列表
+        mysqlx::SqlResult result = conn->sql(
+            "SELECT DISTINCT scr.item_id "
+            "FROM security_check_results scr "
+            "JOIN scan_host_result shr ON scr.shr_id = shr.id "
+            "WHERE shr.ip = ? "
+            "ORDER BY scr.item_id")
+            .bind(ip)
+            .execute();
+
+        while (mysqlx::Row row = result.fetchOne()) {
+            checkedIds.push_back(row[0]);
+        }
+
+    }
+    catch (const mysqlx::Error& err) {
+        std::cerr << "获取已检查项ID时数据库错误: " << err.what() << std::endl;
+    }
+
+    return checkedIds;
+}
+
+// 辅助函数：获取所有基线检查项ID列表
+std::vector<int> DatabaseHandler::getAllBaselineItemIds(ConnectionPool& pool)
+{
+    std::vector<int> allIds;
+
+    try {
+        auto conn = pool.getConnection();
+
+        mysqlx::SqlResult result = conn->sql(
+            "SELECT item_id FROM baseline_check_items ORDER BY item_id")
+            .execute();
+
+        while (mysqlx::Row row = result.fetchOne()) {
+            allIds.push_back(row[0]);
+        }
+
+    }
+    catch (const mysqlx::Error& err) {
+        std::cerr << "获取所有基线检查项ID时数据库错误: " << err.what() << std::endl;
+    }
+
+    return allIds;
 }

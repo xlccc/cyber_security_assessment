@@ -381,7 +381,7 @@ web::json::value ServerManager::convertAssetInfoToJson(const AssetInfo& assetInf
 {
     web::json::value result = web::json::value::object();
     result["ip"] = web::json::value::string(assetInfo.ip);
-
+    result["M"] = web::json::value::number(assetInfo.M);
     // 添加服务器信息
     web::json::value serverInfoObj = web::json::value::object();
     serverInfoObj["hostname"] = web::json::value::string(assetInfo.serverinfo.hostname);
@@ -486,6 +486,36 @@ web::json::value ServerManager::convertAssetInfoToJson(const AssetInfo& assetInf
     level3_baseline_summary[_XPLATSTR("medium_items")] = web::json::value::number(assetInfo.level3_baseline_summary.medium_items);
     level3_baseline_summary[_XPLATSTR("medium_compliant")] = web::json::value::number(assetInfo.level3_baseline_summary.medium_compliant);
     result[_XPLATSTR("level3_baseline_summary")] = level3_baseline_summary;
+
+    //添加检测项未作的情况
+    web::json::value undoBaselineArray = web::json::value::array(assetInfo.undo_BaseLine.size());
+    for (size_t i = 0; i < assetInfo.undo_BaseLine.size(); i++) {
+        web::json::value itemObj = web::json::value::object();
+        const event& item = assetInfo.undo_BaseLine[i];
+
+        itemObj["item_id"] = web::json::value::number(item.item_id);
+        itemObj["description"] = web::json::value::string(item.description);
+        itemObj["basis"] = web::json::value::string(item.basis);
+        itemObj["important_level"] = web::json::value::string(item.importantLevel);
+
+        undoBaselineArray[i] = itemObj;
+    }
+    result["undo_baseline"] = undoBaselineArray;
+
+    // 添加未完成的三级等保基线检查项
+    web::json::value undoLevel3BaselineArray = web::json::value::array(assetInfo.undo_level3BaseLine.size());
+    for (size_t i = 0; i < assetInfo.undo_level3BaseLine.size(); i++) {
+        web::json::value itemObj = web::json::value::object();
+        const event& item = assetInfo.undo_level3BaseLine[i];
+
+        itemObj["item_id"] = web::json::value::number(item.item_id);
+        itemObj["description"] = web::json::value::string(item.description);
+        itemObj["basis"] = web::json::value::string(item.basis);
+        itemObj["important_level"] = web::json::value::string(item.importantLevel);
+
+        undoLevel3BaselineArray[i] = itemObj;
+    }
+    result["undo_level3_baseline"] = undoLevel3BaselineArray;
     return result;
 }
 

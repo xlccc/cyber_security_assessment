@@ -159,6 +159,9 @@ struct AssetInfo {
     std::vector<PortVulnerabilityInfo> port_vulnerabilities; // 端口漏洞
     BaselineCheckSummary baseline_summary;                 // 基线检测摘要
     BaselineCheckSummary level3_baseline_summary;                 // 三级等保摘要
+    double M;                                              //等保得分情况
+    std::vector<event> undo_BaseLine;                   //还没做的检测项
+    std::vector<event> undo_level3BaseLine;
 };
 
 #endif
