@@ -406,4 +406,30 @@ INSERT INTO `baseline_check_items` VALUES
 (88, '检查是否限制FTP用户登录后能访问的目录', '应该限制FTP用户登录后能访问的目录', '1'),
 (89, '检查内核版本是否处于CVE-2021-43267漏洞影响版本', '内核版本不在5.10和5.14.16之间', '3');
 
+
+
+DROP TABLE IF EXISTS `level3_security_check_items`;
+CREATE TABLE `level3_security_check_items`  (
+  `item_id` int(0) NOT NULL COMMENT '检查项ID',
+  `description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '检查项描述',
+  `basis` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '判定依据',
+  `important_level` enum('1','2','3') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '重要程度：1-低，2-中，3-高',
+  PRIMARY KEY (`item_id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '等级保护三级安全检查项基础表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of level3_security_check_items
+-- ----------------------------
+INSERT INTO `level3_security_check_items` VALUES (1, '应在网络边界或区域之间根据访问控制策略设置访问控制规则，默认情况下除允许通信外受控接口拒绝所有通信', '防火墙应处于开启状态', '3');
+INSERT INTO `level3_security_check_items` VALUES (2, '应删除多余或无效的访问控制规则，优化访问控制列表，并保证访问控制规则数量最小化', '防火墙规则应配置有效且完整', '3');
+INSERT INTO `level3_security_check_items` VALUES (3, '应对源地址、目的地址、源端口、目的端口和协议等进行检查，以允许/拒绝数据包进出。', '防火墙应能检查源地址、目的地址、端口和协议信息', '3');
+INSERT INTO `level3_security_check_items` VALUES (4, '应能根据会话状态信息为进出数据流提供明确的允许/拒绝访问能力', '会话状态访问控制机制应正确配置', '3');
+INSERT INTO `level3_security_check_items` VALUES (5, '应对进出网络的数据流实现基于应用协议和应用内容的访问控制', '应配置基于应用协议和内容的访问控制规则', '3');
+INSERT INTO `level3_security_check_items` VALUES (6, '应在关键网络节点处检测、防止或限制从外部发起的网络攻击行为', '应安装并启动IDS/IPS/WAF等防护工具', '3');
+INSERT INTO `level3_security_check_items` VALUES (7, '应在关键网络节点处检测、防止或限制从内部发起的网络攻击行为', '应安装并启动IDS/IPS/WAF等防护工具', '3');
+INSERT INTO `level3_security_check_items` VALUES (8, '应采取技术措施对网络行为进行分析实现对网络攻击特别是新型网络攻击行为的分析', '应运行网络行为分析系统服务', '3');
+INSERT INTO `level3_security_check_items` VALUES (9, '当检测到攻击行为时，记录攻击源IP、攻击类型、攻击目标、攻击时间，在发生严重入侵事件时应提供报警', '应具备攻击行为记录和报警能力', '3');
+INSERT INTO `level3_security_check_items` VALUES (10, '应在关键网络节点处对恶意代码进行检测和清除，并维护恶意代码防护机制的升级和更新', '应安装恶意代码防护软件', '3');
+INSERT INTO `level3_security_check_items` VALUES (11, '应在关键网络节点处对垃圾邮件进行检测和防护，并维护垃圾邮件防护机制的升级和更新', '应安装邮件服务器并开启垃圾邮件防护', '3');
+
 SET FOREIGN_KEY_CHECKS = 1;

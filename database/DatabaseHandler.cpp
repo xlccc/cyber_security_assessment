@@ -1580,6 +1580,8 @@ std::vector<AssetInfo> DatabaseHandler::getAllAssetsInfo(ConnectionPool& pool)
 
             //获取有哪些检测项没做
             assetInfo.undo_BaseLine = getUncheckedBaselineItems(ip, pool);
+            //获取有哪些三级等保检测项没做
+            assetInfo.undo_level3BaseLine = getUncheckedLevel3Items(ip, pool);
             allAssets.push_back(assetInfo);
         }
     }
@@ -3088,6 +3090,149 @@ std::vector<int> DatabaseHandler::getAllBaselineItemIds(ConnectionPool& pool)
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "获取所有基线检查项ID时数据库错误: " << err.what() << std::endl;
+    }
+
+    return allIds;
+}
+
+// 根据IP获取未完成的Level3安全检查项
+std::vector<event> DatabaseHandler::getUncheckedLevel3Items(const std::string& ip, ConnectionPool& pool)
+{
+    std::vector<event> uncheckedItems;
+
+    try {
+        auto conn = pool.getConnection();
+
+        // 1. 根据IP获取shr_id
+        mysqlx::SqlResult shrResult = conn->sql("SELECT id FROM scan_host_result WHERE ip = ?")
+            .bind(ip)
+            .execute();
+
+        mysqlx::Row shrRow = shrResult.fetchOne();
+        if (!shrRow) {
+            std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
+            return uncheckedItems;
+        }
+
+        int shr_id = shrRow[0];
+
+        // 2. 获取已检查的item_id列表
+        mysqlx::SqlResult checkedResult = conn->sql(
+            "SELECT DISTINCT item_id FROM level3_security_check_results WHERE shr_id = ?")
+            .bind(shr_id)
+            .execute();
+
+        std::set<int> checkedItemIds;
+        while (mysqlx::Row checkedRow = checkedResult.fetchOne()) {
+            int itemId = checkedRow[0];
+            checkedItemIds.insert(itemId);
+        }
+
+        // 3. 获取所有Level3检查项，排除已检查的项
+        std::string level3Query = "SELECT item_id, description, basis, important_level FROM level3_security_check_items";
+
+        // 如果有已检查的项，添加WHERE条件排除它们
+        if (!checkedItemIds.empty()) {
+            level3Query += " WHERE item_id NOT IN (";
+            bool first = true;
+            for (int checkedId : checkedItemIds) {
+                if (!first) {
+                    level3Query += ",";
+                }
+                level3Query += std::to_string(checkedId);
+                first = false;
+            }
+            level3Query += ")";
+        }
+
+        level3Query += " ORDER BY item_id";
+
+        mysqlx::SqlResult level3Result = conn->sql(level3Query).execute();
+
+        // 4. 将未检查的Level3项转换为event结构
+        while (mysqlx::Row level3Row = level3Result.fetchOne()) {
+            event uncheckedEvent;
+
+            uncheckedEvent.item_id = level3Row[0];
+            uncheckedEvent.description = static_cast<std::string>(level3Row[1]);
+            uncheckedEvent.basis = level3Row[2].isNull() ? "" : static_cast<std::string>(level3Row[2]);
+            uncheckedEvent.importantLevel = static_cast<std::string>(level3Row[3]);
+
+            // 设置未检查项的默认值
+            uncheckedEvent.command = "";
+            uncheckedEvent.result = "";
+            uncheckedEvent.IsComply = "false";
+            uncheckedEvent.tmp_IsComply = "false";
+            uncheckedEvent.recommend = "";
+
+            uncheckedItems.push_back(uncheckedEvent);
+        }
+
+        std::cout << "IP: " << ip << " 未完成的Level3安全检查项数量: " << uncheckedItems.size() << std::endl;
+
+    }
+    catch (const mysqlx::Error& err) {
+        std::cerr << "获取未完成Level3检查项时数据库错误: " << err.what() << std::endl;
+    }
+    catch (std::exception& ex) {
+        std::cerr << "异常: " << ex.what() << std::endl;
+    }
+    catch (...) {
+        std::cerr << "未知错误发生" << std::endl;
+    }
+
+    return uncheckedItems;
+}
+
+// 辅助函数：获取指定IP已完成的Level3检查项ID列表
+std::vector<int> DatabaseHandler::getCheckedLevel3ItemIds(const std::string& ip, ConnectionPool& pool)
+{
+    std::vector<int> checkedIds;
+
+    try {
+        auto conn = pool.getConnection();
+
+        // 根据IP获取shr_id，然后获取已检查的item_id列表
+        mysqlx::SqlResult result = conn->sql(
+            "SELECT DISTINCT l3cr.item_id "
+            "FROM level3_security_check_results l3cr "
+            "JOIN scan_host_result shr ON l3cr.shr_id = shr.id "
+            "WHERE shr.ip = ? "
+            "ORDER BY l3cr.item_id")
+            .bind(ip)
+            .execute();
+
+        while (mysqlx::Row row = result.fetchOne()) {
+            checkedIds.push_back(row[0]);
+        }
+
+    }
+    catch (const mysqlx::Error& err) {
+        std::cerr << "获取已检查Level3项ID时数据库错误: " << err.what() << std::endl;
+    }
+
+    return checkedIds;
+}
+
+// 辅助函数：获取所有Level3检查项ID列表
+std::vector<int> DatabaseHandler::getAllLevel3ItemIds(ConnectionPool& pool)
+{
+    std::vector<int> allIds;
+
+    try {
+        auto conn = pool.getConnection();
+
+        mysqlx::SqlResult result = conn->sql(
+            "SELECT item_id FROM level3_security_check_items ORDER BY item_id")
+            .execute();
+
+        while (mysqlx::Row row = result.fetchOne()) {
+            allIds.push_back(row[0]);
+        }
+
+    }
+    catch (const mysqlx::Error& err) {
+        std::cerr << "获取所有Level3检查项ID时数据库错误: " << err.what() << std::endl;
     }
 
     return allIds;

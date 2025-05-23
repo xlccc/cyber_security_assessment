@@ -91,6 +91,13 @@ public:
     std::vector<int> getCheckedItemIds(const std::string& ip, ConnectionPool& pool);
     // 辅助函数：获取所有基线检查项ID列表
     std::vector<int> getAllBaselineItemIds(ConnectionPool& pool);
+
+    // 根据IP获取未完成的Level3安全检查项
+    std::vector<event> getUncheckedLevel3Items(const std::string& ip, ConnectionPool& pool);
+    // 辅助函数：获取指定IP已完成的Level3检查项ID列表
+    std::vector<int> getCheckedLevel3ItemIds(const std::string& ip, ConnectionPool& pool);
+    // 辅助函数：获取所有Level3检查项ID列表
+    std::vector<int> getAllLevel3ItemIds(ConnectionPool& pool);
     //根据ip地址以及ids获取安全检查结果
     // 计算基线检测摘要
     BaselineCheckSummary calculateBaselineSummary(const std::vector<event>& check_results);
