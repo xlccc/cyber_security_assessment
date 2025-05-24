@@ -137,6 +137,7 @@ struct PortInfo {
 struct BaselineCheckSummary {
     int total_checks = 0;           // 总检测项数
     int compliant_items = 0;        // 合规项数
+    int half_compliant_items = 0;
     int non_compliant_items = 0;    // 不合规项数
     double compliance_rate = 0.0;   // 合规率 (百分比)
 
@@ -158,6 +159,10 @@ struct AssetInfo {
     std::vector<VulnerabilityInfo> host_vulnerabilities;   // 主机漏洞
     std::vector<PortVulnerabilityInfo> port_vulnerabilities; // 端口漏洞
     BaselineCheckSummary baseline_summary;                 // 基线检测摘要
+    BaselineCheckSummary level3_baseline_summary;                 // 三级等保摘要
+    double M;                                              //等保得分情况
+    std::vector<event> undo_BaseLine;                   //还没做的检测项
+    std::vector<event> undo_level3BaseLine;
 };
 
 #endif

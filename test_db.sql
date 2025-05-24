@@ -311,6 +311,132 @@ INSERT IGNORE INTO VulnType (TypeName) VALUES
 ('未经授权的访问'),
 ('其他类型');
 
+-- 基线检查项基础表
+CREATE TABLE `baseline_check_items` (
+  `item_id` int NOT NULL COMMENT '检查项ID',
+  `description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '检查项描述',
+  `basis` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '判定依据',
+  `important_level` enum('1','2','3') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '重要程度：1-低，2-中，3-高',
+  PRIMARY KEY (`item_id`)
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '基线检查项基础表' ROW_FORMAT = Dynamic;
+
+-- 插入基线检查项数据
+INSERT INTO `baseline_check_items` VALUES 
+(1, '检查口令生存周期', '<=90天', '3'),
+(2, '检查口令最小长度', '>=8', '3'),
+(3, '检查口令过期前警告天数', '>=30天', '3'),
+(4, '检查设备密码复杂度策略', '至少包含1个大写字母、1个小写字母、1个数字、1个特殊字符', '3'),
+(5, '检查是否存在空口令账号', '不存在空口令账号', '3'),
+(6, '检查是否设置除root之外UID为0的用户', '普通用户的UID全为非0', '2'),
+(7, '检查/etc/csh.cshrc中的用户umask设置', '=027 或 =077', '2'),
+(8, '检查/etc/bashrc中的用户umask设置', '=027 或 =077', '2'),
+(9, '检查/etc/profile中的用户umask设置', '=027 或 =077', '2'),
+(10, '检查/etc/xinetd.conf文件权限', '<=600', '2'),
+(11, '检查/etc/group文件权限', '<=644', '2'),
+(12, '检查/etc/shadow文件权限', '<=400', '2'),
+(13, '检查/etc/services文件权限', '<=644', '2'),
+(14, '检查/etc/security目录权限', '<=600', '2'),
+(15, '检查/etc/passwd文件权限', '<=644', '2'),
+(16, '检查/etc/rc6.d目录权限', '<=750', '2'),
+(17, '检查/etc/rc0.d目录权限', '<=750', '2'),
+(18, '检查/etc/rc1.d目录权限', '<=750', '2'),
+(19, '检查/etc/xinetd.conf文件权限', '<=750', '2'),
+(20, '检查/etc目录权限', '<=750', '2'),
+(21, '检查/etc/rc4.d目录权限', '<=750', '2'),
+(22, '检查/etc/rc5.d目录权限', '<=750', '2'),
+(23, '检查/etc/rc3.d目录权限', '<=750', '2'),
+(24, '检查/etc/rc.d/init.d目录权限', '<=750', '2'),
+(25, '检查/tmp目录权限', '<=750', '2'),
+(26, '检查/etc/grub.conf文件权限', '<=600', '2'),
+(27, '检查/etc/grub/grub.conf文件权限', '<=600', '2'),
+(28, '检查/etc/lilo.conf文件权限', '<=600', '2'),
+(29, '检查/etc/passwd的文件属性', '是否设置了i属性', '2'),
+(30, '检查/etc/shadow的文件属性', '设置i属性', '2'),
+(31, '检查/etc/group的文件属性', '设置i属性', '2'),
+(32, '检查/etc/gshadow的文件属性', '设置i属性', '2'),
+(33, '检查用户目录缺省访问权限设置', '=027', '3'),
+(34, '检查是否设置ssh登录前警告Banner', '/etc/ssh/sshd_config 是否开启 Banner', '1'),
+(35, '检查e-ng是否配置远程日志功能', '查找配置文件是否有相应行', '1'),
+(36, 'rsyslog是否配置远程日志功能', '查找配置文件是否有相应行', '1'),
+(37, 'syslog是否配置远程日志功能', '查找配置文件是否有相应行', '1'),
+(38, 'syslog_ng是否配置安全事件日志', '查找配置文件是否有相应行', '1'),
+(39, 'rsyslog_safe是否配置安全事件日志', '查找配置文件是否有相应行', '1'),
+(40, 'rsyslog_safe是否配置安全事件日志', '查找配置文件是否有相应行', '1'),
+(41, '检查/var/log/cron日志文件是否other用户不可写', 'other用户不可写', '1'),
+(42, '检查/var/log/secure日志文件是否other用户不可写', 'other用户不可写', '1'),
+(43, '检查/var/log/messages日志文件是否other用户不可写', 'other用户不可写', '1'),
+(44, '检查/var/log/boot.log日志文件是否other用户不可写', 'other用户不可写', '1'),
+(45, '检查/var/log/mail日志文件是否other用户不可写', 'other用户不可写', '1'),
+(46, '检查/var/log/spooler日志文件是否other用户不可写', 'other用户不可写', '1'),
+(47, '检查/var/log/localmessages日志文件是否other用户不可写', 'other用户不可写', '1'),
+(48, '检查/var/log/maillog日志文件是否other用户不可写', 'other用户不可写', '1'),
+(49, '是否对登录进行日志记录', 'last检查', '3'),
+(50, '是否对su命令进行日志记录', '基于Debian或者RPM访问不同的文件', '1'),
+(51, '检查系统openssh安全配置', '/etc/ssh/sshd_config中的Protocol配置值为2', '2'),
+(52, '检查SNMP服务是否在运行', '查看是否存在SNMP进程', '2'),
+(53, '检查是否已修改snmp默认团体字', '检查是否已修改snmp默认团体字', '2'),
+(54, '是否配置ssh协议', '根据22号端口是否开放检测是否配置ssh协议', '3'),
+(55, '由于telnet明文传输，所以应该禁止telnet协议', '根据23号端口是否开放检测是否配置telnet协议', '3'),
+(56, '检查是否在运行ftp', '判断相应的服务是否后台运行', '2'),
+(57, '检查是否禁止root用户登录ftp', '/etc/vsftpd/ftpusers文件中包含root用户即为禁止了', '2'),
+(58, '检查是否禁止匿名用户登录FTP', '/etc/vsftpd/vsftpd.conf文件中是否存在anonymous_enable=NO配置', '3'),
+(59, '检查是否设置命令行界面超时退出', '开启TMOUT且TMOUNT<=600秒', '3'),
+(60, '检查是否设置系统引导管理器密码', '系统引导管理器（GRUB2、GRUB 或 LILO）应设置密码', '1'),
+(61, '检查系统coredump设置', '在文件/etc/security/limits.conf中配置* hard core 0 和 * soft core 0', '2'),
+(62, '检查历史命令设置', 'HISTFILESIZE 和 HISTSIZE 的值 <= 5', '1'),
+(63, '检查是否使用PAM认证模块禁止wheel组之外的用户su为root', '在 /etc/pam.d/su 文件中配置: \n  auth sufficient pam_rootok.so \n  auth required pam_wheel.so group=wheel', '3'),
+(64, '检查是否对系统账户进行登录限制', '请手动检查文件文件/etc/passwd，/etc/shadow，并使用命令：usermod -s /sbin/nologin username', '1'),
+(65, '检查密码重复使用次数限制', '>=5', '2'),
+(66, '检查账户认证失败次数限制', '登录失败限制可以使用pam_tally或pam.d，请手工检测/etc/pam.d/system-auth、/etc/pam.d/passwd、/etc/pam.d/common-auth文件。', '1'),
+(67, '检查是否关闭绑定多ip功能', '/etc/host.conf中设置 multi off', '1'),
+(68, '检查是否限制远程登录IP范围', '请手工查看/etc/hosts.allow和/etc/hosts.deny两个文件', '1'),
+(69, '检查别名文件', '请手工查看/etc/aliases和/etc/mail/aliases两个文件', '1'),
+(70, '检查重要文件是否存在suid和sgid权限', '重要文件应该不存在suid和sgid权限', '1'),
+(71, '检查是否配置定时自动屏幕锁定（适用于图形化界面）', '在屏幕上面的面板中，打开"系统"-->"首选项"-->"屏幕保护程序"', '1'),
+(72, '检查系统内核参数配置', '=1', '2'),
+(73, '检查是否按组进行账号管理', '请手工查看/etc/group等文件', '1'),
+(74, '检查root用户的path环境变量内容', '不包含（.和..）的路径', '2'),
+(75, '检查系统是否禁用ctrl+alt+del组合键', '禁用Ctrl+Alt+Delete组合键重启系统', '2'),
+(76, '检查是否关闭系统信任机制', '关闭系统信任机制', '3'),
+(77, '检查系统磁盘分区使用率', '系统磁盘分区使用率均<=80%', '1'),
+(78, '检查是否删除了潜在危险文件', '删除潜在危险文件，包括hosts.equiv文件 .rhosts文件和 .netrc 文件', '3'),
+(79, '检查是否配置用户所需最小权限', '配置用户所需最小权限,/etc/passwd为644；/etc/group为644；/etc/shadow为600', '2'),
+(80, '检查是否关闭数据包转发功能', '对于不做路由功能的系统，应该关闭数据包转发功能', '1'),
+(81, '检查是否使用NTP（网络时间协议）保持时间同步', '检查ntp服务是否开启，若开启则需配置NTP服务器地址', '1'),
+(82, '检查NFS（网络文件系统）服务设置', '如果需要NFS服务，需要限制能够访问NFS服务的IP范围；如果没有必要，需要停止NFS服务', '1'),
+(83, '检查是否设置ssh成功登陆后Banner', '设置ssh成功登陆后Banner', '1'),
+(84, '检查FTP用户上传的文件所具有的权限', '检查是否安装vsftpd或者pure-ftpd，且上传权限设置正确', '1'),
+(85, '是否更改默认的ftp登陆警告Banner', '需要自己检查自定义的banner', '1'),
+(86, '为了保证信息安全的可靠性，需要检查可执行文件的拥有者属性', '所有含有"s"属性的文件，把不必要的"s"属性去掉，或者把不用的直接删除。', '1'),
+(87, '检查是否更改默认的telnet登录警告Banner', '请手动检查修改文件/etc/issue 和/etc/issue.net中的内容', '1'),
+(88, '检查是否限制FTP用户登录后能访问的目录', '应该限制FTP用户登录后能访问的目录', '1'),
+(89, '检查内核版本是否处于CVE-2021-43267漏洞影响版本', '内核版本不在5.10和5.14.16之间', '3');
+
+
+
+DROP TABLE IF EXISTS `level3_security_check_items`;
+CREATE TABLE `level3_security_check_items`  (
+  `item_id` int(0) NOT NULL COMMENT '检查项ID',
+  `description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '检查项描述',
+  `basis` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '判定依据',
+  `important_level` enum('1','2','3') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '重要程度：1-低，2-中，3-高',
+  PRIMARY KEY (`item_id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '等级保护三级安全检查项基础表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of level3_security_check_items
+-- ----------------------------
+INSERT INTO `level3_security_check_items` VALUES (1, '应在网络边界或区域之间根据访问控制策略设置访问控制规则，默认情况下除允许通信外受控接口拒绝所有通信', '防火墙应处于开启状态', '3');
+INSERT INTO `level3_security_check_items` VALUES (2, '应删除多余或无效的访问控制规则，优化访问控制列表，并保证访问控制规则数量最小化', '防火墙规则应配置有效且完整', '3');
+INSERT INTO `level3_security_check_items` VALUES (3, '应对源地址、目的地址、源端口、目的端口和协议等进行检查，以允许/拒绝数据包进出。', '防火墙应能检查源地址、目的地址、端口和协议信息', '3');
+INSERT INTO `level3_security_check_items` VALUES (4, '应能根据会话状态信息为进出数据流提供明确的允许/拒绝访问能力', '会话状态访问控制机制应正确配置', '3');
+INSERT INTO `level3_security_check_items` VALUES (5, '应对进出网络的数据流实现基于应用协议和应用内容的访问控制', '应配置基于应用协议和内容的访问控制规则', '3');
+INSERT INTO `level3_security_check_items` VALUES (6, '应在关键网络节点处检测、防止或限制从外部发起的网络攻击行为', '应安装并启动IDS/IPS/WAF等防护工具', '3');
+INSERT INTO `level3_security_check_items` VALUES (7, '应在关键网络节点处检测、防止或限制从内部发起的网络攻击行为', '应安装并启动IDS/IPS/WAF等防护工具', '3');
+INSERT INTO `level3_security_check_items` VALUES (8, '应采取技术措施对网络行为进行分析实现对网络攻击特别是新型网络攻击行为的分析', '应运行网络行为分析系统服务', '3');
+INSERT INTO `level3_security_check_items` VALUES (9, '当检测到攻击行为时，记录攻击源IP、攻击类型、攻击目标、攻击时间，在发生严重入侵事件时应提供报警', '应具备攻击行为记录和报警能力', '3');
+INSERT INTO `level3_security_check_items` VALUES (10, '应在关键网络节点处对恶意代码进行检测和清除，并维护恶意代码防护机制的升级和更新', '应安装恶意代码防护软件', '3');
+INSERT INTO `level3_security_check_items` VALUES (11, '应在关键网络节点处对垃圾邮件进行检测和防护，并维护垃圾邮件防护机制的升级和更新', '应安装邮件服务器并开启垃圾邮件防护', '3');
 
 SET FOREIGN_KEY_CHECKS = 1;
 
