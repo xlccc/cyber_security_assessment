@@ -381,7 +381,15 @@ web::json::value ServerManager::convertAssetInfoToJson(const AssetInfo& assetInf
 {
     web::json::value result = web::json::value::object();
     result["ip"] = web::json::value::string(assetInfo.ip);
-    result["M"] = web::json::value::number(assetInfo.M);
+    // 在设置 JSON 时也要检查
+    // 修改 JSON 设置部分
+    if (std::isnan(assetInfo.M) || std::isinf(assetInfo.M)) {
+        result["M"] = web::json::value::number(0.0);
+    }
+    else {
+        result["M"] = web::json::value::number(assetInfo.M);
+    }
+    
     // 添加服务器信息
     web::json::value serverInfoObj = web::json::value::object();
     serverInfoObj["hostname"] = web::json::value::string(assetInfo.serverinfo.hostname);

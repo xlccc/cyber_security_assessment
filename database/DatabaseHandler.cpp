@@ -1544,7 +1544,7 @@ std::vector<AssetInfo> DatabaseHandler::getAllAssetsInfo(ConnectionPool& pool)
             };
 
             // 计算评分
-            int n = check_results.size(); // 项数
+            int n = level3_check_results.size(); // 项数
             double sum = 0.0;
 
             // 累加每一项的得分
