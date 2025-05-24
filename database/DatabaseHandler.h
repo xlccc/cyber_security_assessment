@@ -144,6 +144,27 @@ public:
 
     // ------  POC表 相关的操作 --------
 
+    //获取所有资产信息（包括不存活的）
+    std::vector<AssetInfo> getAllAssetsFullInfo(ConnectionPool& pool);
+
+    // ------  资产组 相关的操作 --------
+    
+    //判断资产组是否存在
+    bool isAssetGroupExists(const std::string& group_name, ConnectionPool& pool);
+    //创建资产组
+    int createAssetGroup(const std::string& group_name, const std::string& description, ConnectionPool& pool);
+    //获取资产组列表
+    std::vector<std::pair<int, std::string>> getAllAssetGroups(ConnectionPool& pool);
+    //归入当前组或移出资产
+    bool updateAssetGroup(const std::string& ip, int group_id, bool is_null, ConnectionPool& pool);
+    //资产组改名
+    bool renameAssetGroup(int group_id, const std::string& new_name, ConnectionPool& pool);
+    //删除资产组（支持是否删除组内资产）
+    bool deleteAssetGroup(int group_id, bool deleteAssets, ConnectionPool& pool);
+
+
+    // ------  资产组 相关的操作 --------
+
 };
 
 #endif // DATABASEHANDLER_H

@@ -152,6 +152,7 @@ struct BaselineCheckSummary {
 // 更新 AssetInfo 结构体
 struct AssetInfo {
     std::string ip;
+    bool alive;     
     std::vector<PortInfo> ports;                           // 端口信息
     ServerInfo serverinfo; //Linux相关信息
     std::vector<VulnerabilityInfo> host_vulnerabilities;   // 主机漏洞

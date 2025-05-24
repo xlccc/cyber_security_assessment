@@ -2935,3 +2935,221 @@ void DatabaseHandler::updateBaseLineSecurityCheckResult(const std::string& ip, C
         std::cerr << "未知错误发生" << std::endl;
     }
 }
+
+std::vector<AssetInfo> DatabaseHandler::getAllAssetsFullInfo(ConnectionPool& pool) {
+    std::vector<AssetInfo> allAssets;
+
+    try {
+        auto session_ptr = pool.getConnection();  // std::shared_ptr<mysqlx::Session>
+        mysqlx::Session& session = *session_ptr;
+
+        auto result = session.sql("SELECT ip, alive FROM scan_host_result").execute();
+
+        //1.获取所有主机及存活状态
+        std::vector<std::string> all_ips;
+        std::map<std::string, std::string> ip_alive_map;
+
+        for (auto row : result) {
+            std::string ip = row[0].get<std::string>();
+            std::string alive = row[1].get<std::string>();
+            all_ips.push_back(ip);
+            ip_alive_map[ip] = alive;
+        }
+
+        //2.获取所有存活主机的漏洞信息
+        auto allVulns = getVulnerabilities(pool, all_ips);
+        std::map<std::string, IpVulnerabilities> ipToVulnMap;
+        for (const auto& v : allVulns) {
+            ipToVulnMap[v.ip] = v;
+        }
+
+        //3.为每个存活主机获取端口信息并组合数据
+        for (const auto& ip : all_ips) {
+            AssetInfo assetInfo;
+            assetInfo.ip = ip;
+            assetInfo.alive = (ip_alive_map[ip] == "true");
+
+            //获取端口信息
+            assetInfo.ports = getAllPortInfoByIp(ip, pool);
+            //获取服务器系统信息
+            assetInfo.serverinfo = getServerInfoByIp(ip, pool);
+            
+            //如果有该IP的漏洞信息，则填充到assetInfo中
+            if (ipToVulnMap.count(ip)) {
+                assetInfo.host_vulnerabilities = ipToVulnMap[ip].host_vulnerabilities;
+                assetInfo.port_vulnerabilities = ipToVulnMap[ip].port_vulnerabilities;
+            }
+
+            //获取该IP的基线检测结果并计算摘要
+            assetInfo.baseline_summary = calculateBaselineSummary(getSecurityCheckResults(ip, pool));
+
+            allAssets.push_back(assetInfo);
+        }
+    }
+    catch (const std::exception& ex) {
+        console->error("getAllAssetsFullInfo error: {}", ex.what());
+    }
+
+    return allAssets;
+}
+
+
+bool DatabaseHandler::isAssetGroupExists(const std::string& group_name, ConnectionPool& pool) {
+    try {
+        auto session_ptr = pool.getConnection();  // std::shared_ptr<mysqlx::Session>
+        mysqlx::Session& session = *session_ptr;
+
+        std::string query = "SELECT COUNT(*) FROM asset_group WHERE group_name = ?";
+        auto result = session.sql(query).bind(group_name).execute();
+        auto row = result.fetchOne();
+        return row[0].get<int>() > 0;
+    }
+    catch (const mysqlx::Error& err) {
+        console->error("[DB] isAssetGroupExists failed: {}", err.what());
+        return false;
+    }
+}
+
+int DatabaseHandler::createAssetGroup(const std::string& group_name, const std::string& description, ConnectionPool& pool) {
+    try {
+        auto session_ptr = pool.getConnection();  // std::shared_ptr<mysqlx::Session>
+        mysqlx::Session& session = *session_ptr;
+
+        std::string insert = "INSERT INTO asset_group (group_name, description) VALUES (?, ?)";
+        auto result = session.sql(insert).bind(group_name, description).execute();
+        return static_cast<int>(result.getAutoIncrementValue());
+    }
+    catch (const mysqlx::Error& err) {
+        console->error("[DB] createAssetGroup failed: {}", err.what());
+        throw;
+    }
+}
+
+std::vector<std::pair<int, std::string>> DatabaseHandler::getAllAssetGroups(ConnectionPool& pool) {
+    std::vector<std::pair<int, std::string>> groups;
+
+    try {
+        auto session_ptr = pool.getConnection();  // std::shared_ptr<mysqlx::Session>
+        mysqlx::Session& session = *session_ptr;
+
+        std::string query = "SELECT id, group_name FROM asset_group ORDER BY id ASC";
+        auto result = session.sql(query).execute();
+
+        for (auto row : result) {
+            int id = row[0].get<int>();
+            std::string name = row[1].get<std::string>();
+            groups.emplace_back(id, name);
+        }
+
+    }
+    catch (const mysqlx::Error& err) {
+        console->error("[DB] getAllAssetGroups failed: {}", err.what());
+        throw;
+    }
+
+    return groups;
+}
+
+bool DatabaseHandler::updateAssetGroup(const std::string& ip, int group_id, bool is_null, ConnectionPool& pool) {
+    try {
+        auto session_ptr = pool.getConnection();  // std::shared_ptr<mysqlx::Session>
+        mysqlx::Session& session = *session_ptr;
+
+        // 检查 IP 是否存在
+        auto check = session.sql("SELECT COUNT(*) FROM scan_host_result WHERE ip = ?").bind(ip).execute();
+        if (check.fetchOne()[0].get<int>() == 0) {
+            return false; // IP 不存在
+        }
+
+        if (!is_null) {
+            // 检查 group_id 是否存在
+            auto group_check = session.sql("SELECT COUNT(*) FROM asset_group WHERE id = ?")
+                .bind(group_id).execute();
+            if (group_check.fetchOne()[0].get<int>() == 0) {
+                return false;
+            }
+
+            session.sql("UPDATE scan_host_result SET group_id = ? WHERE ip = ?")
+                .bind(group_id, ip).execute();
+        }
+        else {
+            // 设置为 NULL
+            session.sql("UPDATE scan_host_result SET group_id = NULL WHERE ip = ?")
+                .bind(ip).execute();
+        }
+
+        return true;
+
+    }
+    catch (const mysqlx::Error& err) {
+        console->error("[DB] updateAssetGroup failed: {}", err.what());
+        return false;
+    }
+}
+
+
+bool DatabaseHandler::renameAssetGroup(int group_id, const std::string& new_name, ConnectionPool& pool) {
+    try {
+        auto session_ptr = pool.getConnection();  // std::shared_ptr<mysqlx::Session>
+        mysqlx::Session& session = *session_ptr;
+
+
+        // 检查是否存在此 ID
+        auto check = session.sql("SELECT COUNT(*) FROM asset_group WHERE id = ?").bind(group_id).execute();
+        if (check.fetchOne()[0].get<int>() == 0) {
+            return false;
+        }
+
+        // 检查是否已存在该名字
+        auto dup = session.sql("SELECT COUNT(*) FROM asset_group WHERE group_name = ? AND id != ?")
+            .bind(new_name, group_id).execute();
+        if (dup.fetchOne()[0].get<int>() > 0) {
+            return false;
+        }
+
+        session.sql("UPDATE asset_group SET group_name = ? WHERE id = ?")
+            .bind(new_name, group_id).execute();
+
+        return true;
+
+    }
+    catch (const mysqlx::Error& err) {
+        console->error("[DB] renameAssetGroup failed: {}", err.what());
+        return false;
+    }
+}
+
+bool DatabaseHandler::deleteAssetGroup(int group_id, bool deleteAssets, ConnectionPool& pool) {
+    try {
+        auto session_ptr = pool.getConnection();  // std::shared_ptr<mysqlx::Session>
+        mysqlx::Session& session = *session_ptr;
+
+        // 先检查资产组是否存在
+        auto check = session.sql("SELECT COUNT(*) FROM asset_group WHERE id = ?").bind(group_id).execute();
+        if (check.fetchOne()[0].get<int>() == 0) {
+            return false;
+        }
+
+        if (deleteAssets) {
+            // 删除资产组下的所有资产（IP）
+            session.sql("DELETE FROM scan_host_result WHERE group_id = ?")
+                .bind(group_id).execute();
+        }
+        else {
+            // 仅解除资产归属
+            session.sql("UPDATE scan_host_result SET group_id = NULL WHERE group_id = ?")
+                .bind(group_id).execute();
+        }
+
+        // 删除资产组本身
+        session.sql("DELETE FROM asset_group WHERE id = ?").bind(group_id).execute();
+
+        return true;
+    }
+    catch (const mysqlx::Error& err) {
+        console->error("[DB] deleteAssetGroup failed: {}", err.what());
+        return false;
+    }
+}
+
+

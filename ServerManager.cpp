@@ -237,8 +237,39 @@ void ServerManager::handle_request(http_request request) {
     else if (first_segment == _XPLATSTR("poc") && second_segment == _XPLATSTR("editVulnType") && request.method() == methods::POST) {
         handle_edit_vuln_type(request);
     }
-    
-    
+    // ========== 创建资产组 ==========
+    else if (first_segment == _XPLATSTR("asset_group") && request.method() == methods::POST) {
+        handle_post_create_asset_group(request);
+        }
+
+        // ========== 获取资产组列表 ==========
+    else if (first_segment == _XPLATSTR("asset_group") && second_segment == _XPLATSTR("list") &&
+        request.method() == methods::GET) {
+        handle_get_asset_group_list(request);
+        }
+        // ========== 删除资产组 ==========
+    else if (first_segment == _XPLATSTR("asset_group") &&
+        request.method() == methods::DEL) {
+        handle_delete_asset_group(request);
+        }
+
+        // ========== 修改资产组名称 ==========
+    else if (first_segment == _XPLATSTR("asset_group") &&
+        request.method() == methods::PATCH) {
+        handle_patch_asset_group_name(request);
+        }
+
+        // ========== 修改资产归属分组 ==========
+    else if (path.size() >= 3 && path[0] == _XPLATSTR("asset") && path[2] == _XPLATSTR("group") &&
+        request.method() == methods::PATCH) {
+        handle_patch_asset_group(request);
+        }
+
+        // ========== 获取所有资产（含非存活） ==========
+    else if (first_segment == _XPLATSTR("assets") && second_segment == _XPLATSTR("full_info") &&
+        request.method() == methods::GET) {
+        handle_get_all_assets_full_info(request);
+        }
     else {
         request.reply(status_codes::NotFound, _XPLATSTR("Path not found"));
     }
@@ -384,6 +415,7 @@ web::json::value ServerManager::convertAssetInfoToJson(const AssetInfo& assetInf
 {
     web::json::value result = web::json::value::object();
     result["ip"] = web::json::value::string(assetInfo.ip);
+    result["alive"] = json::value::boolean(assetInfo.alive);
 
     // 添加服务器信息
     web::json::value serverInfoObj = web::json::value::object();
@@ -3396,18 +3428,30 @@ void ServerManager::handle_post_poc_excute(http_request request)
 {
     request.extract_json().then([this, &request](json::value body) {
         try {
+            // 提取请求参数
+            if (!body.has_field(_XPLATSTR("CVE_id")) || !body.has_field(_XPLATSTR("ip"))) {
+                throw std::runtime_error("Missing 'CVE_id' or 'ip' in request body.");
+            }
+
             std::string CVE_id = body[_XPLATSTR("CVE_id")].as_string();
+            std::string ip = body[_XPLATSTR("ip")].as_string();
 
-            // 使用新的函数获取CVE引用
+            // 从数据库获取指定IP的扫描结果
+            ScanHostResult scan_host_result_single = dbHandler_.getScanHostResult(ip, pool);
+            if (scan_host_result_single.ports.empty()) {
+                throw std::runtime_error("No scan result found for IP: " + ip);
+            }
+
+            // 查找目标CVE信息
+            vector<ScanHostResult> scan_host_result;
+            scan_host_result.push_back(scan_host_result_single);
+
             Vuln& cve = findCveByCveId(scan_host_result, CVE_id);
-
-            // 从找到的CVE直接获取script
             std::string script = cve.script;
             std::string portId = findPortIdByCveId(scan_host_result, CVE_id);
-            std::string ip = scan_host_result[0].ip;
-            std::string url = scan_host_result[0].url;
+            std::string url = scan_host_result[0].url.empty() ? ip : scan_host_result[0].url;
 
-            // 执行脚本
+            // 执行PoC脚本
             std::string result = runPythonWithOutput(script, url, ip, std::stoi(portId));
 
             if (result.find("[!]") != std::string::npos) {
@@ -3416,12 +3460,14 @@ void ServerManager::handle_post_poc_excute(http_request request)
             else if (result.find("[SAFE]") != std::string::npos) {
                 cve.vulExist = "不存在";
             }
-            else
-            {
+            else {
                 cve.vulExist = "未验证";
             }
+
+            // 更新漏洞验证结果到数据库
             dbHandler_.alterPortVulnResultAfterPocVerify(pool, cve, ip, portId);
-            // 创建响应
+
+            // 构建并返回响应
             http_response response(status_codes::OK);
             response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
             response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
@@ -3430,9 +3476,10 @@ void ServerManager::handle_post_poc_excute(http_request request)
             response_data[_XPLATSTR("message")] = json::value::string(result);
             response.set_body(response_data);
             request.reply(response);
+
         }
         catch (const std::runtime_error& e) {
-            // 处理未找到CVE的情况
+            // 处理参数或逻辑错误
             http_response response(status_codes::BadRequest);
             response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
             response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
@@ -3443,7 +3490,7 @@ void ServerManager::handle_post_poc_excute(http_request request)
             request.reply(response);
         }
         catch (const std::exception& e) {
-            // 处理其他可能的异常
+            // 处理其他异常
             http_response response(status_codes::InternalError);
             response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
             response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
@@ -3455,6 +3502,7 @@ void ServerManager::handle_post_poc_excute(http_request request)
         }
         }).wait();
 }
+
 
 
 
@@ -4517,6 +4565,211 @@ void ServerManager::handle_post_updateBaseLine_protect(http_request request)
         }
         }).wait();
 }
+
+//获取所有资产信息（包括不存活的）
+void ServerManager::handle_get_all_assets_full_info(http_request request) {
+    try {
+        std::vector<AssetInfo> allAssets = dbHandler_.getAllAssetsFullInfo(pool);
+
+        json::value response = json::value::array(allAssets.size());
+        for (size_t i = 0; i < allAssets.size(); ++i) {
+            response[i] = convertAssetInfoToJson(allAssets[i]);
+        }
+
+        request.reply(status_codes::OK, response);
+    }
+    catch (const std::exception& ex) {
+        std::cerr << "异常: " << ex.what() << std::endl;
+        request.reply(status_codes::InternalError, json::value::string(_XPLATSTR("服务器内部错误")));
+    }
+}
+
+//创建资产组
+void ServerManager::handle_post_create_asset_group(http_request request) {
+    request.extract_json().then([this, request](pplx::task<json::value> task) {
+        try {
+            json::value body = task.get();
+
+            if (!body.has_field(_XPLATSTR("group_name"))) {
+                request.reply(status_codes::BadRequest, _XPLATSTR("Missing 'group_name' field"));
+                return;
+            }
+
+            std::string group_name = utility::conversions::to_utf8string(body[_XPLATSTR("group_name")].as_string());
+            std::string description = body.has_field(_XPLATSTR("description"))
+                ? utility::conversions::to_utf8string(body[_XPLATSTR("description")].as_string())
+                : "";
+
+            if (dbHandler_.isAssetGroupExists(group_name, pool)) {
+                request.reply(status_codes::Conflict, _XPLATSTR("Group already exists"));
+                return;
+            }
+
+            int group_id = dbHandler_.createAssetGroup(group_name, description, pool);
+
+            json::value response;
+            response[_XPLATSTR("message")] = json::value::string(_XPLATSTR("Asset group created successfully"));
+            response[_XPLATSTR("group_id")] = json::value::number(group_id);
+            request.reply(status_codes::OK, response);
+
+        }
+        catch (const std::exception& e) {
+            request.reply(status_codes::InternalError,
+                _XPLATSTR("Server error: ") + utility::conversions::to_string_t(e.what()));
+        }
+        });
+}
+
+//获取资产组列表
+void ServerManager::handle_get_asset_group_list(http_request request) {
+    try {
+        std::vector<std::pair<int, std::string>> groups = dbHandler_.getAllAssetGroups(pool);
+
+        json::value result = json::value::array();
+        int index = 0;
+
+        // 加入 "未分组" 特殊项，id 为 null
+        json::value ungrouped;
+        ungrouped[_XPLATSTR("id")] = json::value::null();
+        ungrouped[_XPLATSTR("name")] = json::value::string(_XPLATSTR("未分组"));
+        result[index++] = ungrouped;
+
+        // 加入数据库中已有的资产组
+        for (const auto& [id, name] : groups) {
+            json::value item;
+            item[_XPLATSTR("id")] = json::value::number(id);
+            item[_XPLATSTR("name")] = json::value::string(utility::conversions::to_string_t(name));
+            result[index++] = item;
+        }
+
+        request.reply(status_codes::OK, result);
+    }
+    catch (const std::exception& e) {
+        request.reply(status_codes::InternalError,
+            _XPLATSTR("Error retrieving asset groups: ") +
+            utility::conversions::to_string_t(e.what()));
+    }
+}
+
+void ServerManager::handle_patch_asset_group(http_request request) {
+    const auto paths = uri::split_path(uri::decode(request.relative_uri().path()));
+    if (paths.size() != 3 || paths[0] != _XPLATSTR("asset") || paths[2] != _XPLATSTR("group")) {
+        request.reply(status_codes::BadRequest, _XPLATSTR("Invalid path."));
+        return;
+    }
+
+    std::string ip = utility::conversions::to_utf8string(paths[1]);
+
+    request.extract_json().then([this, request, ip](pplx::task<json::value> task) {
+        try {
+            json::value body = task.get();
+
+            if (!body.has_field(_XPLATSTR("group_id"))) {
+                request.reply(status_codes::BadRequest, _XPLATSTR("Missing 'group_id' field"));
+                return;
+            }
+
+            bool success;
+            if (body.at(_XPLATSTR("group_id")).is_null()) {
+                success = dbHandler_.updateAssetGroup(ip, 0, true, pool);  // 设置为 NULL
+            }
+            else {
+                int group_id = body.at(_XPLATSTR("group_id")).as_integer();
+                success = dbHandler_.updateAssetGroup(ip, group_id, false, pool);  // 设置为具体组
+            }
+
+            if (success) {
+                request.reply(status_codes::OK, _XPLATSTR("Asset group updated successfully"));
+            }
+            else {
+                request.reply(status_codes::NotFound, _XPLATSTR("Asset not found or group invalid"));
+            }
+
+        }
+        catch (const std::exception& e) {
+            request.reply(status_codes::InternalError,
+                _XPLATSTR("Server error: ") + utility::conversions::to_string_t(e.what()));
+        }
+        });
+}
+
+
+
+void ServerManager::handle_patch_asset_group_name(http_request request) {
+    const auto paths = uri::split_path(uri::decode(request.relative_uri().path()));
+    if (paths.size() != 2 || paths[0] != _XPLATSTR("asset_group")) {
+        request.reply(status_codes::BadRequest, _XPLATSTR("Invalid path."));
+        return;
+    }
+
+    int group_id = std::stoi(utility::conversions::to_utf8string(paths[1]));
+
+    request.extract_json().then([this, request, group_id](pplx::task<json::value> task) {
+        try {
+            json::value body = task.get();
+            if (!body.has_field(_XPLATSTR("new_name"))) {
+                request.reply(status_codes::BadRequest, _XPLATSTR("Missing 'new_name' field"));
+                return;
+            }
+
+            std::string new_name = utility::conversions::to_utf8string(body[_XPLATSTR("new_name")].as_string());
+
+            if (new_name.empty()) {
+                request.reply(status_codes::BadRequest, _XPLATSTR("Group name cannot be empty"));
+                return;
+            }
+
+            bool success = dbHandler_.renameAssetGroup(group_id, new_name, pool);
+
+            if (success) {
+                request.reply(status_codes::OK, _XPLATSTR("Asset group renamed successfully"));
+            }
+            else {
+                request.reply(status_codes::NotFound, _XPLATSTR("Asset group not found or name already exists"));
+            }
+
+        }
+        catch (const std::exception& e) {
+            request.reply(status_codes::InternalError,
+                _XPLATSTR("Server error: ") + utility::conversions::to_string_t(e.what()));
+        }
+        });
+}
+
+void ServerManager::handle_delete_asset_group(http_request request) {
+    const auto paths = uri::split_path(uri::decode(request.relative_uri().path()));
+    if (paths.size() != 2 || paths[0] != _XPLATSTR("asset_group")) {
+        request.reply(status_codes::BadRequest, _XPLATSTR("Invalid path."));
+        return;
+    }
+
+    int group_id = std::stoi(utility::conversions::to_utf8string(paths[1]));
+
+    // 获取查询参数
+    auto query = uri::split_query(request.request_uri().query());
+    bool delete_assets = false;
+    if (query.find(_XPLATSTR("delete_assets")) != query.end()) {
+        std::string val = utility::conversions::to_utf8string(query[_XPLATSTR("delete_assets")]);
+        delete_assets = (val == "true");
+    }
+
+    try {
+        bool success = dbHandler_.deleteAssetGroup(group_id, delete_assets, pool);
+
+        if (success) {
+            request.reply(status_codes::OK, _XPLATSTR("Asset group deleted successfully"));
+        }
+        else {
+            request.reply(status_codes::NotFound, _XPLATSTR("Asset group not found"));
+        }
+    }
+    catch (const std::exception& e) {
+        request.reply(status_codes::InternalError,
+            _XPLATSTR("Server error: ") + utility::conversions::to_string_t(e.what()));
+    }
+}
+
+
 
 void ServerManager::start() {
     try {

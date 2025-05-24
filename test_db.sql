@@ -156,6 +156,12 @@ CREATE TABLE `scan_host_result`  (
   UNIQUE INDEX `ip`(`ip`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 133 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
+ALTER TABLE `scan_host_result`
+ADD COLUMN `group_id` INT DEFAULT NULL COMMENT '所属资产组ID',
+ADD CONSTRAINT `fk_scan_host_group`
+  FOREIGN KEY (`group_id`) REFERENCES `asset_group` (`id`)
+  ON DELETE SET NULL ON UPDATE CASCADE;
+
 -- ----------------------------
 -- Table structure for security_check_results
 -- ----------------------------
@@ -307,3 +313,16 @@ INSERT IGNORE INTO VulnType (TypeName) VALUES
 
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+
+-- ----------------------------
+-- 资产组的表
+-- ----------------------------
+CREATE TABLE `asset_group` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `group_name` VARCHAR(255) NOT NULL UNIQUE COMMENT '资产组名称',
+  `description` TEXT DEFAULT NULL COMMENT '资产组描述',
+  `create_time` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `update_time` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

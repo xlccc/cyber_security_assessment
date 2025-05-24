@@ -131,7 +131,7 @@ private:
     //自动选择POC
     void handle_auto_select_poc(http_request request);
 
-    //首页获取数据库中的资产数据，
+    //首页获取数据库中的资产数据
     void handle_get_all_assets_vuln_data(http_request request);
     
     //数据库弱口令检测扫描
@@ -195,6 +195,25 @@ private:
     //基线：从历史数据中取出来评估
     void handle_get_baseLineResult(http_request  request);
     void handle_post_updateBaseLine_protect(http_request request);
+
+    //获取所有资产信息（包括不存活的）
+    void handle_get_all_assets_full_info(http_request request);
+
+    //资产组相关接口
+    void handle_post_create_asset_group(http_request request);
+    //获取资产组列表
+    void handle_get_asset_group_list(http_request request);
+    //归入当前组或移出资产
+    void handle_patch_asset_group(http_request request);
+    
+    //重命名资产组
+    void handle_patch_asset_group_name(http_request request);
+
+    //删除资产组（支持是否删除组内资产）
+    void handle_delete_asset_group(http_request request);
+
+    //删除资产组（支持是否删除组内资产）
+    bool deleteAssetGroup(int group_id, bool deleteAssets, ConnectionPool& pool);
 
     ConnectionPool pool;
     DatabaseHandler dbHandler_;
