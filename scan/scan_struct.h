@@ -140,7 +140,7 @@ struct BaselineCheckSummary {
     int half_compliant_items = 0;
     int non_compliant_items = 0;    // 不合规项数
     double compliance_rate = 0.0;   // 合规率 (百分比)
-
+    int pending_items = 0;
     // 按重要程度的统计
     int critical_items = 0;         // 重要程度为1的项目总数
     int critical_compliant = 0;     // 重要程度为1的合规项数

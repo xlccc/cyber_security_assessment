@@ -512,6 +512,7 @@ web::json::value ServerManager::convertAssetInfoToJson(const AssetInfo& assetInf
     baseline_summary[_XPLATSTR("high_compliant")] = web::json::value::number(assetInfo.baseline_summary.high_compliant);
     baseline_summary[_XPLATSTR("medium_items")] = web::json::value::number(assetInfo.baseline_summary.medium_items);
     baseline_summary[_XPLATSTR("medium_compliant")] = web::json::value::number(assetInfo.baseline_summary.medium_compliant);
+    baseline_summary[_XPLATSTR("pending_items")] = web::json::value::number(assetInfo.baseline_summary.pending_items);
     result[_XPLATSTR("baseline_summary")] = baseline_summary;
 
     // 添加三级等保基线检测摘要
@@ -527,6 +528,7 @@ web::json::value ServerManager::convertAssetInfoToJson(const AssetInfo& assetInf
     level3_baseline_summary[_XPLATSTR("high_compliant")] = web::json::value::number(assetInfo.level3_baseline_summary.high_compliant);
     level3_baseline_summary[_XPLATSTR("medium_items")] = web::json::value::number(assetInfo.level3_baseline_summary.medium_items);
     level3_baseline_summary[_XPLATSTR("medium_compliant")] = web::json::value::number(assetInfo.level3_baseline_summary.medium_compliant);
+    level3_baseline_summary[_XPLATSTR("pending_items")] = web::json::value::number(assetInfo.level3_baseline_summary.pending_items);
     result[_XPLATSTR("level3_baseline_summary")] = level3_baseline_summary;
 
     //添加检测项未作的情况

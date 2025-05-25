@@ -2231,7 +2231,9 @@ BaselineCheckSummary DatabaseHandler::calculateBaselineSummary(const std::vector
                 summary.medium_compliant++;
             }
         }
-
+        if (result.tmp_IsComply == "pending") {
+            summary.pending_items++;
+        }
         // 统计各重要程度的总项数
         if (result.importantLevel == "1") {
             summary.critical_items++;
