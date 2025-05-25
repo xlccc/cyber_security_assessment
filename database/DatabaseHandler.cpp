@@ -2247,7 +2247,7 @@ BaselineCheckSummary DatabaseHandler::calculateBaselineSummary(const std::vector
     }
 
     // 计算不合规项数
-    summary.non_compliant_items = summary.total_checks - summary.compliant_items - summary.half_compliant_items;
+    summary.non_compliant_items = summary.total_checks - summary.compliant_items - summary.half_compliant_items - summary.pending_items;
 
 
 
