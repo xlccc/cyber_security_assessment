@@ -3276,19 +3276,73 @@ std::vector<AssetInfo> DatabaseHandler::getAllAssetsFullInfo(ConnectionPool& poo
             assetInfo.alive = (ip_alive_map[ip] == "true");
             assetInfo.group_id = ip_group_map[ip];
 
-            //获取端口信息
+
+            // 获取端口信息
             assetInfo.ports = getAllPortInfoByIp(ip, pool);
-            //获取服务器系统信息
+
+            // 获取服务器系统信息
             assetInfo.serverinfo = getServerInfoByIp(ip, pool);
 
-            //如果有该IP的漏洞信息，则填充到assetInfo中
-            if (ipToVulnMap.count(ip)) {
-                assetInfo.host_vulnerabilities = ipToVulnMap[ip].host_vulnerabilities;
-                assetInfo.port_vulnerabilities = ipToVulnMap[ip].port_vulnerabilities;
+            // 如果有该IP的漏洞信息，则填充到assetInfo中
+            if (ipToVulnMap.find(ip) != ipToVulnMap.end()) {
+                const IpVulnerabilities& ipVulns = ipToVulnMap[ip];
+                assetInfo.host_vulnerabilities = ipVulns.host_vulnerabilities;
+                assetInfo.port_vulnerabilities = ipVulns.port_vulnerabilities;
+            }
+            // 获取该IP的基线检测结果并计算摘要
+            std::vector<event> check_results = getSecurityCheckResults(ip, pool);
+            std::vector<event> level3_check_results = getLevel3SecurityCheckResults(ip, pool);
+
+            assetInfo.baseline_summary = calculateBaselineSummary(check_results);
+            assetInfo.level3_baseline_summary = calculateBaselineSummary(level3_check_results);
+            //计算等保得分
+            // 定义合规等级映射表
+            std::unordered_map<std::string, double> complyLevelMapping = {
+                {"true", 1.0},
+                {"false", 0.0},
+                {"half_true", 0.5},
+                {"pending", -1.0}  // pending状态可根据需要调整处理方式
+            };
+
+            // 计算评分
+            int n = level3_check_results.size(); // 项数
+            double sum = 0.0;
+
+            // 累加每一项的得分
+            for (const auto& item : level3_check_results) {
+                double importantLevel = std::stod(item.importantLevel) / 3;
+
+                // 通过映射表获取合规等级
+                double complyLevel = 0.0; // 默认值
+                auto it = complyLevelMapping.find(item.tmp_IsComply);
+                if (it != complyLevelMapping.end()) {
+                    complyLevel = it->second;
+                }
+
+                // 如果是pending状态，可以选择跳过或者作为不符合处理
+                if (complyLevel < 0) {
+                    // 如果遇到pending状态，将其视为不符合(0.0)
+                    complyLevel = 0.0;
+                }
+
+                sum += importantLevel * (1.0 - complyLevel);
+
+                // 输出每一项的计算值用于调试（可选）
+                std::cout << "Item " << item.item_id << ": importantLevel = " << importantLevel
+                    << ", complyLevel = " << complyLevel
+                    << ", contribution = " << importantLevel * (1.0 - complyLevel) << std::endl;
             }
 
-            //获取该IP的基线检测结果并计算摘要
-            assetInfo.baseline_summary = calculateBaselineSummary(getSecurityCheckResults(ip, pool));
+            // 输出总和用于调试
+            std::cout << "Total sum: " << sum << std::endl;
+
+            // 计算最终评分
+            assetInfo.M = 100.0 - (100.0 * sum / n);
+
+            //获取有哪些检测项没做
+            assetInfo.undo_BaseLine = getUncheckedBaselineItems(ip, pool);
+            //获取有哪些三级等保检测项没做
+            assetInfo.undo_level3BaseLine = getUncheckedLevel3Items(ip, pool);
 
             allAssets.push_back(assetInfo);
         }

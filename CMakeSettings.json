@@ -6,7 +6,7 @@
       "configurationType": "Debug",
       "cmakeExecutable": "cmake",
       "remoteCopySourcesExclusionList": [ ".vs", ".git", "out" ],
-      "cmakeCommandArgs": "-DPython3_ROOT_DIR=/usr -DPython3_INCLUDE_DIR=/usr/include/python3.8 -DPython3_LIBRARY=/usr/lib/x86_64-linux-gnu/libpython3.8.so -DPYBIND11_PYTHON_VERSION=3.8  -DCMAKE_TOOLCHAIN_FILE=/home/c/vcpkg/scripts/buildsystems/vcpkg.cmake",
+      "cmakeCommandArgs": "-DPython3_ROOT_DIR=/usr -DPython3_INCLUDE_DIR=/usr/include/python3.8 -DPython3_LIBRARY=/usr/lib/x86_64-linux-gnu/libpython3.8.so -DPYBIND11_PYTHON_VERSION=3.8  -DCMAKE_TOOLCHAIN_FILE=/vcpkg/scripts/buildsystems/vcpkg.cmake",
       "buildCommandArgs": "",
       "ctestCommandArgs": "",
       "inheritEnvironments": [ "linux_x64" ],
@@ -40,7 +40,7 @@
           "type": "STRING"
         }
       ],
-      "includePath": [ "/root/vcpkg/installed/x64-linux/include", "${workspaceFolder}/**" ],
+      "includePath": [ "/vcpkg/installed/x64-linux/include", "${workspaceFolder}/**" ],
       "intelliSenseMode": "linux-gcc-x64"
     }
   ]
