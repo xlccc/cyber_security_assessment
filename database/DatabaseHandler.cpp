@@ -1576,9 +1576,10 @@ std::vector<AssetInfo> DatabaseHandler::getAllAssetsInfo(ConnectionPool& pool)
             std::cout << "Total sum: " << sum << std::endl;
 
             // 计算最终评分
+            // 正确的保留两位小数方法
             double temp_score = 100.0 - (100.0 * sum / n);
             assetInfo.M = temp_score > 0 ?
-                (round(temp_score * 100.0) / 100.0) : 0.0;
+                (round(temp_score * 10000.0) / 100.0) : 0.0;  // 改为10000
 
             //获取有哪些检测项没做
             assetInfo.undo_BaseLine = getUncheckedBaselineItems(ip, pool);
