@@ -3245,17 +3245,21 @@ std::vector<AssetInfo> DatabaseHandler::getAllAssetsFullInfo(ConnectionPool& poo
         auto session_ptr = pool.getConnection();  // std::shared_ptr<mysqlx::Session>
         mysqlx::Session& session = *session_ptr;
 
-        auto result = session.sql("SELECT ip, alive FROM scan_host_result").execute();
+        auto result = session.sql("SELECT ip, alive,group_id FROM scan_host_result").execute();
 
         //1.获取所有主机及存活状态
         std::vector<std::string> all_ips;
         std::map<std::string, std::string> ip_alive_map;
+        std::map<std::string, int> ip_group_map;
 
         for (auto row : result) {
             std::string ip = row[0].get<std::string>();
             std::string alive = row[1].get<std::string>();
+            int group_id = row[2].isNull() ? -1 : row[2].get<int>();
+
             all_ips.push_back(ip);
             ip_alive_map[ip] = alive;
+            ip_group_map[ip] = group_id;
         }
 
         //2.获取所有存活主机的漏洞信息
@@ -3270,6 +3274,7 @@ std::vector<AssetInfo> DatabaseHandler::getAllAssetsFullInfo(ConnectionPool& poo
             AssetInfo assetInfo;
             assetInfo.ip = ip;
             assetInfo.alive = (ip_alive_map[ip] == "true");
+            assetInfo.group_id = ip_group_map[ip];
 
             //获取端口信息
             assetInfo.ports = getAllPortInfoByIp(ip, pool);

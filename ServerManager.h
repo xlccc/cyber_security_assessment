@@ -204,16 +204,13 @@ private:
     //获取资产组列表
     void handle_get_asset_group_list(http_request request);
     //归入当前组或移出资产
-    void handle_patch_asset_group(http_request request);
+    void handle_change_asset_group(http_request request);
     
     //重命名资产组
-    void handle_patch_asset_group_name(http_request request);
+    void handle_asset_group_rename(http_request request);
 
     //删除资产组（支持是否删除组内资产）
     void handle_delete_asset_group(http_request request);
-
-    //删除资产组（支持是否删除组内资产）
-    bool deleteAssetGroup(int group_id, bool deleteAssets, ConnectionPool& pool);
 
     ConnectionPool pool;
     DatabaseHandler dbHandler_;

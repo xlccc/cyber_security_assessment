@@ -154,6 +154,7 @@ struct BaselineCheckSummary {
 struct AssetInfo {
     std::string ip;
     bool alive;     
+    int group_id = -1;  //资产组id,-1表示未分组
     std::vector<PortInfo> ports;                           // 端口信息
     ServerInfo serverinfo; //Linux相关信息
     std::vector<VulnerabilityInfo> host_vulnerabilities;   // 主机漏洞

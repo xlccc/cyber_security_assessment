@@ -252,14 +252,14 @@ void ServerManager::handle_request(http_request request) {
 
         // ========== 修改资产组名称 ==========
     else if (first_segment == _XPLATSTR("asset_group") &&
-        request.method() == methods::PATCH) {
-        handle_patch_asset_group_name(request);
+        request.method() == methods::PUT) {
+        handle_asset_group_rename(request);
         }
 
         // ========== 修改资产归属分组 ==========
     else if (path.size() >= 3 && path[0] == _XPLATSTR("asset") && path[2] == _XPLATSTR("group") &&
-        request.method() == methods::PATCH) {
-        handle_patch_asset_group(request);
+        request.method() == methods::PUT) {
+        handle_change_asset_group(request);
         }
 
         // ========== 获取所有资产（含非存活） ==========
@@ -413,6 +413,8 @@ web::json::value ServerManager::convertAssetInfoToJson(const AssetInfo& assetInf
     web::json::value result = web::json::value::object();
     result["ip"] = web::json::value::string(assetInfo.ip);
     result["alive"] = json::value::boolean(assetInfo.alive);
+    result["group_id"] = (assetInfo.group_id == -1) ? web::json::value::null() : web::json::value::number(assetInfo.group_id);
+
     // 在设置 JSON 时也要检查
     // 修改 JSON 设置部分
     if (std::isnan(assetInfo.M) || std::isinf(assetInfo.M)) {
@@ -4701,7 +4703,7 @@ void ServerManager::handle_get_asset_group_list(http_request request) {
     }
 }
 
-void ServerManager::handle_patch_asset_group(http_request request) {
+void ServerManager::handle_change_asset_group(http_request request) {
     const auto paths = uri::split_path(uri::decode(request.relative_uri().path()));
     if (paths.size() != 3 || paths[0] != _XPLATSTR("asset") || paths[2] != _XPLATSTR("group")) {
         request.reply(status_codes::BadRequest, _XPLATSTR("Invalid path."));
@@ -4745,7 +4747,7 @@ void ServerManager::handle_patch_asset_group(http_request request) {
 
 
 
-void ServerManager::handle_patch_asset_group_name(http_request request) {
+void ServerManager::handle_asset_group_rename(http_request request) {
     const auto paths = uri::split_path(uri::decode(request.relative_uri().path()));
     if (paths.size() != 2 || paths[0] != _XPLATSTR("asset_group")) {
         request.reply(status_codes::BadRequest, _XPLATSTR("Invalid path."));
