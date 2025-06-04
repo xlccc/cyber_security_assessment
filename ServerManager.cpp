@@ -2230,8 +2230,8 @@ void ServerManager::handle_post_hydra(http_request request) {
             }
 
             // 默认文件路径
-            std::string usernameFile = "/home/c/hydra/usernames.txt";
-            std::string passwordFile = "/home/c/hydra/passwords.txt";
+            std::string usernameFile = "/hydra/usernames.txt";
+            std::string passwordFile = "//hydra/passwords.txt";
 
             // 检查文件扩展名函数
             auto is_txt_file = [](const std::string& filename) -> bool {
@@ -2387,7 +2387,7 @@ void ServerManager::handle_post_hydra(http_request request) {
                     login = match[4].str();
                     password = match[5].str();
                     // 保存弱口令结果到数据库
-                    dbHandler_.saveWeakPasswordResult(host, port, service, login, password, pool);
+                    std::string verify_time = dbHandler_.saveWeakPasswordResult(host, port, service, login, password, pool);
 
                     // 构建返回对象，包含找到的弱口令信息
                     json::value json_obj = json::value::object();
@@ -2396,6 +2396,7 @@ void ServerManager::handle_post_hydra(http_request request) {
                     json_obj[_XPLATSTR("host")] = json::value::string(host);
                     json_obj[_XPLATSTR("login")] = json::value::string(login);
                     json_obj[_XPLATSTR("password")] = json::value::string(password);
+                    json_obj[_XPLATSTR("verify_time")] = json::value::string(verify_time);
 
                     json::value json_array = json::value::array();
                     json_array[0] = json_obj;

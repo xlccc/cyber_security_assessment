@@ -75,7 +75,7 @@ public:
     //获取特定主机ip的所有service_name信息
 	std::vector<std::string> getServiceNameByIp(const std::string& ip, ConnectionPool& pool);
 
-	void saveWeakPasswordResult(const std::string& ip, int port, const std::string& service, const std::string& login, const std::string& password, ConnectionPool& pool);
+	std::string saveWeakPasswordResult(const std::string& ip, int port, const std::string& service, const std::string& login, const std::string& password, ConnectionPool& pool);
     // 在DatabaseHandler类的公共成员函数中添加这个声明
     void saveSecurityCheckResult(const std::string& ip, const event& checkEvent, ConnectionPool& pool);
 
