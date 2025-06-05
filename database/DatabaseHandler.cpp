@@ -3518,7 +3518,7 @@ std::vector<AssetInfo> DatabaseHandler::getAllAssetsFullInfo(ConnectionPool& poo
 
             // 累加每一项的得分
             for (const auto& item : level3_check_results) {
-                double importantLevel = std::stod(item.importantLevel) / 3;
+                double importantLevel = std::stod(item.tmp_importantLevel) / 3;
 
                 // 通过映射表获取合规等级
                 double complyLevel = 0.0; // 默认值
