@@ -20,6 +20,7 @@ struct event {
     string importantLevel;// 重要程度，分为1，2，3
     string tmp_importantLevel;// 重要程度，分为1，2，3
 	int item_id; //检查项id
+    string check_time; //检查时间
 };
 struct scoreMeasure {
     int item_id;

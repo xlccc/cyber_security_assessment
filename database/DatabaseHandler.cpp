@@ -1915,7 +1915,7 @@ void DatabaseHandler::updateLevel3SecurityCheckResult(const std::string& ip, Con
             // 更新 level3_security_check_results 表中的 tmp_is_comply 和 tmp_important_level 字段
             mysqlx::SqlResult updateResult = conn->sql(
                 "UPDATE level3_security_check_results "
-                "SET tmp_is_comply = ?, tmp_important_level = ? "
+                "SET tmp_is_comply = ?, tmp_important_level = ?, check_time = CURRENT_TIMESTAMP "
                 "WHERE shr_id = ? AND item_id = ?"
             )
                 .bind(isComply)
@@ -2069,6 +2069,7 @@ std::vector<event> DatabaseHandler::getLevel3SecurityCheckResults(const std::str
             checkEvent.recommend = row[7].isNull() ? "" : row[7].get<std::string>();
             checkEvent.importantLevel = row[8].get<std::string>();  // 索引向后移一位
             checkEvent.tmp_importantLevel = row[9].get<std::string>();  // 索引向后移一位
+            checkEvent.check_time = row[10].get<std::string>();  // 新增：处理check_time字段
             checkResults.push_back(checkEvent);
         }
 
@@ -2145,6 +2146,7 @@ std::vector<event> DatabaseHandler::getLevel3SecurityCheckResultsByIds(const std
             checkEvent.recommend = row[7].isNull() ? "" : row[7].get<std::string>();
             checkEvent.importantLevel = row[8].get<std::string>();  // 索引从7变为8
             checkEvent.tmp_importantLevel = row[9].get<std::string>();  // 索引从7变为8
+            checkEvent.check_time = row[10].get<std::string>();  // 新增：处理check_time字段
             checkResults.push_back(checkEvent);
         }
 
@@ -2288,6 +2290,7 @@ std::vector<event> DatabaseHandler::getSecurityCheckResults(const std::string& i
             checkEvent.recommend = row[7].isNull() ? "" : row[7].get<std::string>();
             checkEvent.importantLevel = row[8].get<std::string>();  // 索引从7变为8
             checkEvent.tmp_importantLevel = row[9].get<std::string>();  // 索引从7变为8
+            checkEvent.check_time = row[10].get<std::string>();  // 新增：处理check_time字段
             checkResults.push_back(checkEvent);
         }
 
@@ -2364,6 +2367,7 @@ std::vector<event> DatabaseHandler::getSecurityCheckResultsByIds(const std::stri
             checkEvent.recommend = row[7].isNull() ? "" : row[7].get<std::string>();
             checkEvent.importantLevel = row[8].get<std::string>();  // 索引从7变为8
             checkEvent.tmp_importantLevel = row[9].get<std::string>();  // 索引从7变为8
+            checkEvent.check_time = row[10].get<std::string>();  // 新增：处理check_time字段
             checkResults.push_back(checkEvent);
         }
 
@@ -3112,7 +3116,7 @@ void DatabaseHandler::updateBaseLineSecurityCheckResult(
             // 更新 security_check_results 表中的 tmp_is_comply 和 tmp_important_level 字段
             mysqlx::SqlResult updateResult = conn->sql(
                 "UPDATE security_check_results "
-                "SET tmp_is_comply = ?, tmp_important_level = ? "
+                "SET tmp_is_comply = ?, tmp_important_level = ?, check_time = CURRENT_TIMESTAMP "
                 "WHERE shr_id = ? AND item_id = ?"
             )
                 .bind(isComply)
