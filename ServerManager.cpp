@@ -1058,6 +1058,7 @@ void ServerManager::handle_get_level3TmpUserInfo(http_request request)
             result[_XPLATSTR("tmp_IsComply")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].tmp_IsComply));
             result[_XPLATSTR("recommend")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].recommend));
             result[_XPLATSTR("importantLevel")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].importantLevel));
+            result[_XPLATSTR("tmp_importantLevel")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].tmp_importantLevel));
             results_array[i] = result;
         }
         response_json[_XPLATSTR("checkResults")] = results_array;
