@@ -19,7 +19,7 @@ void fun2( const string& host, const string& username, const string& password,
 		// 运行检测项
 		checker.checkEvents(localEvent,ids);
 		for (auto& e : localEvent) {
-			dbHandler.saveSecurityCheckResult(host, e, mysqlPool);
+			dbHandler.saveSecurityCheckResult(host, e, mysqlPool);//tmp_import
 		}
 
 	}

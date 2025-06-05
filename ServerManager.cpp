@@ -86,26 +86,26 @@ void ServerManager::handle_request(http_request request) {
     }
     //返回基线检测的结果
     else if (first_segment == _XPLATSTR("userinfo") && request.method() == methods::GET) {
-        handle_get_userInfo(request);//
+        handle_get_userInfo(request);//tmp_import
     }
     else if (first_segment == _XPLATSTR("tmpUserinfo") && request.method() == methods::GET) {
-        handle_get_tmpUserInfo(request);//
+        handle_get_tmpUserInfo(request);//tmp_import
     }
     //基线检测的账号密码登录
     else if (first_segment == _XPLATSTR("login") && request.method() == methods::POST) {
-        handle_post_login(request);//
+        handle_post_login(request);//tmp_import
     }
     //三级等保检测的账号密码登录
     else if (first_segment == _XPLATSTR("level3Login") && request.method() == methods::POST) {
-        handle_post_level3(request);//
+        handle_post_level3(request);//tmp_import
     }
     //返回三级等保检测的结果
     else if (first_segment == _XPLATSTR("level3Userinfo") && request.method() == methods::GET) {
-        handle_get_level3UserInfo(request);//
+        handle_get_level3UserInfo(request);//tmp_import
     }
     //返回三级等保当前检测的结果
     else if (first_segment == _XPLATSTR("level3TmpUserinfo") && request.method() == methods::GET) {
-        handle_get_level3TmpUserInfo(request);//
+        handle_get_level3TmpUserInfo(request);//tmp_import
     }
 
     //主机发现
@@ -170,11 +170,11 @@ void ServerManager::handle_request(http_request request) {
     }
     //根据前端传来的vecScore进行等级数据库操作修改
     else if (first_segment == _XPLATSTR("updateLevel3Protect") && request.method() == methods::POST) {
-        handle_post_updateLevel3_protect(request);//
+        handle_post_updateLevel3_protect(request);//tmp_import
     }
     //根据前端传来的vecScore进行等级数据库操作修改
     else if (first_segment == _XPLATSTR("updateBaseLineProtect") && request.method() == methods::POST) {
-        handle_post_updateBaseLine_protect(request);//
+        handle_post_updateBaseLine_protect(request);//tmp_import
     }
 
     else if (first_segment == _XPLATSTR("pocExcute") && request.method() == methods::POST) {
@@ -211,18 +211,18 @@ void ServerManager::handle_request(http_request request) {
         handle_get_all_assets_info(request);
     }
     else if (first_segment == _XPLATSTR("getSecurityCheckByIp") && request.method() == methods::GET) {
-        handle_get_security_check_by_ip(request);
+        handle_get_security_check_by_ip(request);//tmp_import
     }
     else if (first_segment == _XPLATSTR("getWeakPasswordByIp") && request.method() == methods::GET) {
         handle_get_weak_password_by_ip(request);
     }
     //获取等保分数
     else if (first_segment == _XPLATSTR("getlevel3ResultByIp") && request.method() == methods::GET) {
-        handle_get_level3Result(request);
+        handle_get_level3Result(request);//tmp_import
     }
     //获取基线检测分数
     else if (first_segment == _XPLATSTR("getBaseLineResultByIp") && request.method() == methods::GET) {
-        handle_get_baseLineResult(request);
+        handle_get_baseLineResult(request);//tmp_import
     }
     else if (first_segment == _XPLATSTR("getAllWeakPassword") && request.method() == methods::GET) {
         handle_get_all_weak_passwords(request);
@@ -867,7 +867,7 @@ void ServerManager::handle_get_security_check_by_ip(http_request request) {
         }
 
         // 从数据库中获取该IP的安全检查结果
-        std::vector<event> check_results = dbHandler_.getSecurityCheckResults(ip, pool);
+        std::vector<event> check_results = dbHandler_.getSecurityCheckResults(ip, pool);//tmp_import
 
         // 创建结果JSON数组
         web::json::value results_array = web::json::value::array();
@@ -921,7 +921,7 @@ void ServerManager::handle_post_level3(http_request request) {
         // 缓存该 IP 最后检测的 IDs
         lastLevel3CheckedIds[ip] = selectedIds;
 
-        level3Fun(ip, "root", pd, pool, dbHandler_, selectedIds);//
+        level3Fun(ip, "root", pd, pool, dbHandler_, selectedIds);//tmp_import
 
         http_response response(status_codes::OK);
         response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
@@ -953,7 +953,7 @@ void ServerManager::handle_get_level3UserInfo(http_request request)
         }
 
         // 获取三级等保结果
-        std::vector<event> check_results = dbHandler_.getLevel3SecurityCheckResults(ip, pool);//
+        std::vector<event> check_results = dbHandler_.getLevel3SecurityCheckResults(ip, pool);//tmp_import
 
 
         // 创建返回的JSON对象
@@ -972,6 +972,7 @@ void ServerManager::handle_get_level3UserInfo(http_request request)
             result[_XPLATSTR("tmp_IsComply")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].tmp_IsComply));
             result[_XPLATSTR("recommend")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].recommend));
             result[_XPLATSTR("importantLevel")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].importantLevel));
+            result[_XPLATSTR("tmp_importantLevel")] = web::json::value::string(utility::conversions::to_string_t(check_results[i].tmp_importantLevel));
             results_array[i] = result;
         }
         response_json[_XPLATSTR("checkResults")] = results_array;
@@ -1038,7 +1039,7 @@ void ServerManager::handle_get_level3TmpUserInfo(http_request request)
         }
 
         // 获取选定IDs的安全检查结果
-        std::vector<event> check_results = dbHandler_.getLevel3SecurityCheckResultsByIds(ip, selectedIds, pool);//
+        std::vector<event> check_results = dbHandler_.getLevel3SecurityCheckResultsByIds(ip, selectedIds, pool);//tmp_import
 
 
         // 创建返回的JSON对象
@@ -1203,7 +1204,7 @@ void ServerManager::handle_post_login(http_request request) {
         };
         */
 
-        fun2( ip, "root", pd,  pool, dbHandler_, selectedIds);
+        fun2( ip, "root", pd,  pool, dbHandler_, selectedIds);//tmp_import
         // Create connection pool for ServerInfo
         auto start = std::chrono::high_resolution_clock::now();
         SSHConnectionPool sshPool(ip, "root", pd, 1); // Single connection is enough for sequential operations
@@ -4219,7 +4220,7 @@ void ServerManager::handle_get_level3Result(http_request request)
         }
 
         // 获取三级等保结果
-        std::vector<event> check_results = dbHandler_.getLevel3SecurityCheckResults(ip, pool);
+        std::vector<event> check_results = dbHandler_.getLevel3SecurityCheckResults(ip, pool);//tmp_import
 
         // 定义合规等级映射表
         std::unordered_map<std::string, double> complyLevelMapping = {
@@ -4374,7 +4375,7 @@ void ServerManager::handle_post_updateLevel3_protect(http_request request) {
             }
 
             // 调用数据库更新函数
-            dbHandler_.updateLevel3SecurityCheckResult(ip, pool, vec_score);
+            dbHandler_.updateLevel3SecurityCheckResult(ip, pool, vec_score);//tmp_import
 
             // 构造成功响应
             json::value response_data;
@@ -4430,7 +4431,7 @@ void ServerManager::handle_get_baseLineResult(http_request  request)
         }
 
         // 获取三级等保结果
-        std::vector<event> check_results = dbHandler_.getSecurityCheckResults(ip, pool);
+        std::vector<event> check_results = dbHandler_.getSecurityCheckResults(ip, pool);//tmp_import
 
         // 定义合规等级映射表
         std::unordered_map<std::string, double> complyLevelMapping = {
@@ -4586,7 +4587,7 @@ void ServerManager::handle_post_updateBaseLine_protect(http_request request)
             }
 
             // 调用数据库更新函数
-            dbHandler_.updateBaseLineSecurityCheckResult(ip, pool, vec_score);
+            dbHandler_.updateBaseLineSecurityCheckResult(ip, pool, vec_score);//tmp_import
 
             // 构造成功响应
             json::value response_data;

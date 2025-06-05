@@ -18,6 +18,7 @@ struct event {
     string tmp_IsComply = "false";//返回true还是false，或者half_true，分别对应IsComplyLevel的 1 0 0.5 用于给予测试人员手动选择是否满足
 	string recommend; //建议
     string importantLevel;// 重要程度，分为1，2，3
+    string tmp_importantLevel;// 重要程度，分为1，2，3
 	int item_id; //检查项id
 };
 struct scoreMeasure {

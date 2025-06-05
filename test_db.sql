@@ -76,6 +76,7 @@ CREATE TABLE `level3_security_check_results`  (
   `tmp_is_comply` enum('true','false','pending','half_true') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'half_true' COMMENT '计算评分列',
   `recommend` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '建议',
   `important_level` enum('1','2','3') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '重要程度',
+  `tmp_important_level` enum('1','2','3') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '3' COMMENT '临时重要程度',
   `check_time` datetime(0) NOT NULL COMMENT '检查时间',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_shr_id`(`shr_id`) USING BTREE,
@@ -178,6 +179,7 @@ CREATE TABLE `security_check_results`  (
   `tmp_is_comply` enum('true','false','pending','half_true') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'half_true' COMMENT '计算评分列',
   `recommend` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '建议',
   `important_level` enum('1','2','3') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '重要程度',
+  `tmp_important_level` enum('1','2','3') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '3' COMMENT '临时重要程度',
   `check_time` datetime(0) NOT NULL COMMENT '检查时间',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_shr_id`(`shr_id`) USING BTREE,
@@ -437,6 +439,39 @@ INSERT INTO `level3_security_check_items` VALUES (8, '应采取技术措施对�
 INSERT INTO `level3_security_check_items` VALUES (9, '当检测到攻击行为时，记录攻击源IP、攻击类型、攻击目标、攻击时间，在发生严重入侵事件时应提供报警', '应具备攻击行为记录和报警能力', '3');
 INSERT INTO `level3_security_check_items` VALUES (10, '应在关键网络节点处对恶意代码进行检测和清除，并维护恶意代码防护机制的升级和更新', '应安装恶意代码防护软件', '3');
 INSERT INTO `level3_security_check_items` VALUES (11, '应在关键网络节点处对垃圾邮件进行检测和防护，并维护垃圾邮件防护机制的升级和更新', '应安装邮件服务器并开启垃圾邮件防护', '3');
+INSERT INTO `level3_security_check_items` VALUES (12, '应在网络边界、重要网络节点进行安全审计，审计覆盖到每个用户，对重要的用户行为和重要安全事件进行审计', '应安装审计系统并覆盖到网络边界和重要节点，审计应覆盖所有用户行为和安全事件', '3');
+INSERT INTO `level3_security_check_items` VALUES (13, '审计记录应包括事件的日期和时间、用户、事件类型、事件是否成功及其他与审计相关的信息', '审计记录应包含完整的事件信息，如时间、用户、事件类型和结果', '3');
+INSERT INTO `level3_security_check_items` VALUES (14, '应对审计记录进行保护，定期备份，避免受到未预期的删除、修改或覆盖', '应配置审计日志轮转和文件权限保护，防止日志被篡改或意外删除', '3');
+INSERT INTO `level3_security_check_items` VALUES (15, '应能对远程访问的用户行为、访问互联网的用户行为等单独进行行为审计和数据分析', '应安装并配置用户行为审计工具，支持远程和互联网访问的审计与分析', '3');
+INSERT INTO `level3_security_check_items` VALUES (16, '应对登录的用户进行身份标识和鉴别，身份标识具有唯一性，身份鉴别信息具有复杂度要求并定期更换', '应为每个用户设置唯一身份标识，密码满足复杂度要求并定期更换', '3');
+INSERT INTO `level3_security_check_items` VALUES (17, '应具有登录失败处理功能，应配置并启用结束会话、限制非法登录次数和当登录连接超时自动退出等相关措施', '应配置登录失败锁定策略、会话超时与登出清理机制，防止暴力破解和会话劫持', '3');
+INSERT INTO `level3_security_check_items` VALUES (18, '当进行远程管理时，应采取必要措施防止鉴别信息在网络传输过程中被窃听', '应使用加密协议（如 SSH），禁止明文传输管理信息', '3');
+INSERT INTO `level3_security_check_items` VALUES (19, '应采用口令、密码技术、生物技术等两种或两种以上组合的鉴别技术对用户进行身份鉴别，且其中一种鉴别技术至少应使用密码技术来实现', '应启用多因素认证，其中至少一种因素为密码/口令技术', '3');
+INSERT INTO `level3_security_check_items` VALUES (20, '应对登录的用户分配账户和权限，确保每个用户拥有唯一身份，并依据职责授予适当权限', '应按照职责分配账户和权限，避免共享账户并确保唯一性', '3');
+INSERT INTO `level3_security_check_items` VALUES (21, '应重命名或删除默认账户，修改默认账户的默认口令', '应删除或禁用系统默认账户并修改其默认密码', '3');
+INSERT INTO `level3_security_check_items` VALUES (22, '应及时删除或停用多余的、过期的账户，避免共享账户的存在', '应定期审查并删除/锁定90天以上未登录或不再使用的账户', '3');
+INSERT INTO `level3_security_check_items` VALUES (23, '应授予管理用户所需的最小权限，实现管理用户的权限分离', '应为管理用户分配最小必要权限并在sudoers中使用命令别名进行权限分离', '3');
+INSERT INTO `level3_security_check_items` VALUES (24, '应由授权主体配置访问控制策略，访问控制策略规定主体对客体的访问规则', '应制定并实施访问控制策略，明确主体对资源的访问规则', '3');
+INSERT INTO `level3_security_check_items` VALUES (25, '访问控制的粒度应达到主体为用户级或进程级，客体为文件，数据库表级', '访问控制应细化到用户/进程对文件或数据库表的访问权限', '3');
+INSERT INTO `level3_security_check_items` VALUES (26, '应对重要主体和客体设置安全标记，并控制主体对有安全标记信息资源的访问', '应为关键进程和资源设置安全标记，并对访问进行强制控制', '3');
+INSERT INTO `level3_security_check_items` VALUES (27, '应启用安全审计功能，审计覆盖到每个用户，对重要的用户行为和重要安全事件进行审计', '应安装并启动auditd并配置审计规则，覆盖所有用户行为和安全事件', '3');
+INSERT INTO `level3_security_check_items` VALUES (28, '审计记录应包括事件的日期和时间、用户、事件类型，事件是否成功及其他审计相关的信息', '审计日志应记录详尽的事件信息，包括时间戳、用户、操作类型和执行结果', '3');
+INSERT INTO `level3_security_check_items` VALUES (29, '应对审计记录进行保护，定期备份，避免受到未预期的删除、修改或覆盖等', '应配置审计日志轮转、文件权限和定期备份，防止日志被篡改或删除', '3');
+INSERT INTO `level3_security_check_items` VALUES (30, '应对审计进程进行保护，防止未经授权的中断', '应将auditd进程设置为受保护模式，并确保内核审计功能始终开启', '3');
+INSERT INTO `level3_security_check_items` VALUES (31, '应遵循最小安装原则，仅安装需要的组件和应用程序', '系统应仅安装必要的软件包，避免不必要的组件和服务', '3');
+INSERT INTO `level3_security_check_items` VALUES (32, '应关闭不需要的系统服务、默认共享和高危端口', '应禁用未使用的服务、停止默认共享并关闭高危监听端口', '3');
+INSERT INTO `level3_security_check_items` VALUES (33, '应能够检测到对重要节点进行入侵的行为，并在发生严重入侵事件时提供报警', '应安装并配置入侵检测/防护工具，如Fail2Ban、Wazuh，并启用告警功能', '3');
+INSERT INTO `level3_security_check_items` VALUES (34, '应采用免受恶意代码攻击的技术措施或主动免疫可信验证机制，及时识别入侵和病毒行为，并将其有效阻断', '应安装杀毒软件（如ClamAV）和完整性检测工具（如AIDE），并保持规则及时更新', '3');
+INSERT INTO `level3_security_check_items` VALUES (35, '应采用校验技术或密码技术保证重要数据在传输过程中的完整性，包括鉴别数据、业务数据、审计数据、配置数据、视频数据、个人信息等', '传输过程应使用TLS/SSL等加密协议，并启用数据完整性校验', '3');
+INSERT INTO `level3_security_check_items` VALUES (36, '应采用校验技术或密码技术保证重要数据在存储过程中的完整性，包括鉴别数据、业务数据、审计数据、配置数据、视频数据和个人信息等', '存储重要数据时应使用数字签名或完整性校验工具（如AIDE）', '3');
+INSERT INTO `level3_security_check_items` VALUES (37, '应采用密码技术保证重要数据在传输过程中的保密性，包括但不限于鉴别数据、重要业务数据和重要个人信息等', '应对所有传输的重要数据使用加密通道（如HTTPS、SSH）', '3');
+INSERT INTO `level3_security_check_items` VALUES (38, '应采用密码技术保证重要数据在存储过程中的保密性，包括但不限于鉴别数据、重要业务数据和重要个人信息等', '应对敏感文件或分区使用磁盘/目录加密技术（如LUKS、ecryptfs）', '3');
+INSERT INTO `level3_security_check_items` VALUES (39, '应提供重要数据的本地数据备份和恢复功能', '应定期执行本地备份并验证备份完整性与可恢复性', '3');
+INSERT INTO `level3_security_check_items` VALUES (40, '应提供重要数据处理系统的热冗余，保证系统的高可用性', '应部署热备份或集群技术（如DRBD、Pacemaker），确保系统高可用', '3');
+INSERT INTO `level3_security_check_items` VALUES (41, '应保证鉴别信息所在的存储空间在被释放或重新分配前得到完全清除', '应对卸载磁盘或释放分区执行安全擦除，包括Swap和/tmp', '3');
+INSERT INTO `level3_security_check_items` VALUES (42, '应保证存有敏感数据的存储空间被释放或重新分配前得到完全清除', '应对删除敏感文件使用安全擦除工具，并对/tmp、Swap进行加密和清理', '3');
+INSERT INTO `level3_security_check_items` VALUES (43, '应仅采集和保存业务必需的用户个人信息', '应在系统设计和数据库中仅存储必需字段，定期审计数据采集情况', '3');
+INSERT INTO `level3_security_check_items` VALUES (44, '应禁止未授权访问和非法使用用户个人信息', '应配置访问控制与审计机制，确保用户个人信息不被未授权访问或使用', '3');
 
 SET FOREIGN_KEY_CHECKS = 1;
 
