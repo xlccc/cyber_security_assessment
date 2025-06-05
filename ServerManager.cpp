@@ -4236,7 +4236,7 @@ void ServerManager::handle_get_level3Result(http_request request)
 
         // 累加每一项的得分
         for (const auto& item : check_results) {
-            double importantLevel = std::stod(item.importantLevel)/3;
+            double importantLevel = std::stod(item.tmp_importantLevel)/3;
 
             // 通过映射表获取合规等级
             double complyLevel = 0.0; // 默认值
@@ -4447,7 +4447,7 @@ void ServerManager::handle_get_baseLineResult(http_request  request)
 
         // 累加每一项的得分
         for (const auto& item : check_results) {
-            double importantLevel = std::stod(item.importantLevel) / 3;
+            double importantLevel = std::stod(item.tmp_importantLevel) / 3;
 
             // 通过映射表获取合规等级
             double complyLevel = 0.0; // 默认值
