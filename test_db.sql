@@ -159,9 +159,16 @@ CREATE TABLE `scan_host_result`  (
 
 ALTER TABLE `scan_host_result`
 ADD COLUMN `group_id` INT DEFAULT NULL COMMENT '所属资产组ID',
+ADD COLUMN `baseline_check_time` datetime(0) NULL DEFAULT NULL COMMENT '基线检测时间',
+ADD COLUMN `level3_check_time` datetime(0) NULL DEFAULT NULL COMMENT '三级等保检测时间',
 ADD CONSTRAINT `fk_scan_host_group`
   FOREIGN KEY (`group_id`) REFERENCES `asset_group` (`id`)
   ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- 为新增的时间字段添加索引
+ALTER TABLE `scan_host_result`
+ADD INDEX `idx_baseline_check_time`(`baseline_check_time`),
+ADD INDEX `idx_level3_check_time`(`level3_check_time`);
 
 -- ----------------------------
 -- Table structure for security_check_results

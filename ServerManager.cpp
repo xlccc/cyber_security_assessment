@@ -86,26 +86,26 @@ void ServerManager::handle_request(http_request request) {
     }
     //返回基线检测的结果
     else if (first_segment == _XPLATSTR("userinfo") && request.method() == methods::GET) {
-        handle_get_userInfo(request);//check_time
+        handle_get_userInfo(request);//get_check_time
     }
     else if (first_segment == _XPLATSTR("tmpUserinfo") && request.method() == methods::GET) {
-        handle_get_tmpUserInfo(request);//check_time
+        handle_get_tmpUserInfo(request);//get_check_time
     }
     //基线检测的账号密码登录
     else if (first_segment == _XPLATSTR("login") && request.method() == methods::POST) {
-        handle_post_login(request);//check_time
+        handle_post_login(request);//update_check_time
     }
     //三级等保检测的账号密码登录
     else if (first_segment == _XPLATSTR("level3Login") && request.method() == methods::POST) {
-        handle_post_level3(request);//check_time
+        handle_post_level3(request);//update_check_time
     }
     //返回三级等保检测的结果
     else if (first_segment == _XPLATSTR("level3Userinfo") && request.method() == methods::GET) {
-        handle_get_level3UserInfo(request);//check_time
+        handle_get_level3UserInfo(request);//get_check_time
     }
     //返回三级等保当前检测的结果
     else if (first_segment == _XPLATSTR("level3TmpUserinfo") && request.method() == methods::GET) {
-        handle_get_level3TmpUserInfo(request);//check_time
+        handle_get_level3TmpUserInfo(request);//get_check_time
     }
 
     //主机发现
@@ -170,11 +170,11 @@ void ServerManager::handle_request(http_request request) {
     }
     //根据前端传来的vecScore进行等级数据库操作修改
     else if (first_segment == _XPLATSTR("updateLevel3Protect") && request.method() == methods::POST) {
-        handle_post_updateLevel3_protect(request);//check_time
+        handle_post_updateLevel3_protect(request);//update_check_time
     }
     //根据前端传来的vecScore进行等级数据库操作修改
     else if (first_segment == _XPLATSTR("updateBaseLineProtect") && request.method() == methods::POST) {
-        handle_post_updateBaseLine_protect(request);//check_time
+        handle_post_updateBaseLine_protect(request);//update_check_time
     }
 
     else if (first_segment == _XPLATSTR("pocExcute") && request.method() == methods::POST) {
@@ -218,11 +218,11 @@ void ServerManager::handle_request(http_request request) {
     }
     //获取等保分数
     else if (first_segment == _XPLATSTR("getlevel3ResultByIp") && request.method() == methods::GET) {
-        handle_get_level3Result(request);//check_time
+        handle_get_level3Result(request);//get_check_time
     }
     //获取基线检测分数
     else if (first_segment == _XPLATSTR("getBaseLineResultByIp") && request.method() == methods::GET) {
-        handle_get_baseLineResult(request);//tmp_import
+        handle_get_baseLineResult(request);//get_check_time
     }
     else if (first_segment == _XPLATSTR("getAllWeakPassword") && request.method() == methods::GET) {
         handle_get_all_weak_passwords(request);
@@ -424,6 +424,13 @@ web::json::value ServerManager::convertAssetInfoToJson(const AssetInfo& assetInf
         result["M"] = web::json::value::number(assetInfo.M);
     }
     
+    // 添加检测时间信息
+    result["baseline_check_time"] = web::json::value::string(
+        assetInfo.baseline_check_time.empty() ? "未检测" : assetInfo.baseline_check_time
+    );
+    result["level3_check_time"] = web::json::value::string(
+        assetInfo.level3_check_time.empty() ? "未检测" : assetInfo.level3_check_time
+    );
     // 添加服务器信息
     web::json::value serverInfoObj = web::json::value::object();
     serverInfoObj["hostname"] = web::json::value::string(assetInfo.serverinfo.hostname);
@@ -694,6 +701,8 @@ void ServerManager::handle_get_userInfo(http_request request) {
         // 获取服务器信息
         ServerInfo server_info = dbHandler_.getServerInfoByIp(ip, pool);
 
+        // 获取基线检测时间
+        std::string baseline_check_time = dbHandler_.getBaselineCheckTime(ip, pool);
         // 创建返回的JSON对象
         web::json::value response_json = web::json::value::object();
 
@@ -729,6 +738,10 @@ void ServerManager::handle_get_userInfo(http_request request) {
         server_info_json[_XPLATSTR("isInternet")] = web::json::value::string(utility::conversions::to_string_t(server_info.isInternet));
         response_json[_XPLATSTR("serverInfo")] = server_info_json;
 
+        // 将基线检测时间信息添加到JSON中
+        response_json[_XPLATSTR("baseline_check_time")] = web::json::value::string(
+            utility::conversions::to_string_t(baseline_check_time.empty() ? "未检测" : baseline_check_time)
+        );
         // 构造HTTP响应
         http_response response(status_codes::OK);
         response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
@@ -795,6 +808,8 @@ void ServerManager::handle_get_tmpUserInfo(http_request request) {
         // 获取服务器信息
         ServerInfo server_info = dbHandler_.getServerInfoByIp(ip, pool);
 
+        // 获取基线检测时间
+        std::string baseline_check_time = dbHandler_.getBaselineCheckTime(ip, pool);
         // 创建返回的JSON对象
         web::json::value response_json = web::json::value::object();
 
@@ -829,6 +844,11 @@ void ServerManager::handle_get_tmpUserInfo(http_request request) {
         server_info_json[_XPLATSTR("osName")] = web::json::value::string(utility::conversions::to_string_t(server_info.osName));
         server_info_json[_XPLATSTR("isInternet")] = web::json::value::string(utility::conversions::to_string_t(server_info.isInternet));
         response_json[_XPLATSTR("serverInfo")] = server_info_json;
+
+        // 将基线检测时间信息添加到JSON中
+        response_json[_XPLATSTR("baseline_check_time")] = web::json::value::string(
+            utility::conversions::to_string_t(baseline_check_time.empty() ? "未检测" : baseline_check_time)
+        );
 
         // 构造HTTP响应
         http_response response(status_codes::OK);
@@ -960,6 +980,8 @@ void ServerManager::handle_get_level3UserInfo(http_request request)
         std::vector<event> check_results = dbHandler_.getLevel3SecurityCheckResults(ip, pool);//check_time
 
 
+        // 获取三级等保检测时间
+        std::string level3_check_time = dbHandler_.getLevel3CheckTime(ip, pool);
         // 创建返回的JSON对象
         web::json::value response_json = web::json::value::object();
 
@@ -982,6 +1004,10 @@ void ServerManager::handle_get_level3UserInfo(http_request request)
         }
         response_json[_XPLATSTR("checkResults")] = results_array;
 
+        // 将三级等保检测时间信息添加到JSON中
+        response_json[_XPLATSTR("level3_check_time")] = web::json::value::string(
+            utility::conversions::to_string_t(level3_check_time.empty() ? "未检测" : level3_check_time)
+        );
 
         // 构造HTTP响应
         http_response response(status_codes::OK);
@@ -1047,6 +1073,8 @@ void ServerManager::handle_get_level3TmpUserInfo(http_request request)
         std::vector<event> check_results = dbHandler_.getLevel3SecurityCheckResultsByIds(ip, selectedIds, pool);//tmp_import
 
 
+        // 获取三级等保检测时间
+        std::string level3_check_time = dbHandler_.getLevel3CheckTime(ip, pool);
         // 创建返回的JSON对象
         web::json::value response_json = web::json::value::object();
 
@@ -1070,6 +1098,10 @@ void ServerManager::handle_get_level3TmpUserInfo(http_request request)
         response_json[_XPLATSTR("checkResults")] = results_array;
 
 
+        // 将三级等保检测时间信息添加到JSON中
+        response_json[_XPLATSTR("level3_check_time")] = web::json::value::string(
+            utility::conversions::to_string_t(level3_check_time.empty() ? "未检测" : level3_check_time)
+        );
         // 构造HTTP响应
         http_response response(status_codes::OK);
         response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
@@ -4229,6 +4261,8 @@ void ServerManager::handle_get_level3Result(http_request request)
         // 获取三级等保结果
         std::vector<event> check_results = dbHandler_.getLevel3SecurityCheckResults(ip, pool);//check_time
 
+        // 获取三级等保检测时间
+        std::string level3_check_time = dbHandler_.getLevel3CheckTime(ip, pool);
         // 定义合规等级映射表
         std::unordered_map<std::string, double> complyLevelMapping = {
             {"true", 1.0},
@@ -4282,6 +4316,9 @@ void ServerManager::handle_get_level3Result(http_request request)
         response_data[_XPLATSTR("ip")] = json::value::string(utility::conversions::to_string_t(ip));
         response_data[_XPLATSTR("totalItems")] = json::value::number(n);
 
+        response_data[_XPLATSTR("level3_check_time")] = json::value::string(
+            utility::conversions::to_string_t(level3_check_time.empty() ? "未检测" : level3_check_time)
+        );
 
         // 构造HTTP响应
         http_response response(status_codes::OK);
@@ -4384,6 +4421,8 @@ void ServerManager::handle_post_updateLevel3_protect(http_request request) {
             // 调用数据库更新函数
             dbHandler_.updateLevel3SecurityCheckResult(ip, pool, vec_score);//check_time
 
+            // 更新三级等保检测时间
+            dbHandler_.updateLevel3CheckTime(ip, pool);
             // 构造成功响应
             json::value response_data;
             response_data[_XPLATSTR("message")] = json::value::string("Level3 security check results updated successfully");
@@ -4440,6 +4479,8 @@ void ServerManager::handle_get_baseLineResult(http_request  request)
         // 获取三级等保结果
         std::vector<event> check_results = dbHandler_.getSecurityCheckResults(ip, pool);//tmp_import
 
+        // 获取基线检测时间
+        std::string baseline_check_time = dbHandler_.getBaselineCheckTime(ip, pool);
         // 定义合规等级映射表
         std::unordered_map<std::string, double> complyLevelMapping = {
             {"true", 1.0},
@@ -4493,6 +4534,9 @@ void ServerManager::handle_get_baseLineResult(http_request  request)
         response_data[_XPLATSTR("ip")] = json::value::string(utility::conversions::to_string_t(ip));
         response_data[_XPLATSTR("totalItems")] = json::value::number(n);
 
+        response_data[_XPLATSTR("baseline_check_time")] = json::value::string(
+            utility::conversions::to_string_t(baseline_check_time.empty() ? "未检测" : baseline_check_time)
+        );
 
         // 构造HTTP响应
         http_response response(status_codes::OK);
@@ -4596,6 +4640,8 @@ void ServerManager::handle_post_updateBaseLine_protect(http_request request)
             // 调用数据库更新函数
             dbHandler_.updateBaseLineSecurityCheckResult(ip, pool, vec_score);//check_time
 
+            // 更新基线检测时间
+            dbHandler_.updateBaselineCheckTime(ip, pool);
             // 构造成功响应
             json::value response_data;
             response_data[_XPLATSTR("message")] = json::value::string("Level3 security check results updated successfully");

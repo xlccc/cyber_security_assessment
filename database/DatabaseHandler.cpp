@@ -3495,6 +3495,9 @@ std::vector<AssetInfo> DatabaseHandler::getAllAssetsFullInfo(ConnectionPool& poo
             // 获取服务器系统信息
             assetInfo.serverinfo = getServerInfoByIp(ip, pool);
 
+            // 获取检测时间信息
+            assetInfo.baseline_check_time = getBaselineCheckTime(ip, pool);
+            assetInfo.level3_check_time = getLevel3CheckTime(ip, pool);
             // 如果有该IP的漏洞信息，则填充到assetInfo中
             if (ipToVulnMap.find(ip) != ipToVulnMap.end()) {
                 const IpVulnerabilities& ipVulns = ipToVulnMap[ip];
@@ -3724,4 +3727,159 @@ bool DatabaseHandler::deleteAssetGroup(int group_id, bool deleteAssets, Connecti
         return false;
     }
 }
+// 根据IP更新基线检测时间
+void DatabaseHandler::updateBaselineCheckTime(const std::string& ip, ConnectionPool& pool) {
+    try {
+        auto conn = pool.getConnection();  // 获取连接
 
+        // 更新 scan_host_result 表中的 baseline_check_time 字段
+        mysqlx::SqlResult updateResult = conn->sql(
+            "UPDATE scan_host_result "
+            "SET baseline_check_time = CURRENT_TIMESTAMP "
+            "WHERE ip = ?"
+        )
+            .bind(ip)
+            .execute();
+
+        // 检查更新是否成功
+        uint64_t affectedRows = updateResult.getAffectedItemsCount();
+        if (affectedRows > 0) {
+            std::cout << "成功更新IP " << ip << " 的基线检测时间" << std::endl;
+        }
+        else {
+            std::cerr << "警告：未找到IP " << ip << " 对应的记录，无法更新基线检测时间" << std::endl;
+        }
+    }
+    catch (const mysqlx::Error& err) {
+        std::cerr << "updateBaselineCheckTime 时数据库错误: " << err.what() << std::endl;
+    }
+    catch (std::exception& ex) {
+        std::cerr << "异常: " << ex.what() << std::endl;
+    }
+    catch (...) {
+        std::cerr << "未知错误发生" << std::endl;
+    }
+}
+// 根据IP更新三级等保检测时间
+void DatabaseHandler::updateLevel3CheckTime(const std::string& ip, ConnectionPool& pool) {
+    try {
+        auto conn = pool.getConnection();  // 获取连接
+
+        // 更新 scan_host_result 表中的 level3_check_time 字段
+        mysqlx::SqlResult updateResult = conn->sql(
+            "UPDATE scan_host_result "
+            "SET level3_check_time = CURRENT_TIMESTAMP "
+            "WHERE ip = ?"
+        )
+            .bind(ip)
+            .execute();
+
+        // 检查更新是否成功
+        uint64_t affectedRows = updateResult.getAffectedItemsCount();
+        if (affectedRows > 0) {
+            std::cout << "成功更新IP " << ip << " 的三级等保检测时间" << std::endl;
+        }
+        else {
+            std::cerr << "警告：未找到IP " << ip << " 对应的记录，无法更新三级等保检测时间" << std::endl;
+        }
+    }
+    catch (const mysqlx::Error& err) {
+        std::cerr << "updateLevel3CheckTime 时数据库错误: " << err.what() << std::endl;
+    }
+    catch (std::exception& ex) {
+        std::cerr << "异常: " << ex.what() << std::endl;
+    }
+    catch (...) {
+        std::cerr << "未知错误发生" << std::endl;
+    }
+}
+
+// 根据IP获取基线检测时间
+std::string DatabaseHandler::getBaselineCheckTime(const std::string& ip, ConnectionPool& pool) {
+    try {
+        auto conn = pool.getConnection();  // 获取连接
+
+        // 查询 scan_host_result 表中的 baseline_check_time 字段
+        mysqlx::SqlResult queryResult = conn->sql(
+            "SELECT DATE_FORMAT(baseline_check_time, '%Y-%m-%d %H:%i:%s') as formatted_baseline_time "
+            "FROM scan_host_result "
+            "WHERE ip = ?"
+        )
+            .bind(ip)
+            .execute();
+
+        mysqlx::Row row = queryResult.fetchOne();
+        if (row) {
+            if (row[0].isNull()) {
+                std::cout << "IP " << ip << " 的基线检测时间为空" << std::endl;
+                return "";  // 返回空字符串表示未进行过基线检测
+            }
+            else {
+                std::string baselineTime = row[0].get<std::string>();
+                std::cout << "IP " << ip << " 的基线检测时间: " << baselineTime << std::endl;
+                return baselineTime;
+            }
+        }
+        else {
+            std::cerr << "未找到IP " << ip << " 对应的记录" << std::endl;
+            return "";
+        }
+    }
+    catch (const mysqlx::Error& err) {
+        std::cerr << "getBaselineCheckTime 时数据库错误: " << err.what() << std::endl;
+        return "";
+    }
+    catch (std::exception& ex) {
+        std::cerr << "异常: " << ex.what() << std::endl;
+        return "";
+    }
+    catch (...) {
+        std::cerr << "未知错误发生" << std::endl;
+        return "";
+    }
+}
+
+// 根据IP获取三级等保检测时间
+std::string DatabaseHandler::getLevel3CheckTime(const std::string& ip, ConnectionPool& pool) {
+    try {
+        auto conn = pool.getConnection();  // 获取连接
+
+        // 查询 scan_host_result 表中的 level3_check_time 字段
+        mysqlx::SqlResult queryResult = conn->sql(
+            "SELECT DATE_FORMAT(level3_check_time, '%Y-%m-%d %H:%i:%s') as formatted_level3_time "
+            "FROM scan_host_result "
+            "WHERE ip = ?"
+        )
+            .bind(ip)
+            .execute();
+
+        mysqlx::Row row = queryResult.fetchOne();
+        if (row) {
+            if (row[0].isNull()) {
+                std::cout << "IP " << ip << " 的三级等保检测时间为空" << std::endl;
+                return "";  // 返回空字符串表示未进行过三级等保检测
+            }
+            else {
+                std::string level3Time = row[0].get<std::string>();
+                std::cout << "IP " << ip << " 的三级等保检测时间: " << level3Time << std::endl;
+                return level3Time;
+            }
+        }
+        else {
+            std::cerr << "未找到IP " << ip << " 对应的记录" << std::endl;
+            return "";
+        }
+    }
+    catch (const mysqlx::Error& err) {
+        std::cerr << "getLevel3CheckTime 时数据库错误: " << err.what() << std::endl;
+        return "";
+    }
+    catch (std::exception& ex) {
+        std::cerr << "异常: " << ex.what() << std::endl;
+        return "";
+    }
+    catch (...) {
+        std::cerr << "未知错误发生" << std::endl;
+        return "";
+    }
+}

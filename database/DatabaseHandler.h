@@ -176,7 +176,14 @@ public:
 
 
     // ------  资产组 相关的操作 --------
-
+    //更新基线检测更新时间
+    void updateBaselineCheckTime(const std::string& ip, ConnectionPool& pool);
+    //更新等保检测更新时间
+    void updateLevel3CheckTime(const std::string& ip, ConnectionPool& pool);
+    //获取基线检测更新时间
+    std::string getBaselineCheckTime(const std::string& ip, ConnectionPool& pool);
+    // 根据IP获取三级等保检测时间
+    std::string getLevel3CheckTime(const std::string& ip, ConnectionPool& pool);
 };
 
 #endif // DATABASEHANDLER_H
