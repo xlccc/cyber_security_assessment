@@ -3795,99 +3795,6 @@ void DatabaseHandler::updateBaselineCheckTime(const std::string& ip, ConnectionP
     try {
         auto conn = pool.getConnection();  // 获取连接
 
-<<<<<<< HEAD
-//根据ip list查询所属资产组，返回map。   
-std::map<int, std::pair<std::string, std::vector<std::string>>>
-DatabaseHandler::getAliveHostsGroupInfo(const std::vector<std::string>& aliveHosts, ConnectionPool& pool) {
-    std::map<int, std::pair<std::string, std::vector<std::string>>> groupMap;
-
-    try {
-        auto session_ptr = pool.getConnection();
-        mysqlx::Session& session = *session_ptr;
-
-        // 构建动态IN子句
-        std::string inClause;
-        for (size_t i = 0; i < aliveHosts.size(); ++i) {
-            if (i != 0) inClause += ",";
-            inClause += "?";
-        }
-
-        std::string query =
-            "SELECT shr.ip, ag.id AS group_id, ag.group_name "
-            "FROM scan_host_result shr "
-            "LEFT JOIN asset_group ag ON shr.group_id = ag.id "
-            "WHERE shr.ip IN (" + inClause + ")";
-
-        auto stmt = session.sql(query);
-        for (const auto& ip : aliveHosts) {
-            stmt.bind(ip);
-        }
-
-        auto result = stmt.execute();
-
-        for (auto row : result) {
-            std::string ip = row[0].get<std::string>();
-            int group_id = row[1].isNull() ? -1 : row[1].get<int>();  // 用 -1 表示未分组
-            std::string group_name = row[2].isNull() ? "未分组" : row[2].get<std::string>();
-
-            // 插入分组map
-            auto& entry = groupMap[group_id];
-            entry.first = group_name;
-            entry.second.push_back(ip);
-        }
-
-    }
-    catch (const mysqlx::Error& err) {
-        console->error("[DB] getAliveHostsGroupInfo failed: {}", err.what());
-    }
-
-    return groupMap;
-}
-
-//更新 scan_host_result 表中指定 IP 的 scan_time 字段为当前时间
-void DatabaseHandler::updateScanTimeToNow(const std::vector<std::string>& ipList, ConnectionPool& pool)
-{
-    try {
-        auto conn = pool.getConnection();  // 获取连接
-        for (const auto& ip : ipList) {
-            conn->sql(
-                "UPDATE scan_host_result "
-                "SET scan_time = CURRENT_TIMESTAMP "
-                "WHERE ip = ?"
-            )
-                .bind(ip)
-                .execute();
-            //std::cout << "已更新scan_time为当前时间: " << ip << std::endl;
-        }
-    }
-    catch (const mysqlx::Error& err) {
-        std::cerr << "updateScanTimeToNow时数据库错误: " << err.what() << std::endl;
-    }
-}
-
-//更新 scan_host_result 表中指定 IP 的 scan_time 字段为指定时间
-void DatabaseHandler::updateScanTime(const std::vector<std::string>& ipList, const std::string& timestamp, ConnectionPool& pool)
-{
-    try {
-        auto conn = pool.getConnection();  // 获取连接
-        for (const auto& ip : ipList) {
-            conn->sql(
-                "UPDATE scan_host_result "
-                "SET scan_time = ? "
-                "WHERE ip = ?"
-            )
-                .bind(timestamp)
-                .bind(ip)
-                .execute();
-            //std::cout << "已将 scan_time 更新为指定时间: " << timestamp << "，目标 IP: " << ip << std::endl;
-        }
-    }
-    catch (const mysqlx::Error& err) {
-        std::cerr << "updateScanTimeToNow（带时间）时数据库错误: " << err.what() << std::endl;
-    }
-}
-
-=======
         // 更新 scan_host_result 表中的 baseline_check_time 字段
         mysqlx::SqlResult updateResult = conn->sql(
             "UPDATE scan_host_result "
@@ -4039,4 +3946,75 @@ std::string DatabaseHandler::getLevel3CheckTime(const std::string& ip, Connectio
         return "";
     }
 }
->>>>>>> origin/master
+//更新 scan_host_result 表中指定 IP 的 scan_time 字段为当前时间
+void DatabaseHandler::updateScanTimeToNow(const std::vector<std::string>& ipList, ConnectionPool& pool)
+{
+    try {
+        auto conn = pool.getConnection();  // 获取连接
+        for (const auto& ip : ipList) {
+            conn->sql(
+                "UPDATE scan_host_result "
+                "SET scan_time = CURRENT_TIMESTAMP "
+                "WHERE ip = ?"
+            )
+                .bind(ip)
+                .execute();
+            //std::cout << "已更新scan_time为当前时间: " << ip << std::endl;
+        }
+    }
+    catch (const mysqlx::Error& err) {
+        std::cerr << "updateScanTimeToNow时数据库错误: " << err.what() << std::endl;
+    }
+}
+
+//更新 scan_host_result 表中指定 IP 的 scan_time 字段为指定时间
+void DatabaseHandler::updateScanTime(const std::vector<std::string>& ipList, const std::string& timestamp, ConnectionPool& pool)
+{
+    try {
+        auto conn = pool.getConnection();  // 获取连接
+        for (const auto& ip : ipList) {
+            conn->sql(
+                "UPDATE scan_host_result "
+                "SET scan_time = ? "
+                "WHERE ip = ?"
+            )
+                .bind(timestamp)
+                .bind(ip)
+                .execute();
+            //std::cout << "已将 scan_time 更新为指定时间: " << timestamp << "，目标 IP: " << ip << std::endl;
+        }
+    }
+    catch (const mysqlx::Error& err) {
+        std::cerr << "updateScanTimeToNow（带时间）时数据库错误: " << err.what() << std::endl;
+    }
+}
+
+====== =
+// 更新 scan_host_result 表中的 baseline_check_time 字段
+mysqlx::SqlResult updateResult = conn->sql(
+    "UPDATE scan_host_result "
+    "SET baseline_check_time = CURRENT_TIMESTAMP "
+    "WHERE ip = ?"
+)
+.bind(ip)
+.execute();
+
+// 检查更新是否成功
+uint64_t affectedRows = updateResult.getAffectedItemsCount();
+if (affectedRows > 0) {
+    std::cout << "成功更新IP " << ip << " 的基线检测时间" << std::endl;
+}
+else {
+    std::cerr << "警告：未找到IP " << ip << " 对应的记录，无法更新基线检测时间" << std::endl;
+}
+    }
+    catch (const mysqlx::Error& err) {
+        std::cerr << "updateBaselineCheckTime 时数据库错误: " << err.what() << std::endl;
+    }
+    catch (std::exception& ex) {
+        std::cerr << "异常: " << ex.what() << std::endl;
+    }
+    catch (...) {
+        std::cerr << "未知错误发生" << std::endl;
+    }
+}

@@ -166,6 +166,8 @@ struct AssetInfo {
     double M;                                              //等保得分情况
     std::vector<event> undo_BaseLine;                   //还没做的检测项
     std::vector<event> undo_level3BaseLine;
+    std::string baseline_check_time;                       // 基线检测时间
+    std::string level3_check_time;                         // 三级等保检测时间
 };
 
 #endif

@@ -75,7 +75,7 @@ public:
     //获取特定主机ip的所有service_name信息
 	std::vector<std::string> getServiceNameByIp(const std::string& ip, ConnectionPool& pool);
 
-	void saveWeakPasswordResult(const std::string& ip, int port, const std::string& service, const std::string& login, const std::string& password, ConnectionPool& pool);
+	std::string saveWeakPasswordResult(const std::string& ip, int port, const std::string& service, const std::string& login, const std::string& password, ConnectionPool& pool);
     // 在DatabaseHandler类的公共成员函数中添加这个声明
     void saveSecurityCheckResult(const std::string& ip, const event& checkEvent, ConnectionPool& pool);
 
@@ -177,7 +177,14 @@ public:
     std::map<int, std::pair<std::string, std::vector<std::string>>> getAliveHostsGroupInfo(const std::vector<std::string>& aliveHosts, ConnectionPool& pool);
 
     // ------  资产组 相关的操作 --------
-
+    //更新基线检测更新时间
+    void updateBaselineCheckTime(const std::string& ip, ConnectionPool& pool);
+    //更新等保检测更新时间
+    void updateLevel3CheckTime(const std::string& ip, ConnectionPool& pool);
+    //获取基线检测更新时间
+    std::string getBaselineCheckTime(const std::string& ip, ConnectionPool& pool);
+    // 根据IP获取三级等保检测时间
+    std::string getLevel3CheckTime(const std::string& ip, ConnectionPool& pool);
     //更新 scan_host_result 表中指定 IP 的 scan_time 字段为当前时间
     void updateScanTimeToNow(const std::vector<std::string>& ipList, ConnectionPool& pool);
     //更新 scan_host_result 表中指定 IP 的 scan_time 字段为指定时间
