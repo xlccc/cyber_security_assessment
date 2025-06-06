@@ -512,7 +512,8 @@ web::json::value ServerManager::convertAssetInfoToJson(const AssetInfo& assetInf
     baseline_summary[_XPLATSTR("compliant_items")] = web::json::value::number(assetInfo.baseline_summary.compliant_items);
     baseline_summary[_XPLATSTR("half_compliant_items")] = web::json::value::number(assetInfo.baseline_summary.half_compliant_items);
     baseline_summary[_XPLATSTR("non_compliant_items")] = web::json::value::number(assetInfo.baseline_summary.non_compliant_items);
-    baseline_summary[_XPLATSTR("compliance_rate")] = web::json::value::number(assetInfo.baseline_summary.compliance_rate);
+    baseline_summary[_XPLATSTR("non_compliance_rate")] = web::json::value::number(assetInfo.baseline_summary.non_compliance_rate);
+    baseline_summary[_XPLATSTR("non_compliance_rate_to_initial_checks")] = web::json::value::number(assetInfo.baseline_summary.non_compliance_rate_to_initial_checks);
     baseline_summary[_XPLATSTR("critical_items")] = web::json::value::number(assetInfo.baseline_summary.critical_items);
     baseline_summary[_XPLATSTR("critical_compliant")] = web::json::value::number(assetInfo.baseline_summary.critical_compliant);
     baseline_summary[_XPLATSTR("high_items")] = web::json::value::number(assetInfo.baseline_summary.high_items);
@@ -528,7 +529,8 @@ web::json::value ServerManager::convertAssetInfoToJson(const AssetInfo& assetInf
     level3_baseline_summary[_XPLATSTR("compliant_items")] = web::json::value::number(assetInfo.level3_baseline_summary.compliant_items);
     level3_baseline_summary[_XPLATSTR("half_compliant_items")] = web::json::value::number(assetInfo.level3_baseline_summary.half_compliant_items);
     level3_baseline_summary[_XPLATSTR("non_compliant_items")] = web::json::value::number(assetInfo.level3_baseline_summary.non_compliant_items);
-    level3_baseline_summary[_XPLATSTR("compliance_rate")] = web::json::value::number(assetInfo.level3_baseline_summary.compliance_rate);
+    level3_baseline_summary[_XPLATSTR("non_compliance_rate")] = web::json::value::number(assetInfo.level3_baseline_summary.non_compliance_rate);
+    level3_baseline_summary[_XPLATSTR("non_compliance_rate_to_initial_checks")] = web::json::value::number(assetInfo.level3_baseline_summary.non_compliance_rate_to_initial_checks);
     level3_baseline_summary[_XPLATSTR("critical_items")] = web::json::value::number(assetInfo.level3_baseline_summary.critical_items);
     level3_baseline_summary[_XPLATSTR("critical_compliant")] = web::json::value::number(assetInfo.level3_baseline_summary.critical_compliant);
     level3_baseline_summary[_XPLATSTR("high_items")] = web::json::value::number(assetInfo.level3_baseline_summary.high_items);
