@@ -100,7 +100,7 @@ public:
     std::vector<int> getAllLevel3ItemIds(ConnectionPool& pool);
     //根据ip地址以及ids获取安全检查结果
     // 计算基线检测摘要
-    BaselineCheckSummary calculateBaselineSummary(const std::vector<event>& check_results);
+    BaselineCheckSummary calculateBaselineSummary(const std::vector<event>& check_results, int count);
 
     // 在DatabaseHandler类中添加
     void insertServerInfo(const ServerInfo& info, const std::string& ip, ConnectionPool& pool);

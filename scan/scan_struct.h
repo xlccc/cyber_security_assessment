@@ -137,11 +137,13 @@ struct PortInfo {
 
 // 基线检测统计摘要
 struct BaselineCheckSummary {
+    int initial_checks = 0;//系统中有的检查项数。
     int total_checks = 0;           // 总检测项数
     int compliant_items = 0;        // 合规项数
     int half_compliant_items = 0;
     int non_compliant_items = 0;    // 不合规项数
-    double compliance_rate = 0.0;   // 合规率 (百分比)
+    double non_compliance_rate = 0.0;   // 不合规率 (百分比)
+    double non_compliance_rate_to_initial_checks = 0.0;   // 不合规率 (相对于initial_checks)
     int pending_items = 0;
     // 按重要程度的统计
     int critical_items = 0;         // 重要程度为1的项目总数

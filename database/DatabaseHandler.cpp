@@ -1561,8 +1561,8 @@ std::vector<AssetInfo> DatabaseHandler::getAllAssetsInfo(ConnectionPool& pool)
             std::vector<event> check_results = getSecurityCheckResults(ip, pool);
             std::vector<event> level3_check_results = getLevel3SecurityCheckResults(ip, pool);
             
-            assetInfo.baseline_summary = calculateBaselineSummary(check_results);
-            assetInfo.level3_baseline_summary = calculateBaselineSummary(level3_check_results);
+            assetInfo.baseline_summary = calculateBaselineSummary(check_results,89);
+            assetInfo.level3_baseline_summary = calculateBaselineSummary(level3_check_results,44);
             //计算等保得分
             // 定义合规等级映射表
             std::unordered_map<std::string, double> complyLevelMapping = {
@@ -2450,11 +2450,11 @@ std::vector<event> DatabaseHandler::getSecurityCheckResultsByIds(const std::stri
 }
 
 // 计算基线检测摘要信息
-BaselineCheckSummary DatabaseHandler::calculateBaselineSummary(const std::vector<event>& check_results) {
+BaselineCheckSummary DatabaseHandler::calculateBaselineSummary(const std::vector<event>& check_results, int count) {
     BaselineCheckSummary summary = {};  // 初始化所有字段为0
 
     summary.total_checks = check_results.size();
-
+    summary.initial_checks = count;
     for (const auto& result : check_results) {
         // 统计合规项
         if (result.tmp_IsComply == "true"|| result.tmp_IsComply == "half_true") {
@@ -2498,8 +2498,12 @@ BaselineCheckSummary DatabaseHandler::calculateBaselineSummary(const std::vector
 
     
     // 计算不合规率并保留两位小数(不使用round函数)
-    summary.compliance_rate = summary.total_checks > 0 ?
+    summary.non_compliance_rate = summary.total_checks > 0 ?
         (round(static_cast<double>(summary.non_compliant_items) / summary.total_checks * 10000.0) / 100.0) : 0.0;
+
+    // 计算不合规率并保留两位小数(不使用round函数)
+    summary.non_compliance_rate_to_initial_checks = summary.initial_checks > 0 ?
+        (round(static_cast<double>(summary.non_compliant_items) / summary.initial_checks * 10000.0) / 100.0) : 0.0;
     return summary;
 }
 
@@ -3570,9 +3574,9 @@ std::vector<AssetInfo> DatabaseHandler::getAllAssetsFullInfo(ConnectionPool& poo
             // 获取该IP的基线检测结果并计算摘要
             std::vector<event> check_results = getSecurityCheckResults(ip, pool);
             std::vector<event> level3_check_results = getLevel3SecurityCheckResults(ip, pool);
-
-            assetInfo.baseline_summary = calculateBaselineSummary(check_results);
-            assetInfo.level3_baseline_summary = calculateBaselineSummary(level3_check_results);
+            
+            assetInfo.baseline_summary = calculateBaselineSummary(check_results, 89);
+            assetInfo.level3_baseline_summary = calculateBaselineSummary(level3_check_results, 44);
             //计算等保得分
             // 定义合规等级映射表
             std::unordered_map<std::string, double> complyLevelMapping = {
