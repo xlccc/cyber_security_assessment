@@ -3988,3 +3988,49 @@ void DatabaseHandler::updateScanTime(const std::vector<std::string>& ipList, con
         std::cerr << "updateScanTimeToNow（带时间）时数据库错误: " << err.what() << std::endl;
     }
 }
+std::map<int, std::pair<std::string, std::vector<std::string>>>
+DatabaseHandler::getAliveHostsGroupInfo(const std::vector<std::string>& aliveHosts, ConnectionPool& pool) {
+    std::map<int, std::pair<std::string, std::vector<std::string>>> groupMap;
+
+    try {
+        auto session_ptr = pool.getConnection();
+        mysqlx::Session& session = *session_ptr;
+
+        // 构建动态IN子句
+        std::string inClause;
+        for (size_t i = 0; i < aliveHosts.size(); ++i) {
+            if (i != 0) inClause += ",";
+            inClause += "?";
+        }
+
+        std::string query =
+            "SELECT shr.ip, ag.id AS group_id, ag.group_name "
+            "FROM scan_host_result shr "
+            "LEFT JOIN asset_group ag ON shr.group_id = ag.id "
+            "WHERE shr.ip IN (" + inClause + ")";
+
+        auto stmt = session.sql(query);
+        for (const auto& ip : aliveHosts) {
+            stmt.bind(ip);
+        }
+
+        auto result = stmt.execute();
+
+        for (auto row : result) {
+            std::string ip = row[0].get<std::string>();
+            int group_id = row[1].isNull() ? -1 : row[1].get<int>();  // 用 -1 表示未分组
+            std::string group_name = row[2].isNull() ? "未分组" : row[2].get<std::string>();
+
+            // 插入分组map
+            auto& entry = groupMap[group_id];
+            entry.first = group_name;
+            entry.second.push_back(ip);
+        }
+
+    }
+    catch (const mysqlx::Error& err) {
+        console->error("[DB] getAliveHostsGroupInfo failed: {}", err.what());
+    }
+
+    return groupMap;
+}
