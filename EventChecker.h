@@ -189,7 +189,7 @@ private:
 
         // 三级等保检查条目初始化
         level3ComplianceFunctions = {
-            {1, [this] { event e = checkFirewallCompliance(); e.item_id = 1; e.tmp_IsComply = e.IsComply; e.tmp_importantLevel = e.importantLevel; return e; }},
+            {1, [this] { event e = checkAccessControlAtNetworkBoundary(); e.item_id = 1; e.tmp_IsComply = e.IsComply; e.tmp_importantLevel = e.importantLevel; return e; }},
             {2, [this] { event e = checkFirewallRedundancy(); e.item_id = 2; e.tmp_IsComply = e.IsComply; e.tmp_importantLevel = e.importantLevel; return e; }},
             {3, [this] { event e = checkFirewallRuleCompleteness(); e.item_id = 3; e.tmp_IsComply = e.IsComply; e.tmp_importantLevel = e.importantLevel; return e; }},
             {4, [this] { event e = checkSessionControlCompliance(); e.item_id = 4; e.tmp_IsComply = e.IsComply; e.tmp_importantLevel = e.importantLevel; return e; }},
@@ -201,7 +201,7 @@ private:
             {10, [this] { event e = checkMalwareProtectionCompliance(); e.item_id = 10; e.tmp_IsComply = e.IsComply; e.tmp_importantLevel = e.importantLevel; return e; }},
             {11, [this] { event e = checkSpamMailProtectionCompliance(); e.item_id = 11; e.tmp_IsComply = e.IsComply; e.tmp_importantLevel = e.importantLevel; return e; }},
             {12, [this] { event e = checkNetworkAuditStatus(); e.item_id = 12; e.tmp_IsComply = e.IsComply; e.tmp_importantLevel = e.importantLevel;  return e; }},
-            {13, [this] { event e = checkNetworkAuditStatus1(); e.item_id = 13; e.tmp_IsComply = e.IsComply; e.tmp_importantLevel = e.importantLevel;  return e; }},
+            {13, [this] { event e = checkAuditLogCompleteness(); e.item_id = 13; e.tmp_IsComply = e.IsComply; e.tmp_importantLevel = e.importantLevel;  return e; }},
             {14, [this] { event e = checkRsyslogBackupStatus(); e.item_id = 14; e.tmp_IsComply = e.IsComply; e.tmp_importantLevel = e.importantLevel; return e; }},
             {15, [this] { event e = checkUserBehaviorAuditStatus(); e.item_id = 15; e.tmp_IsComply = e.IsComply; e.tmp_importantLevel = e.importantLevel; return e; }},
             {16, [this] { event e = checkUserIdentityAuthPolicy(); e.item_id = 16; e.tmp_IsComply = e.IsComply; e.tmp_importantLevel = e.importantLevel; return e; }},
@@ -238,71 +238,49 @@ private:
 
     }
 
-    event checkFirewallCompliance() {
-        SSHConnectionGuard guard(sshPool);//guard 从 sshPool 获取一个空闲的 SSH 连接
+    event checkAccessControlAtNetworkBoundary() {
+        SSHConnectionGuard guard(sshPool);  // 获取 SSH 连接
         event e;
         e.description = "8.1.3.2.a";
         e.importantLevel = "3";
         e.basis = "应在网络边界或区域之间根据访问控制策略设置访问控制规则，默认情况下除允许通信外受控接口拒绝所有通信";
-        e.IsComply = "false";
-        // 1. 检查防火墙是否开启
-        std::string command = "sudo ufw status verbose";
-        std::string statusOutput = execute_commands(guard.get(), command);
-        if (statusOutput.find("状态：激活") == std::string::npos &&
-            statusOutput.find("Status: active") == std::string::npos) {
-            e.result = "防火墙未开启";
-            e.recommend = "应开启防火墙";
-            std::cout << "防火墙未开启" << std::endl;
-            return e;
-        }
-        // 2. 检查默认策略是否符合要求
-        // 检查入站默认策略是否为拒绝
-        if (statusOutput.find("默认：deny (incoming)") == std::string::npos &&
-            statusOutput.find("Default: deny (incoming)") == std::string::npos) {
-            e.result = "入站默认策略不是deny";
-            e.recommend = "应符合入站默认策略是deny";
-            std::cout << "入站默认策略不是deny" << std::endl;
-            return e;
-        }
 
-        // 检查出站默认策略是否为允许
-        if (statusOutput.find("allow (outgoing)") == std::string::npos) {
-            e.result = "出站默认策略不是allow";
-            e.recommend = "应符合出站默认策略是allow";
-            std::cout << "出站默认策略不是allow" << std::endl;
-            return e;
-        }
+        try {
+            // 检查 UFW 状态
+            std::string ufwStatusCmd = "ufw status verbose 2>/dev/null || true";
+            std::string ufwStatus = execute_commands(guard.get(), ufwStatusCmd);
 
-        // 检查路由默认策略是否为拒绝
-        if (statusOutput.find("deny (routed)") == std::string::npos) {
-            e.result = "路由默认策略不是deny";
-            e.recommend = "应符合路由默认策略是deny";
-            std::cout << "路由默认策略不是deny" << std::endl;
-            return e;
+            bool isUfwEnabled = ufwStatus.find("Status: active") != std::string::npos;
+            bool defaultDeny = ufwStatus.find("Default: deny (incoming)") != std::string::npos;
+
+            if (isUfwEnabled && defaultDeny) {
+                e.result = "已启用 UFW 防火墙，并设置默认拒绝策略，符合最小通信原则和访问控制要求。";
+                e.IsComply = "true";
+            }
+            else {
+                std::stringstream warn;
+                if (!isUfwEnabled) warn << "未启用防火墙；";
+                if (!defaultDeny) warn << "未设置默认拒绝规则（incoming）为 deny；";
+
+                e.result = "存在以下网络访问控制问题：" + warn.str();
+                e.recommend =
+                    "建议：\n"
+                    "1. 启用主机防火墙（如 UFW）：sudo ufw enable\n"
+                    "2. 设置默认拒绝所有传入连接：sudo ufw default deny incoming\n"
+                    "3. 显式添加必要服务访问规则（如 SSH、Web）：sudo ufw allow 22/tcp\n"
+                    "4. 对于多区域系统，建议使用物理或虚拟防火墙、跳板机或网关进行分区隔离与规则控制。";
+                e.IsComply = "false";
+            }
+
+        }
+        catch (const std::exception& err) {
+            e.result = "检查访问控制策略配置时发生异常: " + std::string(err.what());
+            e.IsComply = "pending";
         }
 
-        // 3. 检查是否存在Anywhere规则
-        command = "sudo ufw status numbered";
-        std::string rulesOutput = execute_commands(guard.get(), command);
-
-        // 使用正则表达式检查入站规则中是否有Anywhere
-        std::regex incomingAnywherePattern("ALLOW\\s+IN\\s+Anywhere");
-        std::smatch matches;
-        if (std::regex_search(rulesOutput, matches, incomingAnywherePattern)) {
-            e.result = "发现入站规则允许Anywhere访问，不符合白名单机制";
-            e.recommend = "应符合白名单机制";
-            
-            std::cout << "发现入站规则允许Anywhere访问，不符合白名单机制" << std::endl;
-            return e;
-        }
-
-        // 所有检查都通过
-        e.result = "防火墙配置符合三级等保要求";
-        e.IsComply = "true";
         return e;
-
-
     }
+
 
     event checkFirewallRedundancy() {
         SSHConnectionGuard guard(sshPool);  // guard 从 sshPool 获取一个空闲的 SSH 连接
@@ -1136,16 +1114,49 @@ private:
 
         return e;
     }
-    event checkNetworkAuditStatus1() {
-        
+    event checkAuditLogCompleteness() {
+        SSHConnectionGuard guard(sshPool);
         event e;
         e.description = "8.1.3.5.b";
         e.importantLevel = "3";
         e.basis = "审计记录应包括事件的日期和时间、用户、事件类型、事件是否成功及其他与审计相关的信息";
-        e.result = "由于应用的审计软件多种多样，需要手动检查";
-        e.IsComply = "pending";
+
+        try {
+            // 使用 ausearch 查最近的关键审计事件
+            std::string cmd = "ausearch -m USER_LOGIN,USER_AUTH,EXECVE -ts recent 2>/dev/null | head -n 20";
+            std::string log = execute_commands(guard.get(), cmd);
+
+            if (log.find("type=") != std::string::npos &&
+                log.find("uid=") != std::string::npos &&
+                log.find("success=") != std::string::npos &&
+                log.find("msg=audit(") != std::string::npos) {
+
+                e.result = "审计日志已包含用户、时间、事件类型及是否成功等关键信息，格式符合要求。示例日志片段：\n" +
+                    log.substr(0, 300) + "...";
+                e.IsComply = "true";
+            }
+            else {
+                e.result = "未在审计日志中检测到完整的字段（如时间、用户、事件类型、成功状态等）。";
+                e.recommend =
+                    "建议：\n"
+                    "1. 安装并启用 auditd：`sudo apt install auditd`\n"
+                    "2. 确保 /var/log/audit/audit.log 文件存在并记录关键事件\n"
+                    "3. 添加如下审计规则示例：\n"
+                    "   - 登录/认证事件：`-w /var/log/auth.log -p wa`\n"
+                    "   - 重要命令审计：`-a always,exit -F arch=b64 -S execve -k cmd_exec`\n"
+                    "4. 定期校验日志内容完整性（是否包含 success=、uid=、audit(time)...）";
+                e.IsComply = "false";
+            }
+
+        }
+        catch (const std::exception& err) {
+            e.result = "检查审计日志字段完整性时出错: " + std::string(err.what());
+            e.IsComply = "pending";
+        }
+
         return e;
     }
+
 
     /**
  * 自动检查远端主机上 rsyslog 日志是否配置了定期备份（logrotate）
