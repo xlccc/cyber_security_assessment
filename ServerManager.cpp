@@ -2449,12 +2449,17 @@ void ServerManager::handle_post_hydra(http_request request) {
                     request.reply(response);
                 }
                 else {
-                    // 没有找到弱口令，返回相应的提示信息
+                    // 没有找到弱口令，但需要清空原有记录（如果存在）
+                    int port = std::stoi(portId);
+                    std::string service = service_name;
+                    dbHandler_.saveWeakPasswordResult(ip, port, service, "", "", pool);  // login 和 password 为空表示清空
+
+                    // 构造返回对象
                     json::value response_obj = json::value::object();
                     response_obj[_XPLATSTR("status")] = json::value::string(_XPLATSTR("no_weak_password"));
                     response_obj[_XPLATSTR("message")] = json::value::string(_XPLATSTR("未发现弱口令"));
 
-                    http_response response(status_codes::OK); // 使用200状态码，表示请求成功但没有发现弱口令
+                    http_response response(status_codes::OK);
                     response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
                     response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
                     response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));

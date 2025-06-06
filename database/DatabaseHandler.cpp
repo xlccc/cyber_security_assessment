@@ -1734,22 +1734,56 @@ std::string DatabaseHandler::saveWeakPasswordResult(
         if (portRow) {
             // 如果找到对应的端口记录，则更新
             int port_id = portRow[0];
-            conn->sql("UPDATE open_ports SET weak_username = ?, weak_password = ?, password_verified = 'true', verify_time = CURRENT_TIMESTAMP WHERE id = ?")
-                .bind(login)
-                .bind(password)
-                .bind(port_id)
-                .execute();
+            if (login.empty() && password.empty()) {
+                // 清空原有弱口令数据
+                conn->sql("UPDATE open_ports SET weak_username = NULL, weak_password = NULL, password_verified = 'true', verify_time = CURRENT_TIMESTAMP WHERE id = ?")
+                    .bind(port_id)
+                    .execute();
+            }
+            else {
+                // 更新弱口令数据
+                conn->sql("UPDATE open_ports SET weak_username = ?, weak_password = ?, password_verified = 'true', verify_time = CURRENT_TIMESTAMP WHERE id = ?")
+                    .bind(login)
+                    .bind(password)
+                    .bind(port_id)
+                    .execute();
+            }
         }
         else {
-            // 如果没找到对应的端口记录，则插入
-            conn->sql("INSERT INTO open_ports (shr_id, port, protocol, status, service_name, weak_username, weak_password, password_verified, verify_time) VALUES (?, ?, 'tcp', 'open', ?, ?, ?, 'true', CURRENT_TIMESTAMP)")
-                .bind(shr_id)
-                .bind(port)
-                .bind(service)
-                .bind(login)
-                .bind(password)
-                .execute();
+            // 只有在发现弱口令的情况下才插入新记录
+            if (!login.empty() && !password.empty()) {
+                conn->sql("INSERT INTO open_ports (shr_id, port, protocol, status, service_name, weak_username, weak_password, password_verified, verify_time) VALUES (?, ?, 'tcp', 'open', ?, ?, ?, 'true', CURRENT_TIMESTAMP)")
+                    .bind(shr_id)
+                    .bind(port)
+                    .bind(service)
+                    .bind(login)
+                    .bind(password)
+                    .execute();
+            }
+            else {
+                std::cout << "未发现弱口令，且端口记录不存在，因此不插入新记录。" << std::endl;
+            }
         }
+
+        //if (portRow) {
+        //    // 如果找到对应的端口记录，则更新
+        //    int port_id = portRow[0];
+        //    conn->sql("UPDATE open_ports SET weak_username = ?, weak_password = ?, password_verified = 'true', verify_time = CURRENT_TIMESTAMP WHERE id = ?")
+        //        .bind(login)
+        //        .bind(password)
+        //        .bind(port_id)
+        //        .execute();
+        //}
+        //else {
+        //    // 如果没找到对应的端口记录，则插入
+        //    conn->sql("INSERT INTO open_ports (shr_id, port, protocol, status, service_name, weak_username, weak_password, password_verified, verify_time) VALUES (?, ?, 'tcp', 'open', ?, ?, ?, 'true', CURRENT_TIMESTAMP)")
+        //        .bind(shr_id)
+        //        .bind(port)
+        //        .bind(service)
+        //        .bind(login)
+        //        .bind(password)
+        //        .execute();
+        //}
 
         // 插入/更新完成后，查询verify_time
         mysqlx::SqlResult timeResult = conn->sql("SELECT DATE_FORMAT(verify_time, '%Y-%m-%d %H:%i:%s') as formatted_time FROM open_ports WHERE shr_id = ? AND port = ?")
