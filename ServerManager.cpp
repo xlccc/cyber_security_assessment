@@ -2386,7 +2386,7 @@ void ServerManager::handle_post_hydra(http_request request) {
             bool exists = isServiceExistByIp(ip, service_name, pool);
             if (true) {
                 // 构建并执行hydra命令
-                std::string command = "hydra -L " + usernameFile + " -P " + passwordFile + " -f " + service_name + "://" + ip;
+                std::string command = "hydra -L " + usernameFile + " -P " + passwordFile + " -f -t 8 " + service_name + "://" + ip;
                 std::string output = exec_hydra(command.c_str());
                 std::cout << output << endl;
 

@@ -15,7 +15,7 @@
     "host": "10.9.130.100",
     "port": 33060,
     "user": "root",
-    "password": "ComplexPassword123!",
+    "password": "Root@1234",
     "schema": "test_db"
   },
   "pocDatabase": {
