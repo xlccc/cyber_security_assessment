@@ -3988,33 +3988,3 @@ void DatabaseHandler::updateScanTime(const std::vector<std::string>& ipList, con
         std::cerr << "updateScanTimeToNow（带时间）时数据库错误: " << err.what() << std::endl;
     }
 }
-
-====== =
-// 更新 scan_host_result 表中的 baseline_check_time 字段
-mysqlx::SqlResult updateResult = conn->sql(
-    "UPDATE scan_host_result "
-    "SET baseline_check_time = CURRENT_TIMESTAMP "
-    "WHERE ip = ?"
-)
-.bind(ip)
-.execute();
-
-// 检查更新是否成功
-uint64_t affectedRows = updateResult.getAffectedItemsCount();
-if (affectedRows > 0) {
-    std::cout << "成功更新IP " << ip << " 的基线检测时间" << std::endl;
-}
-else {
-    std::cerr << "警告：未找到IP " << ip << " 对应的记录，无法更新基线检测时间" << std::endl;
-}
-    }
-    catch (const mysqlx::Error& err) {
-        std::cerr << "updateBaselineCheckTime 时数据库错误: " << err.what() << std::endl;
-    }
-    catch (std::exception& ex) {
-        std::cerr << "异常: " << ex.what() << std::endl;
-    }
-    catch (...) {
-        std::cerr << "未知错误发生" << std::endl;
-    }
-}
