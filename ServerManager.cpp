@@ -478,6 +478,7 @@ web::json::value ServerManager::convertAssetInfoToJson(const AssetInfo& assetInf
         vulnObj["vulExist"] = web::json::value::string(vuln.vulExist);
         vulnObj["softwareType"] = web::json::value::string(vuln.softwareType);
         vulnObj["vulType"] = web::json::value::string(vuln.vulType);
+        vulnObj["scan_time"] = web::json::value::string(vuln.scan_time);
         hostVulnArray[i] = vulnObj;
     }
     result["host_vulnerabilities"] = hostVulnArray;
@@ -496,6 +497,7 @@ web::json::value ServerManager::convertAssetInfoToJson(const AssetInfo& assetInf
         vulnObj["softwareType"] = web::json::value::string(vuln.softwareType);
         vulnObj["vulType"] = web::json::value::string(vuln.vulType);
         vulnObj["service_name"] = web::json::value::string(vuln.service_name);
+        vulnObj["scan_time"] = web::json::value::string(vuln.scan_time);
         portVulnArray[i] = vulnObj;
     }
     result["port_vulnerabilities"] = portVulnArray;
@@ -2595,6 +2597,8 @@ json::value ServerManager::Vuln_to_json(const Vuln& vuln) {
     result[_XPLATSTR("pocExist")] = json::value::boolean(vuln.pocExist);
     result[_XPLATSTR("ifCheck")] = json::value::boolean(vuln.ifCheck); // 添加 ifCheck 字段
     result[_XPLATSTR("vulExist")] = json::value::string(vuln.vulExist);
+    result[_XPLATSTR("scan_time")] = json::value::string(vuln.scan_time);
+
     return result;
 }
 
@@ -2717,7 +2721,8 @@ json::value ServerManager::convertToJson(const std::vector<IpVulnerabilities>& v
             v[_XPLATSTR("vulExist")] = web::json::value::string(utility::conversions::to_string_t(vuln.vulExist));
             v[_XPLATSTR("softwareType")] = web::json::value::string(utility::conversions::to_string_t(vuln.softwareType));
             v[_XPLATSTR("vulType")] = web::json::value::string(utility::conversions::to_string_t(vuln.vulType));
-            
+            v[_XPLATSTR("scan_time")] = web::json::value::string(utility::conversions::to_string_t(vuln.scan_time));
+
             host_vulns[host_index++] = v;
         }
         ip_obj[_XPLATSTR("host_vulnerabilities")] = host_vulns;
@@ -2736,6 +2741,8 @@ json::value ServerManager::convertToJson(const std::vector<IpVulnerabilities>& v
             v[_XPLATSTR("softwareType")] = web::json::value::string(utility::conversions::to_string_t(vuln.softwareType));
             v[_XPLATSTR("vulType")] = web::json::value::string(utility::conversions::to_string_t(vuln.vulType));
             v[_XPLATSTR("service_name")] = web::json::value::string(utility::conversions::to_string_t(vuln.service_name));
+            v[_XPLATSTR("scan_time")] = web::json::value::string(utility::conversions::to_string_t(vuln.scan_time));
+
             port_vulns[port_index++] = v;
         }
         ip_obj[_XPLATSTR("port_vulnerabilities")] = port_vulns;
@@ -3678,40 +3685,6 @@ void ServerManager::handle_post_poc_scan(http_request request) {
                 console->info("IP：{} Nmap 扫描完成，更新历史数据。", ip);
             }
 
-            //// 定义变量以存储扫描结果
-            //ScanHostResult scan_host_result;
-
-            //if (historicalData.data.find(ip) != historicalData.data.end()) {
-            //    scan_host_result = historicalData.data[ip];
-            //    
-            //    console->info("IP：{} 使用历史端口扫描数据。", ip);
-            //    user_logger->info("IP：{} 使用历史端口扫描数据。", ip);
-            //}
-            //else {
-            //    // 执行端口扫描
-            //    bool allPorts = json_data.has_field(_XPLATSTR("all_ports")) ? json_data[_XPLATSTR("all_ports")].as_bool() : false;
-            //    std::string outputPath = performPortScan(ip, allPorts);
-
-            //    // 解析 XML 文件获取扫描结果
-            //    auto scan_host_results = parseXmlFile(outputPath);
-
-            //    // 记录扫描时间并更新到历史数据
-            //    auto timestamp = getCurrentTimestamp(2);
-            //    for (auto& result : scan_host_results) {
-            //        result.scan_time = timestamp;
-            //        result.allPorts = allPorts; // 新增
-            //    }
-            //    scan_host_result = scan_host_results[0];
-            //    historicalData.data[ip] = scan_host_result;
-
-
-            //    user_logger->info("IP：{} Nmap 扫描完成，更新历史数据。", ip);
-            //}
-            //
-            //更新扫描时间
-            auto timestamp = getCurrentTimestamp(2);
-            scan_host_result.scan_time = timestamp;
-
             //搜索POC代码是否存在并装载。
             searchPOCs(scan_host_result, dbManager, dbHandler_, pool);
 
@@ -3732,10 +3705,6 @@ void ServerManager::handle_post_poc_scan(http_request request) {
 
            // 使用多进程版本的执行 PoC 任务并更新结果
             execute_poc_tasks_parallel(poc_tasks_by_port, scan_host_result, dbHandler_ , pool );
-
-            // 将新的扫描结果保存为历史数据
-            historicalData.data[ip] = scan_host_result;
-
 
 
             // 将结果转换为 JSON 格式并返回
@@ -3787,8 +3756,6 @@ void ServerManager::handle_merge_vuln_results(http_request request) {
             // 执行合并操作
             merge_vuln_results(scan_host_result);
 
-            //更新到历史数据
-            historicalData.data[ip] = scan_host_result;
 
             // 返回合并后的结果
             json::value result_json = ScanHostResult_to_json(scan_host_result);
@@ -3956,7 +3923,9 @@ void ServerManager::handle_host_discovery(http_request request) {
             //将存活主机存入scan_host_result表中
             dbHandler_.insertAliveHosts2scanHostResult(aliveHosts, pool);
             // 返回网段扫描结果
-            sendHostDiscoveryResponse(request, aliveHosts);
+            /*sendHostDiscoveryResponse(request, aliveHosts);*/
+            sendHostDiscoveryResponse(request, aliveHosts, dbHandler_, pool);
+
         }
         else {
             request.reply(status_codes::BadRequest, _XPLATSTR("Invalid 'network' parameter format"));
@@ -4012,19 +3981,55 @@ bool ServerManager::isValidCIDR(const std::string& network) {
     return std::regex_match(network, cidrRegex);
 }
 
-//返回主机发现的响应
-void ServerManager::sendHostDiscoveryResponse(http_request& request, const std::vector<std::string>& aliveHosts) {
-    // 将结果转换为 JSON 格式
-    web::json::value response = web::json::value::object();
-    web::json::value hostArray = web::json::value::array();
-    for (size_t i = 0; i < aliveHosts.size(); ++i) {
-        hostArray[i] = web::json::value::string(utility::conversions::to_string_t(aliveHosts[i]));
-    }
-    response[_XPLATSTR("alive_hosts")] = hostArray;
+////返回主机发现的响应
+//void ServerManager::sendHostDiscoveryResponse(http_request& request, const std::vector<std::string>& aliveHosts) {
+//    // 将结果转换为 JSON 格式
+//    web::json::value response = web::json::value::object();
+//    web::json::value hostArray = web::json::value::array();
+//    for (size_t i = 0; i < aliveHosts.size(); ++i) {
+//        hostArray[i] = web::json::value::string(utility::conversions::to_string_t(aliveHosts[i]));
+//    }
+//    response[_XPLATSTR("alive_hosts")] = hostArray;
+//
+//    // 返回成功响应
+//    request.reply(status_codes::OK, response);
+//}
 
-    // 返回成功响应
+//返回主机发现的响应
+void ServerManager::sendHostDiscoveryResponse(http_request& request,
+    const std::vector<std::string>& aliveHosts,
+    DatabaseHandler& dbHandler,
+    ConnectionPool& pool) {
+    web::json::value response = web::json::value::object();
+    web::json::value groupsArray = web::json::value::array();
+
+    auto groupInfo = dbHandler.getAliveHostsGroupInfo(aliveHosts, pool);
+
+    size_t groupIndex = 0;
+    for (const auto& entry : groupInfo) {
+        int group_id = entry.first;
+        const std::string& group_name = entry.second.first;
+        const std::vector<std::string>& hosts = entry.second.second;
+
+        web::json::value groupObj = web::json::value::object();
+        groupObj[_XPLATSTR("group_id")] = (group_id == -1) ? web::json::value::null() : web::json::value::number(group_id);
+        groupObj[_XPLATSTR("group_name")] = web::json::value::string(utility::conversions::to_string_t(group_name));
+
+        web::json::value hostsArray = web::json::value::array();
+        for (size_t i = 0; i < hosts.size(); ++i) {
+            hostsArray[i] = web::json::value::string(utility::conversions::to_string_t(hosts[i]));
+        }
+        groupObj[_XPLATSTR("hosts")] = hostsArray;
+
+        groupsArray[groupIndex++] = groupObj;
+    }
+
+    response[_XPLATSTR("groups")] = groupsArray;
+
     request.reply(status_codes::OK, response);
 }
+
+
 bool ServerManager::pingIsAlive(const std::string& network)
 {
     HostDiscovery hostDiscovery(network, globalThreadPool); // 用全局线程池

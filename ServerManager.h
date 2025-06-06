@@ -148,7 +148,9 @@ private:
     // 校验CIDR网段格式
     bool isValidCIDR(const std::string& network);
     //返回主机发现的响应
-    void sendHostDiscoveryResponse(http_request& request, const std::vector<std::string>& aliveHosts);
+    /*void sendHostDiscoveryResponse(http_request& request, const std::vector<std::string>& aliveHosts);*/
+    //返回主机发现的响应
+    void sendHostDiscoveryResponse(http_request& request, const std::vector<std::string>& aliveHosts, DatabaseHandler& dbHandler, ConnectionPool& pool);
 
 	//探测主机是否存活
 	bool pingIsAlive(const std::string& network);

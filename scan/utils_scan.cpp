@@ -1083,6 +1083,14 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
         }
     }
 
+    //更新数据库中的扫描时间
+    auto timestamp = getCurrentTimestamp(2);
+    scan_host_result.scan_time = timestamp;
+
+    vector<std::string> ipList;
+    ipList.push_back(scan_host_result.ip);
+
+    dbHandler.updateScanTime(ipList, timestamp, pool);
 
 
     // 父进程读取 Redis 中的任务结果
@@ -1107,8 +1115,9 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
             // 插入新的漏洞信息，实现覆盖效果
             vuln.vulnType = matchVulnType(vuln.summary, vulnTypes);
 			std::cout << vuln.vulnType << std::endl;
+            vuln.scan_time = timestamp;
             scan_host_result.vuln_result.insert(vuln);
-            dbHandler.alterHostVulnResultAfterPocVerify(pool, vuln, scan_host_result.ip);
+            dbHandler.alterHostVulnResultAfterPocVerify(pool, vuln, scan_host_result.ip, timestamp);
             console->info("[Parent Process] Overwritten OS-level vuln ID: {} in scan_host_result", vuln.Vuln_id);
         }
         else {
@@ -1124,12 +1133,13 @@ void execute_poc_tasks_parallel(std::map<std::string, std::vector<POCTask>>& poc
                     port_it->vuln_result.erase(vuln_it);
                 }
                 // 插入新的漏洞信息，实现覆盖效果
-                port_it->vuln_result.insert(vuln);
+                vuln.scan_time = timestamp;
                 vuln.vulnType = matchVulnType(vuln.summary, vulnTypes);
+                port_it->vuln_result.insert(vuln);
                 std::cout << vuln.vulnType << std::endl;
                 console->info("[Parent Process] Overwritten port-level vuln ID: {} into port: {}", vuln.Vuln_id, portId);
                 // 将更新后的漏洞信息同步到数据库
-                dbHandler.alterPortVulnResultAfterPocVerify(pool, vuln, scan_host_result.ip, portId);
+                dbHandler.alterPortVulnResultAfterPocVerify(pool, vuln, scan_host_result.ip, portId, timestamp);
             }
             else {
                 console->error("[Parent Process]: Port ID {} not found in scan_host_result.", portId);

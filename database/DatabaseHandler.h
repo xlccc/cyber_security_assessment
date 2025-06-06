@@ -23,8 +23,8 @@ public:
     //void processHostVulns(const ScanHostResult& hostResult, const int shr_id, ConnectionPool& pool);
     void processPortVulns(const ScanHostResult& hostResult, const int shr_id, ConnectionPool& pool);
     void alterVulnsAfterPocSearch(ConnectionPool& pool, const Vuln& vuln); //pocsearch中找到的脚本名称和漏洞名称补充到数据库中
-    void alterHostVulnResultAfterPocVerify(ConnectionPool& pool, const Vuln& vuln, std::string ip);//更新操作类型的漏洞是否存在
-    void alterPortVulnResultAfterPocVerify(ConnectionPool& pool, const Vuln& vuln, std::string ip, std::string portId);//更新端口的漏洞是否存在
+    void alterHostVulnResultAfterPocVerify(ConnectionPool& pool, const Vuln& vuln, std::string ip, const std::string& scan_time = "");//更新操作类型的漏洞是否存在
+    void alterPortVulnResultAfterPocVerify(ConnectionPool& pool, const Vuln& vuln, std::string ip, std::string portId, const std::string& scan_time = "");//更新端口的漏洞是否存在
     void alterVulnAfterPocTask(ConnectionPool& pool, const POCTask& task);
 
     //获得资产信息
@@ -173,10 +173,15 @@ public:
     bool renameAssetGroup(int group_id, const std::string& new_name, ConnectionPool& pool);
     //删除资产组（支持是否删除组内资产）
     bool deleteAssetGroup(int group_id, bool deleteAssets, ConnectionPool& pool);
-
+    //根据ip list查询所属资产组，返回map。   
+    std::map<int, std::pair<std::string, std::vector<std::string>>> getAliveHostsGroupInfo(const std::vector<std::string>& aliveHosts, ConnectionPool& pool);
 
     // ------  资产组 相关的操作 --------
 
+    //更新 scan_host_result 表中指定 IP 的 scan_time 字段为当前时间
+    void updateScanTimeToNow(const std::vector<std::string>& ipList, ConnectionPool& pool);
+    //更新 scan_host_result 表中指定 IP 的 scan_time 字段为指定时间
+    void updateScanTime(const std::vector<std::string>& ipList, const std::string& timestamp, ConnectionPool& pool);
 };
 
 #endif // DATABASEHANDLER_H

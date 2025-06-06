@@ -8,21 +8,21 @@
     ]
   },
   "server": {
-    "url": "http://10.9.130.100:8081/",
-    "ip": "10.9.130.100"
+    "url": "http://192.168.136.128:8081",
+    "ip": "192.168.136.128"
   },
   "database": {
-    "host": "10.9.130.100",
+    "host": "192.168.136.128",
     "port": 33060,
     "user": "root",
-    "password": "ComplexPassword123!",
+    "password": "123456",
     "schema": "test_db"
   },
   "pocDatabase": {
     "path": "../../../src/database/poc.db"
   },
   "cve_api": {
-    "base_url": "http://10.9.130.100:5000/api/cvefor"
+    "base_url": "http://192.168.136.128:5000/api/cvefor"
   },
   "poc": {
     "temp_file": "/tmp/uploaded_body_temp",
