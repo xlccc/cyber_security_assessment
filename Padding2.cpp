@@ -7,6 +7,8 @@ void fun2( const string& host, const string& username, const string& password,
 	ConnectionPool& mysqlPool, DatabaseHandler& dbHandler, const vector<int>& ids ) {
 	auto start = std::chrono::high_resolution_clock::now();
 	try {
+		//更新基线检测更新时间
+		dbHandler.updateBaselineCheckTime(host, mysqlPool);
         // 创建局部变量，避免使用全局变量
         vector<event> localEvent;
 
@@ -19,7 +21,7 @@ void fun2( const string& host, const string& username, const string& password,
 		// 运行检测项
 		checker.checkEvents(localEvent,ids);
 		for (auto& e : localEvent) {
-			dbHandler.saveSecurityCheckResult(host, e, mysqlPool);
+			dbHandler.saveSecurityCheckResult(host, e, mysqlPool);//tmp_import
 		}
 
 	}
@@ -40,6 +42,7 @@ void level3Fun(const string& host, const string& username, const string& passwor
 	ConnectionPool& mysqlPool, DatabaseHandler& dbHandler, const vector<int>& ids) {
 	auto start = std::chrono::high_resolution_clock::now();
 	try {
+		dbHandler.updateLevel3CheckTime(host, mysqlPool);
 		// 创建局部变量，避免使用全局变量
 		vector<event> localEvent;
 
