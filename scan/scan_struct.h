@@ -20,6 +20,7 @@ struct Vuln
     bool        pocExist = false;   //对应CVE编号的POC是否存在于POC库中
     bool        ifCheck =  false;   //是否打算poc验证
     std::string vulExist = "未验证";    //是否存在该漏洞，分为三种：存在、不存在、未验证
+    std::string scan_time = "";
 
 
     // 重载 == 运算符
@@ -69,7 +70,7 @@ struct ScanHostResult {
     std::vector<ScanResult> ports;  //端口扫描结果
     
     std::string scan_time = "";      // 扫描时间（如果为空，则代表没有进行过扫描，故数据库中也不会有该资产。）
-    std::set<Vuln> vuln_result; //存放操作系统的漏洞扫描结果
+    std::set<Vuln> vuln_result; //存放整体的漏洞扫描结果
     bool is_merged;             // 标识是否合并两种漏洞扫描方法的结果 
     bool allPorts = false;      //最近一次扫描是否为全端口扫描
     
@@ -101,6 +102,7 @@ struct VulnerabilityInfo {
     std::string vulExist;
     std::string softwareType;//类型（操作系统,数据库，中间件， web应用)
     std::string vulType; //漏洞类型
+    std::string scan_time;     // 新增,扫描时间 
 
     
 };

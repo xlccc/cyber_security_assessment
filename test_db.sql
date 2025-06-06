@@ -60,6 +60,9 @@ CREATE TABLE `host_vuln_result`  (
   CONSTRAINT `host_vuln_result_ibfk_1` FOREIGN KEY (`shr_id`) REFERENCES `scan_host_result` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
 ) ENGINE = InnoDB AUTO_INCREMENT = 3020 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
+ALTER TABLE host_vuln_result
+ADD COLUMN scan_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '扫描时间';
+
 -- ----------------------------
 -- Table structure for level3_security_check_results
 -- ----------------------------
@@ -141,6 +144,8 @@ CREATE TABLE `port_vuln_result`  (
   CONSTRAINT `port_vuln_result_ibfk_2` FOREIGN KEY (`port_id`) REFERENCES `open_ports` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
 ) ENGINE = InnoDB AUTO_INCREMENT = 2126 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
+ALTER TABLE port_vuln_result
+ADD COLUMN scan_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '扫描时间';
 -- ----------------------------
 -- Table structure for scan_host_result
 -- ----------------------------
@@ -321,6 +326,8 @@ INSERT IGNORE INTO VulnType (TypeName) VALUES
 ('其他类型');
 
 -- 基线检查项基础表
+DROP TABLE IF EXISTS baseline_check_items;
+
 CREATE TABLE `baseline_check_items` (
   `item_id` int NOT NULL COMMENT '检查项ID',
   `description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '检查项描述',
@@ -486,6 +493,8 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- ----------------------------
 -- 资产组的表
 -- ----------------------------
+DROP TABLE IF EXISTS `asset_group`;
+
 CREATE TABLE `asset_group` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `group_name` VARCHAR(255) NOT NULL UNIQUE COMMENT '资产组名称',

@@ -157,7 +157,7 @@ void DatabaseHandler::alterVulnsAfterPocSearch(ConnectionPool& pool, const Vuln&
     }
 }
 
-void DatabaseHandler::alterHostVulnResultAfterPocVerify(ConnectionPool& pool, const Vuln& vuln, std::string ip)
+void DatabaseHandler::alterHostVulnResultAfterPocVerify(ConnectionPool& pool, const Vuln& vuln, std::string ip, const std::string& scan_time)
 {
     try {
         auto conn = pool.getConnection();
@@ -189,12 +189,10 @@ void DatabaseHandler::alterHostVulnResultAfterPocVerify(ConnectionPool& pool, co
             vuln_id_primary = insertResult.getAutoIncrementValue();
         }
         else {
-            // 获取已存在漏洞的ID 和 vuln_type
             mysqlx::Row row = checkResult.fetchOne();
             vuln_id_primary = row[0].get<int>();
             existing_vuln_type = row[1].get<std::string>();
 
-            // **更新漏洞类型**
             if (!vuln.vulnType.empty() && existing_vuln_type != vuln.vulnType) {
                 conn->sql("UPDATE vuln SET vuln_type = ? WHERE id = ?")
                     .bind(vuln.vulnType, vuln_id_primary).execute();
@@ -221,13 +219,25 @@ void DatabaseHandler::alterHostVulnResultAfterPocVerify(ConnectionPool& pool, co
 
         if (count == 0) {
             // 不存在则插入新记录
-            conn->sql("INSERT INTO host_vuln_result (shr_id, vuln_id, vulExist) VALUES (?, ?, ?)")
-                .bind(shr_id, vuln_id_primary, vulExist).execute();
+            if (scan_time.empty()) {
+                conn->sql("INSERT INTO host_vuln_result (shr_id, vuln_id, vulExist, scan_time) VALUES (?, ?, ?, CURRENT_TIMESTAMP)")
+                    .bind(shr_id, vuln_id_primary, vulExist).execute();
+            }
+            else {
+                conn->sql("INSERT INTO host_vuln_result (shr_id, vuln_id, vulExist, scan_time) VALUES (?, ?, ?, ?)")
+                    .bind(shr_id, vuln_id_primary, vulExist, scan_time).execute();
+            }
         }
         else {
             // 存在则更新 vulExist
-            conn->sql("UPDATE host_vuln_result SET vulExist = ? WHERE shr_id = ? AND vuln_id = ?")
-                .bind(vulExist, shr_id, vuln_id_primary).execute();
+            if (scan_time.empty()) {
+                conn->sql("UPDATE host_vuln_result SET vulExist = ?, scan_time = CURRENT_TIMESTAMP WHERE shr_id = ? AND vuln_id = ?")
+                    .bind(vulExist, shr_id, vuln_id_primary).execute();
+            }
+            else {
+                conn->sql("UPDATE host_vuln_result SET vulExist = ?, scan_time = ? WHERE shr_id = ? AND vuln_id = ?")
+                    .bind(vulExist, scan_time, shr_id, vuln_id_primary).execute();
+            }
         }
     }
     catch (const mysqlx::Error& err) {
@@ -283,13 +293,14 @@ void DatabaseHandler::alterHostVulnResultAfterPocVerify(ConnectionPool& pool, co
 //    }
 //}
 
-void DatabaseHandler::alterPortVulnResultAfterPocVerify(ConnectionPool& pool, const Vuln& vuln, std::string ip, std::string portId)
+void DatabaseHandler::alterPortVulnResultAfterPocVerify(ConnectionPool& pool, const Vuln& vuln, std::string ip, std::string portId, const std::string& scan_time)
 {
     try {
         std::cout << "===============================================" << std::endl;
         std::cout << "【开始】更新漏洞验证结果" << std::endl;
         std::cout << "IP: " << ip << " | 端口: " << portId << " | 漏洞ID: " << vuln.Vuln_id << std::endl;
         std::cout << "期望设置的vulExist值: " << vuln.vulExist << std::endl;
+        std::cout << "期望设置的scan_time值: " << (scan_time.empty() ? "当前时间" : scan_time) << std::endl;
         std::cout << "===============================================" << std::endl;
 
         auto conn = pool.getConnection();
@@ -303,7 +314,6 @@ void DatabaseHandler::alterPortVulnResultAfterPocVerify(ConnectionPool& pool, co
         int vuln_id_primary = 0;
         std::string existing_vuln_type;
 
-        // 如果不存在，则插入
         if (checkResult.count() == 0) {
             std::cout << "  ✗ 漏洞信息不存在，正在插入新漏洞记录..." << std::endl;
             auto insertResult = conn->sql(
@@ -322,13 +332,11 @@ void DatabaseHandler::alterPortVulnResultAfterPocVerify(ConnectionPool& pool, co
             std::cout << "  ✓ 新漏洞记录已插入，ID: " << vuln_id_primary << std::endl;
         }
         else {
-            // 获取已存在漏洞的ID和类型
             mysqlx::Row row = checkResult.fetchOne();
             vuln_id_primary = row[0].get<int>();
             existing_vuln_type = row[1].get<std::string>();
             std::cout << "  ✓ 漏洞记录已存在，ID: " << vuln_id_primary << ", 现有类型: " << existing_vuln_type << std::endl;
 
-            // 更新漏洞类型逻辑
             if (!vuln.vulnType.empty() && existing_vuln_type != vuln.vulnType) {
                 std::cout << "    > 更新漏洞类型为: " << vuln.vulnType << std::endl;
                 auto updateTypeResult = conn->sql("UPDATE vuln SET vuln_type = ? WHERE id = ?")
@@ -373,17 +381,27 @@ void DatabaseHandler::alterPortVulnResultAfterPocVerify(ConnectionPool& pool, co
         std::cout << "\n【步骤4】" << (count == 0 ? "插入" : "更新") << "端口漏洞关联记录" << std::endl;
         if (count == 0) {
             std::cout << "  > 端口漏洞关联记录不存在，正在插入新记录..." << std::endl;
-            std::cout << "  > 将插入记录: shr_id=" << shr_id << ", port_id=" << port_id_primary
-                << ", vuln_id=" << vuln_id_primary << ", vulExist=" << vulExist << std::endl;
 
-            auto insertResult = conn->sql(
-                "INSERT INTO port_vuln_result (shr_id, port_id, vuln_id, vulExist) "
-                "VALUES (?, ?, ?, ?)")
-                .bind(shr_id, port_id_primary, vuln_id_primary, vulExist).execute();
+            if (scan_time.empty()) {
+                auto insertResult = conn->sql(
+                    "INSERT INTO port_vuln_result (shr_id, port_id, vuln_id, vulExist, scan_time) "
+                    "VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)")
+                    .bind(shr_id, port_id_primary, vuln_id_primary, vulExist).execute();
 
-            std::cout << "  " << (insertResult.getAffectedItemsCount() > 0 ? "✓" : "✗")
-                << " 插入操作" << (insertResult.getAffectedItemsCount() > 0 ? "成功" : "失败")
-                << "，受影响行数: " << insertResult.getAffectedItemsCount() << std::endl;
+                std::cout << "  " << (insertResult.getAffectedItemsCount() > 0 ? "✓" : "✗")
+                    << " 插入操作" << (insertResult.getAffectedItemsCount() > 0 ? "成功" : "失败")
+                    << "，受影响行数: " << insertResult.getAffectedItemsCount() << std::endl;
+            }
+            else {
+                auto insertResult = conn->sql(
+                    "INSERT INTO port_vuln_result (shr_id, port_id, vuln_id, vulExist, scan_time) "
+                    "VALUES (?, ?, ?, ?, ?)")
+                    .bind(shr_id, port_id_primary, vuln_id_primary, vulExist, scan_time).execute();
+
+                std::cout << "  " << (insertResult.getAffectedItemsCount() > 0 ? "✓" : "✗")
+                    << " 插入操作" << (insertResult.getAffectedItemsCount() > 0 ? "成功" : "失败")
+                    << "，受影响行数: " << insertResult.getAffectedItemsCount() << std::endl;
+            }
         }
         else {
             // 先查询当前值
@@ -395,16 +413,24 @@ void DatabaseHandler::alterPortVulnResultAfterPocVerify(ConnectionPool& pool, co
             std::string currentValue = currentValueResult.fetchOne()[0].get<std::string>();
             std::cout << "  > 端口漏洞关联记录已存在，当前vulExist值: " << currentValue << std::endl;
 
-            if (currentValue == vulExist) {
-                std::cout << "  ✓ 当前值与期望值相同，无需更新" << std::endl;
-            }
-            else {
-                std::cout << "  > 正在更新vulExist从 " << currentValue << " 到 " << vulExist << std::endl;
+
+            std::cout << "  > 正在更新vulExist从 " << currentValue << " 到 " << vulExist << std::endl;
+
+            if (scan_time.empty()) {
                 auto updateResult = conn->sql(
-                    "UPDATE port_vuln_result SET vulExist = ? "
+                    "UPDATE port_vuln_result SET vulExist = ?, scan_time = CURRENT_TIMESTAMP "
                     "WHERE shr_id = ? AND port_id = ? AND vuln_id = ?")
                     .bind(vulExist, shr_id, port_id_primary, vuln_id_primary).execute();
 
+                std::cout << "  > 更新操作已执行，受影响行数: " << updateResult.getAffectedItemsCount() << std::endl;
+            }
+            else {
+                auto updateResult = conn->sql(
+                    "UPDATE port_vuln_result SET vulExist = ?, scan_time = ? "
+                    "WHERE shr_id = ? AND port_id = ? AND vuln_id = ?")
+                    .bind(vulExist, scan_time, shr_id, port_id_primary, vuln_id_primary).execute();
+
+                std::cout << "  > 更新操作已执行，受影响行数: " << updateResult.getAffectedItemsCount() << std::endl;
                 // 检查更新是否成功
                 int affectedRows = updateResult.getAffectedItemsCount();
                 std::cout << "  > 更新操作已执行，受影响行数: " << affectedRows << std::endl;
@@ -416,8 +442,8 @@ void DatabaseHandler::alterPortVulnResultAfterPocVerify(ConnectionPool& pool, co
                         "WHERE shr_id = ? AND port_id = ? AND vuln_id = ?")
                         .bind(shr_id, port_id_primary, vuln_id_primary).execute();
 
-                    if (verifyResult.count() > 0) {
-                        std::string updatedValue = verifyResult.fetchOne()[0].get<std::string>();
+                if (verifyResult.count() > 0) {
+                    std::string updatedValue = verifyResult.fetchOne()[0].get<std::string>();
                         std::cout << "  > 验证结果: 更新后的vulExist值为: " << updatedValue << std::endl;
                         std::cout << "  " << (updatedValue == vulExist ? "✓ 更新成功" : "✗ 更新失败") << std::endl;
                     }
@@ -427,7 +453,6 @@ void DatabaseHandler::alterPortVulnResultAfterPocVerify(ConnectionPool& pool, co
                 }
             }
         }
-
         // 5. 提交事务
         std::cout << "\n【步骤5】提交事务" << std::endl;
         conn->commit();  // 显式提交事务
@@ -543,7 +568,8 @@ std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPoo
                 '主机漏洞' AS vuln_type,
                 '操作系统' AS software_type,
                 v.vuln_type AS vulnerability_type,
-                NULL AS service_name
+                NULL AS service_name,
+                DATE_FORMAT(hvr.scan_time, '%Y-%m-%d %H:%i:%s') AS scan_time
             FROM scan_host_result shr
             JOIN host_vuln_result hvr ON shr.id = hvr.shr_id
             JOIN vuln v ON v.id = hvr.vuln_id
@@ -570,6 +596,7 @@ std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPoo
             vuln.vulExist = row[6].get<std::string>();
             vuln.softwareType = row[8].get<std::string>();
             vuln.vulType = row[9].get<std::string>();
+            vuln.scan_time = row[11].isNull() ? "" : row[11].get<std::string>();  
             ip_vulns_map[ip].host_vulnerabilities.push_back(vuln);
         }
         // std::cout << "主机漏洞查询完成，找到 " << hostVulnCount << " 个结果" << std::endl;
@@ -588,7 +615,8 @@ std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPoo
                 '端口漏洞' AS vuln_type,
                 op.software_type,
                 v.vuln_type AS vulnerability_type,
-                op.product
+                op.product,
+                DATE_FORMAT(pvr.scan_time, '%Y-%m-%d %H:%i:%s') AS scan_time
             FROM scan_host_result shr
             JOIN open_ports op ON shr.id = op.shr_id
             JOIN port_vuln_result pvr ON op.id = pvr.port_id AND shr.id = pvr.shr_id
@@ -618,6 +646,7 @@ std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPoo
             port_vuln.softwareType = row[8].get<std::string>();
             port_vuln.vulType = row[9].get<std::string>();
             port_vuln.service_name = row[10].get<std::string>();
+            port_vuln.scan_time = row[11].isNull() ? "" : row[11].get<std::string>();
             ip_vulns_map[ip].port_vulnerabilities.push_back(port_vuln);
         }
         //std::cout << "端口漏洞查询完成，找到 " << portVulnCount << " 个结果" << std::endl;
@@ -3919,5 +3948,47 @@ std::string DatabaseHandler::getLevel3CheckTime(const std::string& ip, Connectio
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
         return "";
+    }
+}
+//更新 scan_host_result 表中指定 IP 的 scan_time 字段为当前时间
+void DatabaseHandler::updateScanTimeToNow(const std::vector<std::string>& ipList, ConnectionPool& pool)
+{
+    try {
+        auto conn = pool.getConnection();  // 获取连接
+        for (const auto& ip : ipList) {
+            conn->sql(
+                "UPDATE scan_host_result "
+                "SET scan_time = CURRENT_TIMESTAMP "
+                "WHERE ip = ?"
+            )
+                .bind(ip)
+                .execute();
+            //std::cout << "已更新scan_time为当前时间: " << ip << std::endl;
+        }
+    }
+    catch (const mysqlx::Error& err) {
+        std::cerr << "updateScanTimeToNow时数据库错误: " << err.what() << std::endl;
+    }
+}
+
+//更新 scan_host_result 表中指定 IP 的 scan_time 字段为指定时间
+void DatabaseHandler::updateScanTime(const std::vector<std::string>& ipList, const std::string& timestamp, ConnectionPool& pool)
+{
+    try {
+        auto conn = pool.getConnection();  // 获取连接
+        for (const auto& ip : ipList) {
+            conn->sql(
+                "UPDATE scan_host_result "
+                "SET scan_time = ? "
+                "WHERE ip = ?"
+            )
+                .bind(timestamp)
+                .bind(ip)
+                .execute();
+            //std::cout << "已将 scan_time 更新为指定时间: " << timestamp << "，目标 IP: " << ip << std::endl;
+        }
+    }
+    catch (const mysqlx::Error& err) {
+        std::cerr << "updateScanTimeToNow（带时间）时数据库错误: " << err.what() << std::endl;
     }
 }
