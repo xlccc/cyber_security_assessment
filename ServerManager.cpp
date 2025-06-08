@@ -2275,7 +2275,7 @@ void ServerManager::handle_post_hydra(http_request request) {
 
             // 默认文件路径
             std::string usernameFile = "/hydra/usernames.txt";
-            std::string passwordFile = "//hydra/passwords.txt";
+            std::string passwordFile = "/hydra/passwords.txt";
 
             // 检查文件扩展名函数
             auto is_txt_file = [](const std::string& filename) -> bool {
