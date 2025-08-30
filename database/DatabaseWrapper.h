@@ -1,19 +1,19 @@
-#pragma once
+ï»¿#pragma once
 #pragma once
 #include "DatabaseHandler.h"
 #include "mysql_connection_pool.h"
 #include "scan_struct.h"
 
-// °ü×°Àà£¬ÓÃÓÚ¶Ô½Ó¾É DatabaseManager ½Ó¿Ú£¬×ª·¢µ½ĞÂµÄ DatabaseHandler ÊµÏÖ
+// åŒ…è£…ç±»ï¼Œç”¨äºå¯¹æ¥æ—§ DatabaseManager æ¥å£ï¼Œè½¬å‘åˆ°æ–°çš„ DatabaseHandler å®ç°
 class DatabaseWrapper {
 public:
     DatabaseWrapper(ConnectionPool& pool, DatabaseHandler& handler)
         : handler(handler), pool(pool) {}
 
-    // ---- ¼æÈİ¾É DatabaseManager ½Ó¿Ú¶¨Òå ----
+    // ---- å…¼å®¹æ—§ DatabaseManager æ¥å£å®šä¹‰ ----
 
     bool insertData(const std::string& vuln_id, const std::string& vul_name, const std::string& type,
-        const std::string& description, const std::string affected_infra,
+        const std::string& description, const std::string affected_infra, const std::string cvss_score, const std::string poc_condition,
         const std::string& script_type, const std::string& script) {
         POC poc;
         poc.vuln_id = vuln_id;
@@ -21,6 +21,8 @@ public:
         poc.type = type;
         poc.description = description;
         poc.affected_infra = affected_infra;
+        poc.cvss_score = cvss_score;
+        poc.poc_condition = poc_condition;
         poc.script_type = script_type;
         poc.script = script;
         return handler.insertData(poc, pool);
@@ -33,10 +35,25 @@ public:
     bool updateDataById(int id, const POC& poc) {
         return handler.updateDataById(id, poc, pool);
     }
-
-    std::vector<POC> searchData(const std::string& keyword) {
-        return handler.searchData(keyword, pool);
+   
+    std::vector<POC>getPocTableWithPagination(int page, int pageSize, int& totalRecords, int& totalPages) {
+        return handler.getPocTableWithPagination(page, pageSize, totalRecords, totalPages,pool);
     }
+
+    std::vector<POC>getWithtPocCondition(int page, int pageSize, int& totalRecords, int& totalPages) {
+        return handler.getWithPocCondition(page, pageSize, totalRecords, totalPages, pool);
+    }
+
+    std::vector<POC>getWithTranPocCondition(int page, int pageSize, int& totalRecords, int& totalPages) {
+        return handler.getWithTranPocCondition(page, pageSize, totalRecords, totalPages, pool);
+    }
+    std::vector<POC>getWithOutPocCondition(int page, int pageSize, int& totalRecords, int& totalPages) {
+        return handler.getWithOutPocCondition(page, pageSize, totalRecords, totalPages, pool);
+    }
+    std::vector<POC> searchData(const std::string& searchkeyword) {
+        return handler.searchData(searchkeyword, pool);
+    }
+
 
     std::vector<POC> searchDataByCVE(const std::string& vuln_id) {
         return handler.searchDataByCVE(vuln_id, pool);
@@ -54,19 +71,19 @@ public:
         return handler.searchPOCById(id, pool);
     }
 
-    std::string searchPOCById(const std::string& vuln_id) {
-        return handler.searchPOCById(vuln_id, pool);
+    std::string searchPOCByVulnId(const std::string& vuln_id) {
+        return handler.searchPOCByVulnId(vuln_id, pool);
     }
 
     bool searchDataById(const int& id, POC& poc) {
         return handler.searchDataById(id, poc, pool);
     }
 
-    std::vector<POC> getAllData() {
+   /* std::vector<POC> getAllData() {
         return handler.getAllData(pool);
-    }
+    }*/
 
-    std::vector<POC> getVaildPOCData() {
+     std::vector<POC> getVaildPOCData() {
         return handler.getVaildPOCData(pool);
     }
 

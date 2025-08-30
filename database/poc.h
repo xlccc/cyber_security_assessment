@@ -8,6 +8,8 @@ struct POC{
     std::string type;           //漏洞类型
     std::string description;    //漏洞描述
     std::string affected_infra; //受影响的基础设施（操作系统或软件或协议、非空）(新增）
+    std::string cvss_score;     //CVSS评分(新增）
+    std::string poc_condition;  //该CVE现在有无POC(新增）
     std::string script_type;    //POC脚本类型（可包括python、c、c++、yaml。目前只支持python脚本）   
     std::string script;         //插件名称
     std::string timestamp;      // 添加时间，格式为"YYYY-MM-DD HH:MM:SS"

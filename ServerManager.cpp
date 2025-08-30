@@ -12,10 +12,20 @@ ServerManager::ServerManager()
         CONFIG.getDbUser(),
         CONFIG.getDbPassword(),
         CONFIG.getDbSchema()
+       
     },
     pool(localConfig),    // 使用 localConfig 初始化 pool
     //dbManager(CONFIG.getPocDatabasePath())    // 原有的 dbManager 初始化
-    dbManager(pool, dbHandler_)
+    dbManager(pool, dbHandler_),
+    smtpConfig_{
+        CONFIG.getSmtpHost(),
+        CONFIG.getSmtpPort(),
+        CONFIG.getSmtpUsername(),
+        CONFIG.getSmtpPassword(),
+        CONFIG.getSmtpFromAddress(),
+        CONFIG.getSmtpUseTls()
+    }
+
 {
     globalThreadPool = std::make_shared<ThreadPool>(CONFIG.getThreadCount());// 线程池创建
     system_logger->info("Global ThreadPool initialized with {} threads.", CONFIG.getThreadCount());
@@ -62,9 +72,21 @@ void ServerManager::handle_options(http_request request) {
     http_response response(status_codes::OK);
     response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
     response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET, POST, PUT, DELETE, OPTIONS"));
-    response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+    response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type, Authorization"));
+
     request.reply(response);
 }
+
+
+#include <cpprest/http_listener.h>
+#include <cpprest/json.h>
+#include <iostream>
+
+using namespace web;
+using namespace web::http;
+using namespace web::http::experimental::listener;
+
+
 
 void ServerManager::handle_request(http_request request) {
     auto path = uri::split_path(uri::decode(request.relative_uri().path()));
@@ -120,12 +142,25 @@ void ServerManager::handle_request(http_request request) {
     else if (first_segment == _XPLATSTR("ScanHostResult") && request.method() == methods::GET) {
         handle_get_ScanHostResult(request);
     }
-    else if (first_segment == _XPLATSTR("getAllData") && request.method() == methods::GET) {
+ /*   else if (first_segment == _XPLATSTR("getAllData") && request.method() == methods::GET) {
         handle_get_all_data(request);
-    }
+    }*/
     else if (first_segment == _XPLATSTR("getVaildPOCData") && request.method() == methods::GET) {
         handle_get_vaild_poc_data(request);
     }
+    else if (first_segment == _XPLATSTR("getPocTable") && request.method() == methods::GET) {
+        handle_get_poc_table(request);//分页返回数据库中POC表的全部数据
+    }
+    else if (first_segment == _XPLATSTR("getWithPocCondition") && request.method() == methods::GET) {
+        handle_get_with_poc_condition(request);//分页返回数据库中POC表的poc状态字段为"有"数据
+    }
+    else if (first_segment == _XPLATSTR("getWithTranPocCondition") && request.method() == methods::GET) {
+        handle_get_with_tran_poc_condition(request);//分页返回数据库中POC表的poc状态字段为"暂存"数据
+    }
+    else if (first_segment == _XPLATSTR("getWithOutPocCondition") && request.method() == methods::GET) {
+        handle_get_without_poc_condition(request);//分页返回数据库中POC表的poc状态字段为"无"数据
+    }
+
     else if (first_segment == _XPLATSTR("searchData") && request.method() == methods::GET) {
         handle_search_data(request);
     }
@@ -233,7 +268,16 @@ void ServerManager::handle_request(http_request request) {
     }
     else if (first_segment == _XPLATSTR("poc") && second_segment == _XPLATSTR("editVulnType") && request.method() == methods::POST) {
         handle_edit_vuln_type(request);
-    }
+    }//windows基线检测
+    else if (first_segment == _XPLATSTR("win_userinfo") && request.method() == methods::GET) {
+        handle_get_win_userinfo(request);
+        }
+    else if (first_segment == _XPLATSTR("win_login") && request.method() == methods::POST) {
+            handle_post_win_login(request);
+            }
+    else if (first_segment == _XPLATSTR("getScript") && request.method() == methods::GET) {
+                handle_get_baseline_scripts(request);
+                }
     // ========== 创建资产组 ==========
     else if (first_segment == _XPLATSTR("asset_group") && request.method() == methods::POST) {
         handle_post_create_asset_group(request);
@@ -267,10 +311,50 @@ void ServerManager::handle_request(http_request request) {
         request.method() == methods::GET) {
         handle_get_all_assets_full_info(request);
         }
+        // ========== 用户管理 ==========
+        //用户注册
+    else if (first_segment == _XPLATSTR("register") &&request.method() == methods::POST) {
+        handle_post_register(request);
+    }
+        //注册时验证码是否正确
+    else if (first_segment == _XPLATSTR("verify") &&request.method() == methods::POST) {
+            handle_post_verify(request);
+        }
+        //用户登录
+    else if (first_segment == _XPLATSTR("userLogin") && request.method() == methods::POST) {
+            handle_post_userLogin(request);
+            }
+            //管理员对用户的增删改查
+            //创建用户
+    else if (first_segment == _XPLATSTR("createUser") && request.method() == methods::POST) {
+                handle_post_create_user(request);
+                }
+            //用户信息更新
+    else if (first_segment == _XPLATSTR("updateUser") && request.method() == methods::PUT) {
+               handle_put_update_user(request);
+                    }
+              //用户删除
+    else if (first_segment == _XPLATSTR("deleteUser") && request.method() == methods::DEL) {
+               handle_delete_user(request);
+                        }
+             //删除用户恢复使用
+    else if (first_segment == _XPLATSTR("recoverUser") && request.method() == methods::PUT) {
+                            handle_recover_user(request);
+                            }
+               //通过用户名查找用户
+    else if (first_segment == _XPLATSTR("findUser") && request.method() == methods::GET) {
+                  handle_get_user(request);
+                            }
+               //展示数据库中全部用户
+    else if (first_segment == _XPLATSTR("displayUsers") && request.method() == methods::GET) {
+                   handle_get_all_users(request);
+                                }
+   
     else {
         request.reply(status_codes::NotFound, _XPLATSTR("Path not found"));
     }
 }
+
 
 void ServerManager::redis_get_scan(http_request request) {
     
@@ -281,6 +365,8 @@ void ServerManager::redis_get_scan(http_request request) {
 
 void ServerManager::handle_get_test(http_request request)
 {
+    http_request req = request;
+   dbHandler_.setCurrentDatabase(GetDb(req));
     try {
         // 解析请求中的IP参数
         auto query = uri::split_query(request.request_uri().query());
@@ -298,6 +384,7 @@ void ServerManager::handle_get_test(http_request request)
         }
 
         // 使用从请求中获取的IP地址
+       
         ScanHostResult result = dbHandler_.getScanHostResult(ip, pool);
 
         // 打印结果
@@ -609,8 +696,11 @@ web::json::value ServerManager::convertPortsToJson(const std::vector<PortInfo>& 
 // 处理获取所有资产信息的HTTP请求
 void ServerManager::handle_get_all_assets_info(http_request request)
 {
+    http_request req = request;
+
     try {
         // 获取所有资产信息
+        dbHandler_.setCurrentDatabase(GetDb(req));
         std::vector<AssetInfo> allAssets = dbHandler_.getAllAssetsInfo(pool);
 
         // 转换为JSON格式
@@ -634,7 +724,9 @@ void ServerManager::handle_get_all_assets_info(http_request request)
 
 // 处理获取单个IP资产信息的HTTP请求
 void ServerManager::handle_get_asset_info(http_request request)
-{
+{ 
+   http_request req = request;
+   dbHandler_.setCurrentDatabase(GetDb(req));
     try {
         // 从URL中获取IP参数
         std::string ip;
@@ -681,6 +773,8 @@ bool ServerManager::isServiceExistByIp(const std::string& ip, const std::string&
 }
 
 void ServerManager::handle_get_userInfo(http_request request) {
+   http_request req = request;
+   
     try {
         // 解析请求中的IP参数
         auto query = uri::split_query(request.request_uri().query());
@@ -700,12 +794,15 @@ void ServerManager::handle_get_userInfo(http_request request) {
         }
 
         // 获取安全检查结果
+        dbHandler_.setCurrentDatabase(GetDb(req));
         std::vector<event> check_results = dbHandler_.getSecurityCheckResults(ip, pool);//
 
         // 获取服务器信息
+        dbHandler_.setCurrentDatabase(GetDb(req));
         ServerInfo server_info = dbHandler_.getServerInfoByIp(ip, pool);
 
         // 获取基线检测时间
+        dbHandler_.setCurrentDatabase(GetDb(req));
         std::string baseline_check_time = dbHandler_.getBaselineCheckTime(ip, pool);
         // 创建返回的JSON对象
         web::json::value response_json = web::json::value::object();
@@ -764,6 +861,7 @@ void ServerManager::handle_get_userInfo(http_request request) {
 }
 
 void ServerManager::handle_get_tmpUserInfo(http_request request) {
+    http_request req = request;
     try {
         // 解析请求中的IP参数
         auto query = uri::split_query(request.request_uri().query());
@@ -807,12 +905,15 @@ void ServerManager::handle_get_tmpUserInfo(http_request request) {
         }
 
         // 获取选定IDs的安全检查结果
+        dbHandler_.setCurrentDatabase(GetDb(req));
         std::vector<event> check_results = dbHandler_.getSecurityCheckResultsByIds(ip, selectedIds, pool);//check_time
 
         // 获取服务器信息
+        dbHandler_.setCurrentDatabase(GetDb(req));
         ServerInfo server_info = dbHandler_.getServerInfoByIp(ip, pool);
 
         // 获取基线检测时间
+        dbHandler_.setCurrentDatabase(GetDb(req));
         std::string baseline_check_time = dbHandler_.getBaselineCheckTime(ip, pool);
         // 创建返回的JSON对象
         web::json::value response_json = web::json::value::object();
@@ -874,6 +975,7 @@ void ServerManager::handle_get_tmpUserInfo(http_request request) {
 
 // 在 ServerManager.cpp 中实现该函数
 void ServerManager::handle_get_security_check_by_ip(http_request request) {
+    http_request req = request;
     try {
         // 解析请求中的IP参数
         auto query = uri::split_query(request.request_uri().query());
@@ -893,6 +995,7 @@ void ServerManager::handle_get_security_check_by_ip(http_request request) {
         }
 
         // 从数据库中获取该IP的安全检查结果
+        dbHandler_.setCurrentDatabase(GetDb(req));
         std::vector<event> check_results = dbHandler_.getSecurityCheckResults(ip, pool);//tmp_import
 
         // 创建结果JSON数组
@@ -929,6 +1032,8 @@ void ServerManager::handle_get_security_check_by_ip(http_request request) {
 }
 
 void ServerManager::handle_post_level3(http_request request) {
+    http_request req = request;
+    dbHandler_.setCurrentDatabase(GetDb(req));
     request.extract_json().then([&](json::value jsonReq) {
         this->global_ip = jsonReq[_XPLATSTR("ip")].as_string();
         this->global_pd = jsonReq[_XPLATSTR("pd")].as_string();
@@ -949,7 +1054,7 @@ void ServerManager::handle_post_level3(http_request request) {
         // 缓存该 IP 最后检测的 IDs
         lastLevel3CheckedIds[ip] = selectedIds;
 
-        level3Fun(ip, "root", pd, pool, dbHandler_, selectedIds);//tmp_import
+        level3Fun(ip, "root", pd, pool, dbHandler_, selectedIds,req);//tmp_import
 
         http_response response(status_codes::OK);
         response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
@@ -962,6 +1067,8 @@ void ServerManager::handle_post_level3(http_request request) {
 
 void ServerManager::handle_get_level3UserInfo(http_request request)
 {
+   http_request req = request;
+
     try {
         // 解析请求中的IP参数
         auto query = uri::split_query(request.request_uri().query());
@@ -981,10 +1088,12 @@ void ServerManager::handle_get_level3UserInfo(http_request request)
         }
 
         // 获取三级等保结果
+        dbHandler_.setCurrentDatabase(GetDb(req));
         std::vector<event> check_results = dbHandler_.getLevel3SecurityCheckResults(ip, pool);//check_time
 
 
         // 获取三级等保检测时间
+        dbHandler_.setCurrentDatabase(GetDb(req));
         std::string level3_check_time = dbHandler_.getLevel3CheckTime(ip, pool);
         // 创建返回的JSON对象
         web::json::value response_json = web::json::value::object();
@@ -1032,6 +1141,7 @@ void ServerManager::handle_get_level3UserInfo(http_request request)
 
 void ServerManager::handle_get_level3TmpUserInfo(http_request request)
 {
+    http_request req = request;
     try {
         // 解析请求中的IP参数
         auto query = uri::split_query(request.request_uri().query());
@@ -1074,10 +1184,12 @@ void ServerManager::handle_get_level3TmpUserInfo(http_request request)
         }
 
         // 获取选定IDs的安全检查结果
+        dbHandler_.setCurrentDatabase(GetDb(req));
         std::vector<event> check_results = dbHandler_.getLevel3SecurityCheckResultsByIds(ip, selectedIds, pool);//tmp_import
 
 
         // 获取三级等保检测时间
+        dbHandler_.setCurrentDatabase(GetDb(req));
         std::string level3_check_time = dbHandler_.getLevel3CheckTime(ip, pool);
         // 创建返回的JSON对象
         web::json::value response_json = web::json::value::object();
@@ -1125,6 +1237,7 @@ void ServerManager::handle_get_level3TmpUserInfo(http_request request)
 
 // 在 ServerManager.cpp 中实现该函数
 void ServerManager::handle_get_weak_password_by_ip(http_request request) {
+    http_request req = request;
     try {
         // 解析请求中的IP参数
         auto query = uri::split_query(request.request_uri().query());
@@ -1141,6 +1254,7 @@ void ServerManager::handle_get_weak_password_by_ip(http_request request) {
             return;
         }
         // 从数据库中获取该IP的所有端口信息
+        dbHandler_.setCurrentDatabase(GetDb(req));
         std::vector<PortInfo> port_infos = dbHandler_.getAllPortInfoByIp(ip, pool);
 
         // 筛选出有弱密码的端口信息
@@ -1169,11 +1283,13 @@ void ServerManager::handle_get_weak_password_by_ip(http_request request) {
     }
 }
 
-// 在 ServerManager.cpp 中添加新函数
+
 void ServerManager::handle_get_all_weak_passwords(http_request request) {
+    http_request req = request;
     try {
         // 获取所有存活主机
         std::vector<std::string> alive_hosts;
+        dbHandler_.setCurrentDatabase(GetDb(req));
         dbHandler_.readAliveHosts(alive_hosts, pool);
 
         // 创建一个JSON数组来存储所有主机的弱口令信息
@@ -1183,6 +1299,7 @@ void ServerManager::handle_get_all_weak_passwords(http_request request) {
         // 遍历每个存活主机
         for (const auto& ip : alive_hosts) {
             // 从数据库中获取该IP的所有端口信息
+            dbHandler_.setCurrentDatabase(GetDb(req));
             std::vector<PortInfo> port_infos = dbHandler_.getAllPortInfoByIp(ip, pool);
 
             // 筛选出有弱密码的端口信息
@@ -1220,6 +1337,7 @@ void ServerManager::handle_get_all_weak_passwords(http_request request) {
 
 
 void ServerManager::handle_post_login(http_request request) {
+    http_request req = request;
     request.extract_json().then([&](json::value jsonReq) {
         this->global_ip = jsonReq[_XPLATSTR("ip")].as_string();
         this->global_pd = jsonReq[_XPLATSTR("pd")].as_string();
@@ -1246,13 +1364,13 @@ void ServerManager::handle_post_login(http_request request) {
         5   // 空密码检查
         };
         */
-
-        fun2( ip, "root", pd,  pool, dbHandler_, selectedIds);//tmp_import
+        fun2( ip, "root", pd,  pool, dbHandler_, req, selectedIds);//tmp_import
         // Create connection pool for ServerInfo
         auto start = std::chrono::high_resolution_clock::now();
         SSHConnectionPool sshPool(ip, "root", pd, 1); // Single connection is enough for sequential operations
         ServerInfo info;
-        ServerInfo_Padding2(info, ip, sshPool, pool, dbHandler_);
+      
+        ServerInfo_Padding2(info, ip, sshPool, pool, dbHandler_,req);
         // 获取结束时间（用于测试）
         auto end = std::chrono::high_resolution_clock::now();
         // 计算时间差（以毫秒为单位）
@@ -1276,13 +1394,20 @@ void ServerManager::handle_get_cve_scan(http_request request) {
     for (const auto& scan_host_result : scan_host_result) {
         result[index++] = ScanHostResult_to_json(scan_host_result);
     }
+    json::value response_data;
+    response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("成功获取扫描结果"));
+    response_data[_XPLATSTR("data")] = result;
     //std::cout << result.serialize() << std::endl;
+    http_response res(status_codes::OK);
 
-    request.reply(web::http::status_codes::OK, result);
+    res.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+    res.set_body(response_data);
+    request.reply(res);
 }
 
 //新版：从数据库中获取扫描结果
 void ServerManager::handle_get_ScanHostResult(http_request request) {
+    http_request req = request;
     try {
         // 解析查询参数
         auto query = uri::split_query(request.request_uri().query());
@@ -1297,6 +1422,7 @@ void ServerManager::handle_get_ScanHostResult(http_request request) {
         console->info("[INFO] 查询扫描结果，目标IP: {}", ip);
 
         // 查询数据库
+        dbHandler_.setCurrentDatabase(GetDb(req));
         ScanHostResult scan_host_result = dbHandler_.getScanHostResult(ip, pool);
 
         if (!scan_host_result.ports.empty()) {
@@ -1330,18 +1456,20 @@ void ServerManager::handle_get_ScanHostResult(http_request request) {
     }
 }
 
-void ServerManager::handle_get_all_data(http_request request) {
-    poc_list = dbManager.getAllData();
-    json::value all_data = poc_list_to_json(poc_list);
-
-    http_response response(status_codes::OK);
-    response.headers().add(_XPLATSTR("Content-Type"), _XPLATSTR("application/json; charset=utf-8"));
-    response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
-    response.set_body(all_data);
-    request.reply(response);
-}
+//void ServerManager::handle_get_all_data(http_request request) {
+//    poc_list = dbManager.getAllData();
+//    json::value all_data = poc_list_to_json(poc_list);
+//
+//    http_response response(status_codes::OK);
+//    response.headers().add(_XPLATSTR("Content-Type"), _XPLATSTR("application/json; charset=utf-8"));
+//    response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+//    response.set_body(all_data);
+//    request.reply(response);
+//}
 
 void ServerManager::handle_get_vaild_poc_data(http_request request) {
+    http_request req = request;
+    dbHandler_.setCurrentDatabase(GetDb(req));
     poc_list = dbManager.getVaildPOCData();
     json::value all_data = poc_list_to_json(poc_list);
 
@@ -1352,7 +1480,339 @@ void ServerManager::handle_get_vaild_poc_data(http_request request) {
     request.reply(response);
 }
 
+void ServerManager::handle_get_poc_table(http_request request) {
+    http_request req = request;
+    dbHandler_.setCurrentDatabase(GetDb(req));
+    try {
+        // 解析查询参数
+        auto query = uri::split_query(request.request_uri().query());
+
+        // 设置默认分页参数
+        int page = 1;
+        int pageSize = 10;
+
+        // 提取page参数
+        if (query.find(_XPLATSTR("page")) != query.end()) {
+            try {
+                page = std::stoi(query[_XPLATSTR("page")]);
+                if (page < 1) page = 1;  // 确保最小值
+            }
+            catch (const std::invalid_argument&) {
+                // 无效参数处理
+                system_logger->warn("[handle_get_poc_table] 无效的页码参数: {}",
+                    utility::conversions::to_utf8string(query[_XPLATSTR("page")]));
+            }
+        }
+
+        // 提取page_size参数
+        if (query.find(_XPLATSTR("page_size")) != query.end()) {
+            try {
+                pageSize = std::stoi(query[_XPLATSTR("page_size")]);
+                // 限制最大分页大小
+                if (pageSize < 1) pageSize = 10;
+                if (pageSize > 100) pageSize = 100;
+            }
+            catch (const std::invalid_argument&) {
+                // 无效参数处理
+                system_logger->warn("[handle_get_poc_table] 无效的页大小参数: {}",
+                    utility::conversions::to_utf8string(query[_XPLATSTR("page_size")]));
+            }
+        }
+
+        // 调用分页函数
+        int totalRecords = 0;
+        int totalPages = 0;
+
+        std::vector<POC> pocRecords = dbManager.getPocTableWithPagination(page, pageSize, totalRecords, totalPages);
+
+        // 构建JSON响应
+        web::json::value response;
+        response[_XPLATSTR("status")] = json::value::string(_XPLATSTR("success"));
+        response[_XPLATSTR("current_page")] = page;
+        response[_XPLATSTR("page_size")] = pageSize;
+        response[_XPLATSTR("total_records")] = totalRecords;
+        response[_XPLATSTR("total_pages")] = totalPages;
+
+        // 添加记录数组
+        response[_XPLATSTR("records")] = poc_list_to_json(pocRecords);
+
+        // 设置响应头
+        http_response http_resp(status_codes::OK);
+        http_resp.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+        http_resp.headers().add(_XPLATSTR("Content-Type"), _XPLATSTR("application/json; charset=utf-8"));
+
+        // 添加分页头信息（供前端直接使用）
+        http_resp.headers().add(_XPLATSTR("X-Pagination-Page"), _XPLATSTR(std::to_string(page)));
+        http_resp.headers().add(_XPLATSTR("X-Pagination-PageSize"), _XPLATSTR(std::to_string(pageSize)));
+        http_resp.headers().add(_XPLATSTR("X-Pagination-Total"), _XPLATSTR(std::to_string(totalRecords)));
+
+        http_resp.set_body(response);
+        request.reply(http_resp);
+
+        // 记录访问日志
+        system_logger->info("[handle_get_poc_table] 成功响应分页请求: page={}, size={}, total={}",
+            page, pageSize, totalRecords);
+    }
+    catch (const std::exception& e) {
+        // 错误处理
+        system_logger->error("[handle_get_poc_table] 处理请求时出错: {}", e.what());
+        console->error("[handle_get_poc_table] 处理请求时出错: {}", e.what());
+
+        web::json::value error;
+        error[_XPLATSTR("error")] = json::value::string(_XPLATSTR("Internal Server Error"));
+        request.reply(status_codes::InternalError, error);
+    }
+}
+void ServerManager::handle_get_with_poc_condition(http_request request) {
+    http_request req = request;
+    dbHandler_.setCurrentDatabase(GetDb(req));
+    try {
+        // 解析查询参数
+        auto query = uri::split_query(request.request_uri().query());
+
+        // 设置默认分页参数
+        int page = 1;
+        int pageSize = 10;
+
+        // 提取page参数
+        if (query.find(_XPLATSTR("page")) != query.end()) {
+            try {
+                page = std::stoi(query[_XPLATSTR("page")]);
+                if (page < 1) page = 1;  // 确保最小值
+            }
+            catch (const std::invalid_argument&) {
+                // 无效参数处理
+                system_logger->warn("[handle_get_with_poc_condition] 无效的页码参数: {}",
+                    utility::conversions::to_utf8string(query[_XPLATSTR("page")]));
+            }
+        }
+
+        // 提取page_size参数
+        if (query.find(_XPLATSTR("page_size")) != query.end()) {
+            try {
+                pageSize = std::stoi(query[_XPLATSTR("page_size")]);
+                // 限制最大分页大小
+                if (pageSize < 1) pageSize = 10;
+                if (pageSize > 100) pageSize = 100;
+            }
+            catch (const std::invalid_argument&) {
+                // 无效参数处理
+                system_logger->warn("[handle_get_with_poc_condition] 无效的页大小参数: {}",
+                    utility::conversions::to_utf8string(query[_XPLATSTR("page_size")]));
+            }
+        }
+
+        // 调用分页函数
+        int totalRecords = 0;
+        int totalPages = 0;
+        std::vector<POC> pocRecords = dbManager.getWithtPocCondition(page, pageSize, totalRecords, totalPages);
+
+        // 构建JSON响应
+        web::json::value response;
+        response[_XPLATSTR("status")] = json::value::string(_XPLATSTR("success"));
+        response[_XPLATSTR("current_page")] = page;
+        response[_XPLATSTR("page_size")] = pageSize;
+        response[_XPLATSTR("total_records")] = totalRecords;
+        response[_XPLATSTR("total_pages")] = totalPages;
+
+        // 添加记录数组
+        response[_XPLATSTR("records")] = poc_list_to_json(pocRecords);
+
+        // 设置响应头
+        http_response http_resp(status_codes::OK);
+        http_resp.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+        http_resp.headers().add(_XPLATSTR("Content-Type"), _XPLATSTR("application/json; charset=utf-8"));
+
+        // 添加分页头信息（供前端直接使用）
+        http_resp.headers().add(_XPLATSTR("X-Pagination-Page"), _XPLATSTR(std::to_string(page)));
+        http_resp.headers().add(_XPLATSTR("X-Pagination-PageSize"), _XPLATSTR(std::to_string(pageSize)));
+        http_resp.headers().add(_XPLATSTR("X-Pagination-Total"), _XPLATSTR(std::to_string(totalRecords)));
+
+        http_resp.set_body(response);
+        request.reply(http_resp);
+
+        // 记录访问日志
+        system_logger->info("[handle_get_with_poc_condition] 成功响应分页请求: page={}, size={}, total={}",
+            page, pageSize, totalRecords);
+    }
+    catch (const std::exception& e) {
+        // 错误处理
+        system_logger->error("[handle_get_with_poc_condition] 处理请求时出错: {}", e.what());
+        console->error("[handle_get_with_poc_condition] 处理请求时出错: {}", e.what());
+
+        web::json::value error;
+        error[_XPLATSTR("error")] = json::value::string(_XPLATSTR("Internal Server Error"));
+        request.reply(status_codes::InternalError, error);
+    }
+}
+void ServerManager::handle_get_with_tran_poc_condition(http_request request) {
+    http_request req = request;
+    dbHandler_.setCurrentDatabase(GetDb(req));
+    try {
+        // 解析查询参数
+        auto query = uri::split_query(request.request_uri().query());
+
+        // 设置默认分页参数
+        int page = 1;
+        int pageSize = 10;
+
+        // 提取page参数
+        if (query.find(_XPLATSTR("page")) != query.end()) {
+            try {
+                page = std::stoi(query[_XPLATSTR("page")]);
+                if (page < 1) page = 1;  // 确保最小值
+            }
+            catch (const std::invalid_argument&) {
+                // 无效参数处理
+                system_logger->warn("[handle_get_with_tran_poc_condition] 无效的页码参数: {}",
+                    utility::conversions::to_utf8string(query[_XPLATSTR("page")]));
+            }
+        }
+
+        // 提取page_size参数
+        if (query.find(_XPLATSTR("page_size")) != query.end()) {
+            try {
+                pageSize = std::stoi(query[_XPLATSTR("page_size")]);
+                // 限制最大分页大小
+                if (pageSize < 1) pageSize = 10;
+                if (pageSize > 100) pageSize = 100;
+            }
+            catch (const std::invalid_argument&) {
+                // 无效参数处理
+                system_logger->warn("[handle_get_with_tran_poc_condition] 无效的页大小参数: {}",
+                    utility::conversions::to_utf8string(query[_XPLATSTR("page_size")]));
+            }
+        }
+
+        // 调用分页函数
+        int totalRecords = 0;
+        int totalPages = 0;
+        std::vector<POC> pocRecords = dbManager.getWithTranPocCondition(page, pageSize, totalRecords, totalPages);
+
+        // 构建JSON响应
+        web::json::value response;
+        response[_XPLATSTR("status")] = json::value::string(_XPLATSTR("success"));
+        response[_XPLATSTR("current_page")] = page;
+        response[_XPLATSTR("page_size")] = pageSize;
+        response[_XPLATSTR("total_records")] = totalRecords;
+        response[_XPLATSTR("total_pages")] = totalPages;
+
+        // 添加记录数组
+        response[_XPLATSTR("records")] = poc_list_to_json(pocRecords);
+
+        // 设置响应头
+        http_response http_resp(status_codes::OK);
+        http_resp.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+        http_resp.headers().add(_XPLATSTR("Content-Type"), _XPLATSTR("application/json; charset=utf-8"));
+
+        // 添加分页头信息（供前端直接使用）
+        http_resp.headers().add(_XPLATSTR("X-Pagination-Page"), _XPLATSTR(std::to_string(page)));
+        http_resp.headers().add(_XPLATSTR("X-Pagination-PageSize"), _XPLATSTR(std::to_string(pageSize)));
+        http_resp.headers().add(_XPLATSTR("X-Pagination-Total"), _XPLATSTR(std::to_string(totalRecords)));
+
+        http_resp.set_body(response);
+        request.reply(http_resp);
+
+        // 记录访问日志
+        system_logger->info("[handle_get_with_tran_poc_condition] 成功响应分页请求: page={}, size={}, total={}",
+            page, pageSize, totalRecords);
+    }
+    catch (const std::exception& e) {
+        // 错误处理
+        system_logger->error("[handle_get_with_tran_poc_condition] 处理请求时出错: {}", e.what());
+        console->error("[handle_get_with_tran_poc_condition] 处理请求时出错: {}", e.what());
+
+        web::json::value error;
+        error[_XPLATSTR("error")] = json::value::string(_XPLATSTR("Internal Server Error"));
+        request.reply(status_codes::InternalError, error);
+    }
+}
+void ServerManager::handle_get_without_poc_condition(http_request request) {
+    http_request req = request;
+    dbHandler_.setCurrentDatabase(GetDb(req));
+    try {
+        // 解析查询参数
+        auto query = uri::split_query(request.request_uri().query());
+
+        // 设置默认分页参数
+        int page = 1;
+        int pageSize = 10;
+
+        // 提取page参数
+        if (query.find(_XPLATSTR("page")) != query.end()) {
+            try {
+                page = std::stoi(query[_XPLATSTR("page")]);
+                if (page < 1) page = 1;  // 确保最小值
+            }
+            catch (const std::invalid_argument&) {
+                // 无效参数处理
+                system_logger->warn("[handle_get_without_poc_condition] 无效的页码参数: {}",
+                    utility::conversions::to_utf8string(query[_XPLATSTR("page")]));
+            }
+        }
+
+        // 提取page_size参数
+        if (query.find(_XPLATSTR("page_size")) != query.end()) {
+            try {
+                pageSize = std::stoi(query[_XPLATSTR("page_size")]);
+                // 限制最大分页大小
+                if (pageSize < 1) pageSize = 10;
+                if (pageSize > 100) pageSize = 100;
+            }
+            catch (const std::invalid_argument&) {
+                // 无效参数处理
+                system_logger->warn("[handle_get_without_poc_condition] 无效的页大小参数: {}",
+                    utility::conversions::to_utf8string(query[_XPLATSTR("page_size")]));
+            }
+        }
+
+        // 调用分页函数
+        int totalRecords = 0;
+        int totalPages = 0;
+        std::vector<POC> pocRecords = dbManager.getWithOutPocCondition(page, pageSize, totalRecords, totalPages);
+
+        // 构建JSON响应
+        web::json::value response;
+        response[_XPLATSTR("status")] = json::value::string(_XPLATSTR("success"));
+        response[_XPLATSTR("current_page")] = page;
+        response[_XPLATSTR("page_size")] = pageSize;
+        response[_XPLATSTR("total_records")] = totalRecords;
+        response[_XPLATSTR("total_pages")] = totalPages;
+
+        // 添加记录数组
+        response[_XPLATSTR("records")] = poc_list_to_json(pocRecords);
+
+        // 设置响应头
+        http_response http_resp(status_codes::OK);
+        http_resp.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+        http_resp.headers().add(_XPLATSTR("Content-Type"), _XPLATSTR("application/json; charset=utf-8"));
+
+        // 添加分页头信息（供前端直接使用）
+        http_resp.headers().add(_XPLATSTR("X-Pagination-Page"), _XPLATSTR(std::to_string(page)));
+        http_resp.headers().add(_XPLATSTR("X-Pagination-PageSize"), _XPLATSTR(std::to_string(pageSize)));
+        http_resp.headers().add(_XPLATSTR("X-Pagination-Total"), _XPLATSTR(std::to_string(totalRecords)));
+
+        http_resp.set_body(response);
+        request.reply(http_resp);
+
+        // 记录访问日志
+        system_logger->info("[[handle_get_without_poc_condition] 成功响应分页请求: page={}, size={}, total={}",
+            page, pageSize, totalRecords);
+    }
+    catch (const std::exception& e) {
+        // 错误处理
+        system_logger->error("[handle_get_without_poc_condition] 处理请求时出错: {}", e.what());
+        console->error("[handle_get_without_poc_condition] 处理请求时出错: {}", e.what());
+
+        web::json::value error;
+        error[_XPLATSTR("error")] = json::value::string(_XPLATSTR("Internal Server Error"));
+        request.reply(status_codes::InternalError, error);
+    }
+}
+
 void ServerManager::handle_search_data(http_request request) {
+    http_request req = request;
+    dbHandler_.setCurrentDatabase(GetDb(req));
     auto query = uri::split_query(request.relative_uri().query());
     auto searchKeyword = uri::decode(query[_XPLATSTR("keyword")]);
     auto poc_data = dbManager.searchData(searchKeyword);
@@ -1364,7 +1824,9 @@ void ServerManager::handle_search_data(http_request request) {
         data[_XPLATSTR("vul_name")] = json::value::string(utility::conversions::to_string_t(poc_data[i].vul_name));
         data[_XPLATSTR("type")] = json::value::string(utility::conversions::to_string_t(poc_data[i].type));
         data[_XPLATSTR("description")] = json::value::string(utility::conversions::to_string_t(poc_data[i].description));
-        data[_XPLATSTR("affected_infra")] = json::value::string(utility::conversions::to_string_t(poc_list[i].affected_infra));
+        data[_XPLATSTR("affected_infra")] = json::value::string(utility::conversions::to_string_t(poc_data[i].affected_infra));
+        data[_XPLATSTR("cvss_score")] = json::value::string(utility::conversions::to_string_t(poc_data[i].cvss_score));
+        data[_XPLATSTR("poc_condition")] = json::value::string(utility::conversions::to_string_t(poc_data[i].poc_condition));
         data[_XPLATSTR("script_type")] = json::value::string(utility::conversions::to_string_t(poc_data[i].script_type));
         data[_XPLATSTR("script")] = json::value::string(utility::conversions::to_string_t(poc_data[i].script));
         data[_XPLATSTR("timestamp")] = json::value::string(utility::conversions::to_string_t(poc_data[i].timestamp));
@@ -1378,6 +1840,7 @@ void ServerManager::handle_search_data(http_request request) {
 }
 
 void ServerManager::handle_post_insert_data(http_request request) {
+    http_request req = request;
     json::value response_data;
     http_response response;
 
@@ -1396,7 +1859,7 @@ void ServerManager::handle_post_insert_data(http_request request) {
         save_request_to_temp_file(request);
 
         // 解析表单字段
-        std::string cve_id, vul_name, type, description, affected_infra, script_type, mode, edit_filename, filename, poc_content;
+        std::string cve_id, vul_name, type, description, affected_infra,cvss_score,poc_condition,script_type, mode, edit_filename, filename, poc_content;
         std::ifstream temp_file(CONFIG.getPocTempFile(), std::ios::binary);
         std::string body((std::istreambuf_iterator<char>(temp_file)), std::istreambuf_iterator<char>());
         temp_file.close();
@@ -1432,6 +1895,8 @@ void ServerManager::handle_post_insert_data(http_request request) {
                         else if (name == "type") type = decoded_data;
                         else if (name == "description") description = decoded_data;
                         else if (name == "affected_infra") affected_infra = decoded_data;
+                        else if (name == "cvss_score") cvss_score = decoded_data;
+                        else if (name == "poc_condition") poc_condition = decoded_data;
                         else if (name == "script_type") script_type = decoded_data;
                         else if (name == "mode") mode = decoded_data;
                         else if (name == "edit_filename") edit_filename = decoded_data;
@@ -1442,6 +1907,7 @@ void ServerManager::handle_post_insert_data(http_request request) {
         }
 
         // 检查CVE_ID是否已存在
+        dbHandler_.setCurrentDatabase(GetDb(req));
         if (dbManager.isExistCVE(cve_id)) {
             response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("CVE_ID already exists"));
             http_response response(status_codes::BadRequest);
@@ -1466,6 +1932,7 @@ void ServerManager::handle_post_insert_data(http_request request) {
                     return;
                 }
 
+                //写入文件
                 //写入文件
                 std::ofstream outfile(full_file_path);
                 if (outfile.is_open()) {
@@ -1503,9 +1970,11 @@ void ServerManager::handle_post_insert_data(http_request request) {
         }
 
         // 插入数据到数据库
-        bool success = dbManager.insertData(cve_id, vul_name, type, description, affected_infra, script_type, filename);
+        dbHandler_.setCurrentDatabase(GetDb(req));
+        bool success = dbManager.insertData(cve_id, vul_name, type, description, affected_infra,cvss_score,poc_condition ,script_type, filename);
         if (success) {
-            poc_list = dbManager.getAllData();
+            dbHandler_.setCurrentDatabase(GetDb(req));
+            poc_list = dbManager.getVaildPOCData();
             response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("添加成功！"));
             response.set_status_code(status_codes::OK);
         }
@@ -1660,9 +2129,10 @@ void ServerManager::handle_post_insert_data(http_request request) {
 ///*
 void ServerManager::handle_put_update_data_by_id(http_request request)
 {
+  
     json::value response_data;
     http_response response;
-
+    http_request req = request;
     try {
         // 检查是否为multipart/form-data格式
         auto content_type = request.headers().content_type();
@@ -1713,6 +2183,8 @@ void ServerManager::handle_put_update_data_by_id(http_request request)
                         else if (name == "type") poc.type = decoded_data;
                         else if (name == "description") poc.description = decoded_data;
                         else if (name == "affected_infra") poc.affected_infra = decoded_data;
+                        else if (name == "cvss_score") poc.cvss_score = decoded_data;
+                        else if (name == "poc_condition") poc.poc_condition = decoded_data;
                         else if (name == "script_type") poc.script_type = decoded_data;
                         else if (name == "mode") mode = decoded_data;  // 获取操作模式
                         else if (name == "edit_filename") edit_filename = decoded_data; // 获取编辑文件名
@@ -1722,7 +2194,22 @@ void ServerManager::handle_put_update_data_by_id(http_request request)
             }
         }
 
+
+        // 检查如果 poc_condition 的值为"有"，则相关字段不能为空
+        if (poc.poc_condition == "有") {
+            // 验证 script_type 不能为空
+            if (poc.script_type.empty()) {
+                response_data[_XPLATSTR("message")] = json::value::string(
+                    _XPLATSTR("更新失败！POC状态为‘有’时，POC类型不能为空。"));
+                response.set_status_code(status_codes::BadRequest);
+                response.set_body(response_data);
+                request.reply(response);
+                return;
+            }
+
+        }
         // 检索当前POC的原文件名
+        dbHandler_.setCurrentDatabase(GetDb(req));
         std::string POC_filename = dbManager.searchPOCById(poc.id); // 原文件名
         std::string data; // 用于存储文件内容
 
@@ -1792,6 +2279,16 @@ void ServerManager::handle_put_update_data_by_id(http_request request)
             std::string error_message = "";
             bool fileExist = check_and_get_filename(body, content_type, filename, data, error_message);
 
+            // ====== 第二步验证：上传模式文件验证 ====== //
+            if (poc.poc_condition == "有" && edit_filename.empty()) {
+                response_data[_XPLATSTR("message")] = json::value::string(
+                    _XPLATSTR("更新失败！POC状态为'有'时，编辑文件名不能为空。"));
+                response.set_status_code(status_codes::BadRequest);
+                response.set_body(response_data);
+                request.reply(response);
+                return;
+            }
+
             if (filename != "") {
                 // 有同名文件，且不是该POC记录的，报错
                 if (fileExist && filename != poc.script) {
@@ -1824,9 +2321,11 @@ void ServerManager::handle_put_update_data_by_id(http_request request)
         }
 
         // 更新数据
+        dbHandler_.setCurrentDatabase(GetDb(req));
         bool success = dbManager.updateDataById(poc.id, poc);
         if (success) {
-            poc_list = dbManager.getAllData();  // 更新POC列表
+            dbHandler_.setCurrentDatabase(GetDb(req));
+            poc_list = dbManager.getVaildPOCData();  // 更新POC列表
             response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("更新成功"));
             response.set_status_code(status_codes::OK);
         }
@@ -1995,15 +2494,19 @@ void ServerManager::handle_put_update_data_by_id(http_request request)
 
 
 void ServerManager::handle_delete_data_by_id(http_request request) {
+  
     request.extract_json().then([this, &request](json::value body) mutable {
+        http_request req = request;
         bool dbSuccess = true, fileSuccess = true;
 
         if (body[_XPLATSTR("ids")].is_array()) {
             auto idsArray = body[_XPLATSTR("ids")].as_array();
             for (auto& val : idsArray) {
                 int id = val.as_integer();
+                dbHandler_.setCurrentDatabase(GetDb(req));
                 std::string POC_filename = dbManager.searchPOCById(id);
                 // 删除数据库信息
+                dbHandler_.setCurrentDatabase(GetDb(req));
                 if (!dbManager.deleteDataById(id)) {
                     dbSuccess = false;
                     break;
@@ -2033,9 +2536,11 @@ void ServerManager::handle_delete_data_by_id(http_request request) {
         }
         else {
             int id = body[_XPLATSTR("ids")].as_integer();
+            dbHandler_.setCurrentDatabase(GetDb(req));
             std::string POC_filename = dbManager.searchPOCById(id);
 
             // 删除数据库信息
+            dbHandler_.setCurrentDatabase(GetDb(req));
             if (!dbManager.deleteDataById(id)) {
                 dbSuccess = false;
             }
@@ -2066,7 +2571,8 @@ void ServerManager::handle_delete_data_by_id(http_request request) {
         json::value response_data;
 
         if (dbSuccess && fileSuccess) {
-            poc_list = dbManager.getAllData();
+            dbHandler_.setCurrentDatabase(GetDb(req));
+            poc_list = dbManager.getVaildPOCData();
             response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("删除成功"));
             response.set_status_code(status_codes::OK);
         }
@@ -2089,8 +2595,9 @@ void ServerManager::handle_delete_data_by_id(http_request request) {
 
 void ServerManager::handle_post_get_Nmap(http_request request)
 {
+    
     request.extract_json().then([this, &request](json::value body) {
-
+        http_request req = request;
         std::string ip = body[_XPLATSTR("ip")].as_string();
 
         user_logger->info("IP：{} 开始CVE-search漏洞扫描", ip);
@@ -2186,14 +2693,18 @@ void ServerManager::handle_post_get_Nmap(http_request request)
         scan_host_result[0].allPorts = allPorts;
 
         //搜索POC代码是否存在并装载。
-        searchPOCs(scan_host_result[0], dbManager, dbHandler_, pool);
+
+        searchPOCs(scan_host_result[0], dbManager, dbHandler_, pool, req);
 
         // 将新的扫描结果保存为历史数据
         historicalData.data[ip] = scan_host_result[0];  // 目前只支持单个主机，取第一个
        
 		scan_host_result[0].ip = ip;
         //getNmap的部分，始终会为存活状态
+    /*    dbHandler_.setCurrentDatabase("");*/
+        dbHandler_.setCurrentDatabase(GetDb(req));
         dbHandler_.executeInsert(scan_host_result[0], pool);
+        dbHandler_.setCurrentDatabase(GetDb(req));
         dbHandler_.executeUpdateOrInsert(scan_host_result[0], pool);
 
         // 获取结束时间（用于测试）
@@ -2223,6 +2734,7 @@ void ServerManager::handle_post_get_Nmap(http_request request)
 //1.12日版本添加文件大小和文件后缀的检查
 void ServerManager::handle_post_hydra(http_request request) {
     // 检查Content-Type
+    http_request req = request;
     auto content_type = request.headers().content_type();
     if (content_type.find("multipart/form-data") == std::string::npos) {
         json::value error_response = json::value::object();
@@ -2252,6 +2764,7 @@ void ServerManager::handle_post_hydra(http_request request) {
     }
 
     request.extract_vector().then([this, &request](std::vector<unsigned char> body) {
+        http_request req = request;
         try {
             MultipartFormData formData(body);
 
@@ -2387,6 +2900,7 @@ void ServerManager::handle_post_hydra(http_request request) {
             // 验证服务是否存在
 			// 服务名是否在服务列表中
             //if (port_services.find(service_name) != port_services.end()) {
+            dbHandler_.setCurrentDatabase(GetDb(req));
             bool exists = isServiceExistByIp(ip, service_name, pool);
             if (true) {
                 // 构建并执行hydra命令
@@ -2431,6 +2945,7 @@ void ServerManager::handle_post_hydra(http_request request) {
                     login = match[4].str();
                     password = match[5].str();
                     // 保存弱口令结果到数据库
+                    dbHandler_.setCurrentDatabase(GetDb(req));
                     std::string verify_time = dbHandler_.saveWeakPasswordResult(host, port, service, login, password, pool);
 
                     // 构建返回对象，包含找到的弱口令信息
@@ -2456,6 +2971,7 @@ void ServerManager::handle_post_hydra(http_request request) {
                     // 没有找到弱口令，但需要清空原有记录（如果存在）
                     int port = std::stoi(portId);
                     std::string service = service_name;
+                    dbHandler_.setCurrentDatabase(GetDb(req));
                     dbHandler_.saveWeakPasswordResult(ip, port, service, "", "", pool);  // login 和 password 为空表示清空
 
                     // 构造返回对象
@@ -2505,6 +3021,7 @@ void ServerManager::handle_post_hydra(http_request request) {
 
 void ServerManager::handle_post_testWeak(http_request request)
 {
+   
     request.extract_json().then([this, &request](json::value body) {
         std::string password = body[_XPLATSTR("pd")].as_string();
         PasswordStrength strength = checkPasswordStrength(password);
@@ -2801,6 +3318,7 @@ json::value ServerManager::convertToJson(const std::vector<IpVulnerabilities>& v
     return json_array;
 }
 
+
 //POC列表转json
 json::value ServerManager::poc_list_to_json(const std::vector<POC>& poc_list) {
     json::value all_data = json::value::array();
@@ -2812,6 +3330,8 @@ json::value ServerManager::poc_list_to_json(const std::vector<POC>& poc_list) {
         data[_XPLATSTR("type")] = json::value::string(utility::conversions::to_string_t(poc_list[i].type));
         data[_XPLATSTR("description")] = json::value::string(utility::conversions::to_string_t(poc_list[i].description));
         data[_XPLATSTR("affected_infra")] = json::value::string(utility::conversions::to_string_t(poc_list[i].affected_infra));
+        data[_XPLATSTR("cvss_score")] = json::value::string(utility::conversions::to_string_t(poc_list[i].cvss_score));
+        data[_XPLATSTR("poc_condition")] = json::value::string(utility::conversions::to_string_t(poc_list[i].poc_condition));
         data[_XPLATSTR("script_type")] = json::value::string(utility::conversions::to_string_t(poc_list[i].script_type));
         data[_XPLATSTR("script")] = json::value::string(utility::conversions::to_string_t(poc_list[i].script));
         data[_XPLATSTR("timestamp")] = json::value::string(utility::conversions::to_string_t(poc_list[i].timestamp));
@@ -2819,6 +3339,9 @@ json::value ServerManager::poc_list_to_json(const std::vector<POC>& poc_list) {
     }
     return all_data;
 }
+
+
+
 
 
 //检验文件是否存在，并获取文件名
@@ -2901,6 +3424,7 @@ void ServerManager::save_request_to_temp_file(http_request request) {
 
 //查看POC内容
 void ServerManager::handle_get_poc_content(http_request request) {
+    http_request req = request;
     try {
         // 解析请求URL中的参数
         auto query = uri::split_query(request.request_uri().query());
@@ -2915,14 +3439,17 @@ void ServerManager::handle_get_poc_content(http_request request) {
         // 如果有 'id' 参数，根据 id 查询
         if (query.find(_XPLATSTR("id")) != query.end()) {
             int poc_id = std::stoi(query[_XPLATSTR("id")]);
+            dbHandler_.setCurrentDatabase(GetDb(req));
             poc_filename = dbManager.searchPOCById(poc_id);
         }
         // 如果没有 'id' 而有 'vuln_id' 参数，根据 vuln_id 查询
         else if (query.find(_XPLATSTR("vuln_id")) != query.end()) {
             std::string vuln_id = query[_XPLATSTR("vuln_id")];
-            poc_filename = dbManager.searchPOCById(vuln_id);
+            dbHandler_.setCurrentDatabase(GetDb(req));
+            poc_filename = dbManager.searchPOCByVulnId(vuln_id);
 
             // 使用 vuln_id 查询 POC 并提取 affected_infra 字段
+            dbHandler_.setCurrentDatabase(GetDb(req));
             auto poc_data = dbManager.searchDataByCVE(vuln_id);
             if (!poc_data.empty()) {
                 response_data[_XPLATSTR("affected_infra")] = json::value::string(utility::conversions::to_string_t(poc_data[0].affected_infra));
@@ -2979,10 +3506,12 @@ void ServerManager::handle_get_poc_content(http_request request) {
 
 //POC搜索
 void ServerManager::handle_post_poc_search(http_request request) {
+    http_request req = request;
     try {
         // 执行 POC 搜索
         for (auto& scanHostResult : scan_host_result) {
-            searchPOCs(scanHostResult, dbManager, dbHandler_, pool);
+           
+            searchPOCs(scanHostResult, dbManager, dbHandler_, pool,req);
         }
 
         // 使用 handle_get_cve_scan 返回搜索结果
@@ -3006,6 +3535,7 @@ void ServerManager::handle_post_poc_verify(http_request request) {
     try {
         // 获取请求的 JSON 数据
         request.extract_json().then([this, &request](json::value body) {
+            http_request req = request;
             std::vector<std::string> cve_ids;
             for (const auto& id : body[_XPLATSTR("cve_ids")].as_array()) {
                 cve_ids.push_back(id.as_string());
@@ -3018,7 +3548,7 @@ void ServerManager::handle_post_poc_verify(http_request request) {
             }
 
             // 执行 POC 验证
-            verifyPOCs(scan_host_result, dbHandler_, pool);
+            verifyPOCs(scan_host_result, dbHandler_, pool,req);
 
             // 重置 ifCheck 标志
             for (auto& scanHostResult : scan_host_result) {
@@ -3053,6 +3583,7 @@ void ServerManager::handle_post_poc_verify(http_request request) {
 void ServerManager::handle_post_poc_verify_new(http_request request) {
     try {
         request.extract_json().then([this, &request](json::value body) {
+            http_request req = request;
             // ========== 第一步：检查 IP 参数 ==========
             if (!body.has_field(_XPLATSTR("ip"))) {
                 json::value response_data;
@@ -3069,6 +3600,7 @@ void ServerManager::handle_post_poc_verify_new(http_request request) {
             std::string ip = body[_XPLATSTR("ip")].as_string();
 
             // ========== 第二步：从数据库中获取 scan_host_result ==========
+            dbHandler_.setCurrentDatabase(GetDb(req));
             ScanHostResult result = dbHandler_.getScanHostResult(ip, pool);
             if (result.ports.empty()) {
                 json::value response_data;
@@ -3094,7 +3626,8 @@ void ServerManager::handle_post_poc_verify_new(http_request request) {
             }
 
             // ========== 第四步：搜索POC代码是否存在并装载 ==========
-            searchPOCs(scan_host_result_vec[0], dbManager, dbHandler_, pool);
+            
+            searchPOCs(scan_host_result_vec[0], dbManager, dbHandler_, pool,req);
 
             // ========== 第五步：设置 ifCheck ==========
             for (auto& scanHostResult : scan_host_result_vec) {
@@ -3102,7 +3635,8 @@ void ServerManager::handle_post_poc_verify_new(http_request request) {
             }
 
             // ========== 第六步：POC 验证 ==========
-            verifyPOCs(scan_host_result_vec, dbHandler_, pool);
+           
+            verifyPOCs(scan_host_result_vec, dbHandler_, pool,req);
 
             // ========== 第七步：清除 ifCheck ==========
             for (auto& scanHostResult : scan_host_result_vec) {
@@ -3166,7 +3700,7 @@ void ServerManager::setIfCheckByIds(ScanHostResult& hostResult, const std::vecto
 void ServerManager::update_poc_by_cve(http_request request) {
     json::value response_data;
     http_response response;
-
+    http_request req = request;
     try {
         // 检查是否为multipart/form-data格式
         auto content_type = request.headers().content_type();
@@ -3181,7 +3715,7 @@ void ServerManager::update_poc_by_cve(http_request request) {
         // 将请求体保存到临时文件
         save_request_to_temp_file(request);
 
-        std::string cve_id, vul_name, affected_infra, mode, edit_filename, poc_content;
+        std::string cve_id, vul_name, affected_infra,cvss_score,poc_condition, mode, edit_filename, poc_content;
         std::string filename = "";  // 初始化 filename
         std::ifstream temp_file(CONFIG.getPocTempFile(), std::ios::binary);
         std::string body((std::istreambuf_iterator<char>(temp_file)), std::istreambuf_iterator<char>());
@@ -3211,6 +3745,8 @@ void ServerManager::update_poc_by_cve(http_request request) {
                         if (name == "cve_id") cve_id = decoded_data;
                         else if (name == "vul_name") vul_name = decoded_data;
                         else if (name == "affected_infra")  affected_infra = decoded_data;
+                        else if (name == "cvss_score")  cvss_score = decoded_data;
+                        else if (name == "poc_comdition")  poc_condition = decoded_data;
                         else if (name == "mode") mode = decoded_data;  // 获取操作模式
                         else if (name == "edit_filename") edit_filename = decoded_data; // 获取编辑文件名
                         else if (name == "poc_content") poc_content = decoded_data;    // 获取编辑后的POC内容
@@ -3220,6 +3756,7 @@ void ServerManager::update_poc_by_cve(http_request request) {
         }
 
         // 查找数据库中是否存在该cve_id的POC记录
+        dbHandler_.setCurrentDatabase(GetDb(req));
         std::vector<POC> poc_records = dbManager.searchDataByCVE(cve_id);
         bool isExistPOC = true; //是否存在CVE对应的POC记录
         POC existing_poc;
@@ -3228,6 +3765,8 @@ void ServerManager::update_poc_by_cve(http_request request) {
             existing_poc.vuln_id = cve_id;
             existing_poc.vul_name = vul_name;
             existing_poc.affected_infra = affected_infra;
+            existing_poc.cvss_score = cvss_score;
+            existing_poc.poc_condition = poc_condition;
             existing_poc.script_type = "python";
         }
         else
@@ -3333,10 +3872,16 @@ void ServerManager::update_poc_by_cve(http_request request) {
 
         // 更新数据库记录
         bool success = false;
-        if (isExistPOC)
+        if (isExistPOC) {
+            dbHandler_.setCurrentDatabase(GetDb(req));
             success = dbManager.updateDataById(existing_poc.id, existing_poc);
-        else
-            success = dbManager.insertData(existing_poc.vuln_id, existing_poc.vul_name, "", "", existing_poc.affected_infra, existing_poc.script_type, existing_poc.script);
+        }
+           
+        else {
+            dbHandler_.setCurrentDatabase(GetDb(req));
+            success = dbManager.insertData(existing_poc.vuln_id, existing_poc.vul_name, "", "", existing_poc.affected_infra, existing_poc.cvss_score, existing_poc.poc_condition, existing_poc.script_type, existing_poc.script);
+        }
+            
 
         if (success) {
             response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("操作成功"));
@@ -3535,7 +4080,9 @@ void ServerManager::update_poc_by_cve(http_request request) {
 
 void ServerManager::handle_post_poc_excute(http_request request)
 {
+   
     request.extract_json().then([this, &request](json::value body) {
+        http_request req = request;
         try {
             // 提取请求参数
             if (!body.has_field(_XPLATSTR("CVE_id")) || !body.has_field(_XPLATSTR("ip"))) {
@@ -3546,6 +4093,7 @@ void ServerManager::handle_post_poc_excute(http_request request)
             std::string ip = body[_XPLATSTR("ip")].as_string();
 
             // 从数据库获取指定IP的扫描结果
+            dbHandler_.setCurrentDatabase(GetDb(req));
             ScanHostResult scan_host_result_single = dbHandler_.getScanHostResult(ip, pool);
             if (scan_host_result_single.ports.empty()) {
                 throw std::runtime_error("No scan result found for IP: " + ip);
@@ -3574,6 +4122,7 @@ void ServerManager::handle_post_poc_excute(http_request request)
             }
 
             // 更新漏洞验证结果到数据库
+            dbHandler_.setCurrentDatabase(GetDb(req));
             dbHandler_.alterPortVulnResultAfterPocVerify(pool, cve, ip, portId);
 
             // 构建并返回响应
@@ -3636,18 +4185,21 @@ void ServerManager::log_poc_callback(const http_request& request) {
 
 void ServerManager::handle_get_alive_hosts(http_request request)
 {
+    http_request req = request;
     json::value response_data;
     http_response response;
 
     try {
         // 获取存活的主机
         std::vector<std::string> alive_hosts;
+        dbHandler_.setCurrentDatabase(GetDb(req));
         dbHandler_.readAliveHosts(alive_hosts, pool);
 		//需要重新ping一下，因为存活的主机可能已经不存活了
 		for (auto& host : alive_hosts) {
 			if (!pingIsAlive(host)) {
 				//更改数据库中的存活状态
 				alive_hosts.erase(std::remove(alive_hosts.begin(), alive_hosts.end(), host), alive_hosts.end());
+                dbHandler_.setCurrentDatabase(GetDb(req));
                 dbHandler_.updateAliveHosts(host, pool);
 			}
 		}
@@ -3676,9 +4228,10 @@ void ServerManager::handle_get_alive_hosts(http_request request)
 
 // 处理插件化扫描请求
 void ServerManager::handle_post_poc_scan(http_request request) {
+  
     request.extract_json().then([=](json::value json_data) {
         try {
-
+            http_request req = request;
             // 提取 IP 地址
             if (!json_data.has_field(_XPLATSTR("ip"))) {
                 throw std::runtime_error("Invalid request: Missing 'ip' field.");
@@ -3703,9 +4256,11 @@ void ServerManager::handle_post_poc_scan(http_request request) {
             }
 
             // 从数据库中获取指定 ID 的 POC 记录
+            dbHandler_.setCurrentDatabase(GetDb(req));
             std::vector<POC> poc_list = dbManager.searchDataByIds(ids);
 
             // 获取历史扫描结果
+            dbHandler_.setCurrentDatabase(GetDb(req));
             ScanHostResult scan_host_result = dbHandler_.getScanHostResult(ip, pool);
 
             if (!scan_host_result.ports.empty()) {
@@ -3734,7 +4289,7 @@ void ServerManager::handle_post_poc_scan(http_request request) {
             }
 
             //搜索POC代码是否存在并装载。
-            searchPOCs(scan_host_result, dbManager, dbHandler_, pool);
+            searchPOCs(scan_host_result, dbManager, dbHandler_, pool,req);
 
             // 选择是否进行基础设施匹配
             bool match_infra = json_data.has_field(_XPLATSTR("match_infra")) ? json_data[_XPLATSTR("match_infra")].as_bool() : true;
@@ -3752,12 +4307,16 @@ void ServerManager::handle_post_poc_scan(http_request request) {
             //execute_poc_tasks(poc_tasks_by_port, scan_host_result, pool, dbHandler_);
 
            // 使用多进程版本的执行 PoC 任务并更新结果
-            execute_poc_tasks_parallel(poc_tasks_by_port, scan_host_result, dbHandler_ , pool );
+         
+            execute_poc_tasks_parallel(poc_tasks_by_port, scan_host_result, dbHandler_ , pool,req );
 
 
             // 将结果转换为 JSON 格式并返回
             json::value result_json = ScanHostResult_to_json(scan_host_result);
-            request.reply(status_codes::OK, result_json);
+            http_response res(status_codes::OK);
+            res.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+            res.set_body(result_json);
+            request.reply(res);
             cout << " 已经发送回响应了" << endl;
         }
         catch (const std::exception& e) {
@@ -3780,6 +4339,7 @@ void ServerManager::handle_post_poc_scan(http_request request) {
 void ServerManager::handle_merge_vuln_results(http_request request) {
     request.extract_json().then([=](json::value json_data) {
         try {
+            http_request req = request;
             // 获取传递过来的 IP 地址
             if (!json_data.has_field(_XPLATSTR("ip"))) {
                 throw std::runtime_error("Invalid request: Missing 'ip' field.");
@@ -3795,6 +4355,7 @@ void ServerManager::handle_merge_vuln_results(http_request request) {
             //ScanHostResult& scan_host_result = historicalData.data[ip];
 
             // 获取历史扫描结果
+            dbHandler_.setCurrentDatabase(GetDb(req));
             ScanHostResult scan_host_result = dbHandler_.getScanHostResult(ip, pool);
 
             if (scan_host_result.ports.empty()) {
@@ -3821,8 +4382,9 @@ void ServerManager::handle_merge_vuln_results(http_request request) {
 
 // 自动选择POC
 void ServerManager::handle_auto_select_poc(http_request request) {
-
+   
     request.extract_json().then([=](json::value json_data) {
+        http_request req = request;
         std::string ip;
         try {
 
@@ -3835,7 +4397,8 @@ void ServerManager::handle_auto_select_poc(http_request request) {
             user_logger->info("{} 开始自动选择POC...", ip);
 
             // 获取所有PoC 列表
-            std::vector<POC> poc_list = dbManager.getAllData();  // 假设从数据库中提取所有可用的 POC
+            dbHandler_.setCurrentDatabase(GetDb(req));
+            std::vector<POC> poc_list = dbManager.getVaildPOCData();  // 假设从数据库中提取所有可用的 POC
             //console->debug("[DEBUG] Retrieved {} POCs from the database.", poc_list.size());
 
             // 定义变量以存储扫描结果
@@ -3934,11 +4497,177 @@ void ServerManager::handle_auto_select_poc(http_request request) {
 
 }
 
+//Windows基线检测
+void ServerManager::handle_get_win_userinfo(http_request request) {
+    json::value main_body = json::value::object();
+    json::value ServerInfo = json::value::object();
+    ServerInfo[_XPLATSTR("arch")] = json::value::string(info_new.arch);
+    ServerInfo[_XPLATSTR("cpu")] = json::value::string(info_new.cpu);
+    ServerInfo[_XPLATSTR("cpuCore")] = json::value::string(info_new.cpuCore);
+    ServerInfo[_XPLATSTR("cpuPhysical")] = json::value::string(info_new.cpuPhysical);
+    ServerInfo[_XPLATSTR("free")] = json::value::string(info_new.free);
+    ServerInfo[_XPLATSTR("hostname")] = json::value::string(info_new.hostname);
+    ServerInfo[_XPLATSTR("isInternet")] = json::value::string(info_new.isInternet);
+    ServerInfo[_XPLATSTR("ProductName")] = json::value::string(info_new.ProductName);
+    ServerInfo[_XPLATSTR("version")] = json::value::string(info_new.version);
+    json::value response_data = json::value::array();
+
+    for (size_t i = 0; i < Event_win.size(); ++i) {
+        json::value user_data;
+
+        user_data[_XPLATSTR("basis")] = json::value::string(utility::conversions::to_string_t(Event_win[i].basis));
+        user_data[_XPLATSTR("command")] = json::value::string(utility::conversions::to_string_t(Event_win[i].command));
+        user_data[_XPLATSTR("description")] = json::value::string(utility::conversions::to_string_t(Event_win[i].description));
+        user_data[_XPLATSTR("IsComply")] = json::value::string(utility::conversions::to_string_t(Event_win[i].IsComply));
+        user_data[_XPLATSTR("recommend")] = json::value::string(utility::conversions::to_string_t(Event_win[i].recommend));
+        user_data[_XPLATSTR("result")] = json::value::string(utility::conversions::to_string_t(Event_win[i].result));
+      //  user_data[_XPLATSTR("importantLevel")] = json::value::string(utility::conversions::to_string_t(Event_win[i].importantLevel));
+        response_data[i] = user_data;
+    }
+    main_body[_XPLATSTR("ServerInfo")] = ServerInfo;
+    main_body[_XPLATSTR("Event_result")] = response_data;
+    http_response response(status_codes::OK);
+    response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+    response.set_body(main_body);
+    request.reply(response);
+}
+void ServerManager::handle_post_win_login(http_request request) {
+    request.extract_json().then([&](json::value jsonReq) {
+        this->global_hostname = jsonReq[_XPLATSTR("hostname")].as_string();//windows基线检测需要管理员用户名
+        this->global_ip = jsonReq[_XPLATSTR("ip")].as_string();
+        this->global_pd = jsonReq[_XPLATSTR("pd")].as_string();
+
+        //pd是密码
+        string hostname = (global_hostname);
+        string ip = (global_ip);
+        string pd = (global_pd);
+        SSHClient sshClient(ip, 22, hostname, pd);
+
+        initialize_basline(Event_win, allBaseline, sshClient);
+      
+        ServerInfo info;
+        ServerInfo_win(info, sshClient);
+        info_new = convert(info);
+        json::value main_body = json::value::object();
+        json::value ServerInfo = json::value::object();
+        ServerInfo[_XPLATSTR("arch")] = json::value::string(info_new.arch);
+        ServerInfo[_XPLATSTR("cpu")] = json::value::string(info_new.cpu);
+        ServerInfo[_XPLATSTR("cpuCore")] = json::value::string(info_new.cpuCore);
+        ServerInfo[_XPLATSTR("cpuPhysical")] = json::value::string(info_new.cpuPhysical);
+        ServerInfo[_XPLATSTR("free")] = json::value::string(info_new.free);
+        ServerInfo[_XPLATSTR("hostname")] = json::value::string(info_new.hostname);
+        ServerInfo[_XPLATSTR("isInternet")] = json::value::string(info_new.isInternet);
+        ServerInfo[_XPLATSTR("ProductName")] = json::value::string(info_new.ProductName);
+        ServerInfo[_XPLATSTR("version")] = json::value::string(info_new.version);
+        json::value response_data = json::value::array();
+
+
+        for (int i = 0; i < Event_win.size(); i++) {
+            cout << "描述信息：" << Event_win[i].description << endl << " 执行结果：" << Event_win[i].result << endl
+                << "是否符合基线：  " << Event_win[i].IsComply
+                << endl;
+            json::value user_data;
+
+            user_data[_XPLATSTR("basis")] = json::value::string(utility::conversions::to_string_t(Event_win[i].basis));
+            user_data[_XPLATSTR("command")] = json::value::string(utility::conversions::to_string_t(Event_win[i].command));
+            user_data[_XPLATSTR("description")] = json::value::string(utility::conversions::to_string_t(Event_win[i].description));
+            user_data[_XPLATSTR("IsComply")] = json::value::string(utility::conversions::to_string_t(Event_win[i].IsComply));
+            user_data[_XPLATSTR("recommend")] = json::value::string(utility::conversions::to_string_t(Event_win[i].recommend));
+            user_data[_XPLATSTR("result")] = json::value::string(utility::conversions::to_string_t(Event_win[i].result));
+           // user_data[_XPLATSTR("importantLevel")] = json::value::string(utility::conversions::to_string_t(Event_win[i].importantLevel));
+            response_data[i] = user_data;
+
+
+
+        }
+
+        main_body[_XPLATSTR("ServerInfo")] = ServerInfo;
+        main_body[_XPLATSTR("Event_result")] = response_data;
+
+        http_response response(status_codes::OK);
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+        main_body[_XPLATSTR("message")] = json::value::string(_XPLATSTR("Received"));
+        response.set_body(main_body);
+        request.reply(response);
+        }).wait();
+}
+
+bool fileExists(const std::string& filePath) {
+    struct stat buffer;
+    return (stat(filePath.c_str(), &buffer) == 0);
+}
+
+// 获取文件大小的函数
+std::size_t getFileSize(const std::string& filePath) {
+    struct stat buffer;
+    if (stat(filePath.c_str(), &buffer) == 0) {
+        return buffer.st_size;
+    }
+    return 0;
+}
+
+void ServerManager::handle_get_baseline_scripts(http_request request) {
+    // 解析请求的文件名
+    try {
+        // 获取请求的文件名
+        auto queries = uri::split_query(request.request_uri().query());
+        auto it = queries.find(_XPLATSTR("file"));
+        if (it == queries.end()) {
+            request.reply(status_codes::BadRequest, _XPLATSTR("Missing 'file' query parameter."));
+            return;
+        }
+
+        // 转换文件名
+        std::string fileName = conversions::to_utf8string(it->second);
+        std::string filePath = Win_REMOTEPATH + "winSc/" + fileName;
+        
+
+        // 检查文件是否存在
+        if (!fileExists(filePath)) {
+            request.reply(status_codes::NotFound, _XPLATSTR("File not found." + filePath));
+            return;
+        }
+
+        // 打开文件
+        std::ifstream file(filePath, std::ios::binary);
+        if (!file.is_open()) {
+            request.reply(status_codes::InternalError, _XPLATSTR("Unable to open file."));
+            return;
+        }
+
+        // 读取文件内容
+        std::ostringstream buffer;
+        buffer << file.rdbuf();
+        file.close();
+
+        // 获取文件大小
+        std::size_t fileSize = getFileSize(filePath);
+
+        // 创建 HTTP 响应
+        http_response response(status_codes::OK);
+        response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+        response.headers().add(_XPLATSTR("Content-Type"), _XPLATSTR("application/octet-stream"));
+        response.headers().add(_XPLATSTR("Content-Disposition"), _XPLATSTR("attachment; filename=\"" + it->second + "\""));
+        response.headers().add(_XPLATSTR("Content-Length"), std::to_string(fileSize));
+        response.set_body(buffer.str());
+
+        // 发送响应
+        request.reply(response).wait();
+    }
+    catch (const std::exception& e) {
+        request.reply(status_codes::InternalError, _XPLATSTR("Internal server error: ") + conversions::to_string_t(e.what()));
+    }
+}
+
+
 void ServerManager::handle_get_all_assets_vuln_data(http_request request)
 {
+    http_request req = request;
     // 获取存活的主机
     std::vector<std::string> alive_hosts;
+    dbHandler_.setCurrentDatabase(GetDb(req));
     dbHandler_.readAliveHosts(alive_hosts, pool);
+    dbHandler_.setCurrentDatabase(GetDb(req));
     std::vector<IpVulnerabilities> vulnerabilities = dbHandler_.getVulnerabilities(pool, alive_hosts);
     // 转换为JSON
     web::json::value json_data = convertToJson(vulnerabilities);
@@ -3947,6 +4676,7 @@ void ServerManager::handle_get_all_assets_vuln_data(http_request request)
 
 //主机发现
 void ServerManager::handle_host_discovery(http_request request) {
+    http_request req = request;
     std::string network;
     try {
         // 记录模块开始时间
@@ -3969,9 +4699,11 @@ void ServerManager::handle_host_discovery(http_request request) {
             HostDiscovery hostDiscovery(network, globalThreadPool); // 用全局线程池
             auto aliveHosts = hostDiscovery.scan();
             //将存活主机存入scan_host_result表中
+            dbHandler_.setCurrentDatabase(GetDb(req));
             dbHandler_.insertAliveHosts2scanHostResult(aliveHosts, pool);
             // 返回网段扫描结果
             /*sendHostDiscoveryResponse(request, aliveHosts);*/
+           
             sendHostDiscoveryResponse(request, aliveHosts, dbHandler_, pool);
 
         }
@@ -4048,10 +4780,14 @@ void ServerManager::sendHostDiscoveryResponse(http_request& request,
     const std::vector<std::string>& aliveHosts,
     DatabaseHandler& dbHandler,
     ConnectionPool& pool) {
+    http_request req = request;
     web::json::value response = web::json::value::object();
     web::json::value groupsArray = web::json::value::array();
 
-    auto groupInfo = dbHandler.getAliveHostsGroupInfo(aliveHosts, pool);
+    string current_db = GetDb(req);
+
+    cout << aliveHosts.size()<<endl;
+    auto groupInfo = dbHandler.getAliveHostsGroupInfo(aliveHosts, pool, current_db);
 
     size_t groupIndex = 0;
     for (const auto& entry : groupInfo) {
@@ -4073,8 +4809,10 @@ void ServerManager::sendHostDiscoveryResponse(http_request& request,
     }
 
     response[_XPLATSTR("groups")] = groupsArray;
-
-    request.reply(status_codes::OK, response);
+    http_response res(status_codes::OK);
+    res.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+    res.set_body(response);
+    request.reply(res);
 }
 
 
@@ -4115,9 +4853,9 @@ void ServerManager::handle_post_mysql_scan(http_request request)
                 int init_size = body.has_field(_XPLATSTR("init_size")) ? body.at(_XPLATSTR("init_size")).as_integer() : 2;
                 int max_size = body.has_field(_XPLATSTR("max_size")) ? body.at(_XPLATSTR("max_size")).as_integer() : 20;
                 int timeout = body.has_field(_XPLATSTR("timeout")) ? body.at(_XPLATSTR("timeout")).as_integer() : 30;
-
+              
                 // 配置数据库连接池
-                DBConfig config{
+                DatabaseConfig config{
                     host,               // 数据库主机
                     port,               // 数据库端口
                     username,           // 数据库用户名
@@ -4125,8 +4863,11 @@ void ServerManager::handle_post_mysql_scan(http_request request)
                     database,           // 默认数据库
                     init_size,          // 初始连接池大小
                     max_size,           // 最大连接池大小
-                    std::chrono::seconds(timeout)  // 连接超时
+                    std::chrono::seconds(timeout),  // 连接超时
+                    
                 };
+          
+
 
                 // 创建连接池实例
                 std::shared_ptr<ConnectionPool> pool = std::make_shared<ConnectionPool>(config);
@@ -4172,8 +4913,10 @@ void ServerManager::handle_post_mysql_scan(http_request request)
 
 void ServerManager::handle_get_vuln_types(http_request request)
 {
+    http_request req = request;
     try {
         json::value response_data;
+        dbHandler_.setCurrentDatabase(GetDb(req));
         std::vector<std::string> types = dbHandler_.getAllVulnTypes(pool);
 
         json::value type_array = json::value::array();
@@ -4207,14 +4950,16 @@ void ServerManager::handle_get_vuln_types(http_request request)
 //
 void ServerManager::handle_edit_vuln_type(http_request request)
 {
+  
     request.extract_json().then([this, &request](json::value body) {
         try {
+            http_request req = request;
             //type是漏洞类型，action是增还是删（即"add"或"delete"）
             std::string type = utility::conversions::to_utf8string(body[_XPLATSTR("type")].as_string());
             std::string action = utility::conversions::to_utf8string(body[_XPLATSTR("action")].as_string());
 
             user_logger->info("接收到漏洞类型编辑请求：操作 = {}, 类型 = {}", action, type);
-
+            dbHandler_.setCurrentDatabase(GetDb(req));
             bool result = dbHandler_.editVulnType(type, action, pool);
 
             json::value response_data;
@@ -4252,6 +4997,7 @@ void ServerManager::handle_edit_vuln_type(http_request request)
 
 void ServerManager::handle_get_level3Result(http_request request)
 {
+    http_request req = request;
     try {
         // 解析请求中的IP参数
         auto query = uri::split_query(request.request_uri().query());
@@ -4271,9 +5017,11 @@ void ServerManager::handle_get_level3Result(http_request request)
         }
 
         // 获取三级等保结果
+        dbHandler_.setCurrentDatabase(GetDb(req));
         std::vector<event> check_results = dbHandler_.getLevel3SecurityCheckResults(ip, pool);//check_time
 
         // 获取三级等保检测时间
+        dbHandler_.setCurrentDatabase(GetDb(req));
         std::string level3_check_time = dbHandler_.getLevel3CheckTime(ip, pool);
         // 定义合规等级映射表
         std::unordered_map<std::string, double> complyLevelMapping = {
@@ -4357,8 +5105,10 @@ void ServerManager::handle_get_level3Result(http_request request)
 }
 
 void ServerManager::handle_post_updateLevel3_protect(http_request request) {
+
     request.extract_json().then([this, &request](json::value body) {
         try {
+            http_request req = request;
             // 检查 JSON 结构，必须包含 ip 和 scoreMeasures 字段
             if (!body.is_object() || !body.has_field(_XPLATSTR("ip")) || !body.has_field(_XPLATSTR("scoreMeasures"))) {
                 json::value response_data;
@@ -4431,9 +5181,11 @@ void ServerManager::handle_post_updateLevel3_protect(http_request request) {
             }
 
             // 调用数据库更新函数
+            dbHandler_.setCurrentDatabase(GetDb(req));
             dbHandler_.updateLevel3SecurityCheckResult(ip, pool, vec_score);//check_time
 
             // 更新三级等保检测时间
+            dbHandler_.setCurrentDatabase(GetDb(req));
             dbHandler_.updateLevel3CheckTime(ip, pool);
             // 构造成功响应
             json::value response_data;
@@ -4470,6 +5222,7 @@ void ServerManager::handle_post_updateLevel3_protect(http_request request) {
 
 void ServerManager::handle_get_baseLineResult(http_request  request)
 {
+    http_request req = request;
     try {
         // 解析请求中的IP参数
         auto query = uri::split_query(request.request_uri().query());
@@ -4489,9 +5242,11 @@ void ServerManager::handle_get_baseLineResult(http_request  request)
         }
 
         // 获取三级等保结果
+        dbHandler_.setCurrentDatabase(GetDb(req));
         std::vector<event> check_results = dbHandler_.getSecurityCheckResults(ip, pool);//tmp_import
 
         // 获取基线检测时间
+        dbHandler_.setCurrentDatabase(GetDb(req));
         std::string baseline_check_time = dbHandler_.getBaselineCheckTime(ip, pool);
         // 定义合规等级映射表
         std::unordered_map<std::string, double> complyLevelMapping = {
@@ -4578,6 +5333,7 @@ void ServerManager::handle_post_updateBaseLine_protect(http_request request)
 {
     request.extract_json().then([this, &request](json::value body) {
         try {
+            http_request req = request;
             // 检查 JSON 结构，必须包含 ip 和 scoreMeasures 字段
             if (!body.is_object() || !body.has_field(_XPLATSTR("ip")) || !body.has_field(_XPLATSTR("scoreMeasures"))) {
                 json::value response_data;
@@ -4650,9 +5406,13 @@ void ServerManager::handle_post_updateBaseLine_protect(http_request request)
             }
 
             // 调用数据库更新函数
+
+            dbHandler_.setCurrentDatabase(GetDb(req));
             dbHandler_.updateBaseLineSecurityCheckResult(ip, pool, vec_score);//check_time
 
             // 更新基线检测时间
+
+            dbHandler_.setCurrentDatabase(GetDb(req));
             dbHandler_.updateBaselineCheckTime(ip, pool);
             // 构造成功响应
             json::value response_data;
@@ -4689,15 +5449,22 @@ void ServerManager::handle_post_updateBaseLine_protect(http_request request)
 
 //获取所有资产信息（包括不存活的）
 void ServerManager::handle_get_all_assets_full_info(http_request request) {
+    http_request req = request;
     try {
-        std::vector<AssetInfo> allAssets = dbHandler_.getAllAssetsFullInfo(pool);
+        
+      
+        string current_db = GetDb(req);
+        std::vector<AssetInfo> allAssets = dbHandler_.getAllAssetsFullInfo(pool,current_db);
 
         json::value response = json::value::array(allAssets.size());
         for (size_t i = 0; i < allAssets.size(); ++i) {
             response[i] = convertAssetInfoToJson(allAssets[i]);
         }
+        http_response res(status_codes::OK);
+        res.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));;
+        res.set_body(response);
 
-        request.reply(status_codes::OK, response);
+        request.reply(res);
     }
     catch (const std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
@@ -4709,8 +5476,9 @@ void ServerManager::handle_get_all_assets_full_info(http_request request) {
 void ServerManager::handle_post_create_asset_group(http_request request) {
     request.extract_json().then([this, request](pplx::task<json::value> task) {
         try {
+            http_request req = request;
             json::value body = task.get();
-
+            string current_db = GetDb(req);
             if (!body.has_field(_XPLATSTR("group_name"))) {
                 request.reply(status_codes::BadRequest, _XPLATSTR("Missing 'group_name' field"));
                 return;
@@ -4720,18 +5488,21 @@ void ServerManager::handle_post_create_asset_group(http_request request) {
             std::string description = body.has_field(_XPLATSTR("description"))
                 ? utility::conversions::to_utf8string(body[_XPLATSTR("description")].as_string())
                 : "";
-
-            if (dbHandler_.isAssetGroupExists(group_name, pool)) {
+          
+            if (dbHandler_.isAssetGroupExists(group_name, pool, current_db)) {
                 request.reply(status_codes::Conflict, _XPLATSTR("Group already exists"));
                 return;
             }
-
-            int group_id = dbHandler_.createAssetGroup(group_name, description, pool);
+          
+            int group_id = dbHandler_.createAssetGroup(group_name, description, pool, current_db);
 
             json::value response;
             response[_XPLATSTR("message")] = json::value::string(_XPLATSTR("Asset group created successfully"));
             response[_XPLATSTR("group_id")] = json::value::number(group_id);
-            request.reply(status_codes::OK, response);
+            http_response res(status_codes::OK);
+            res.headers().add("Access-Control-Allow-Origin", "*");
+            res.set_body(response);
+            request.reply(res);
 
         }
         catch (const std::exception& e) {
@@ -4743,8 +5514,10 @@ void ServerManager::handle_post_create_asset_group(http_request request) {
 
 //获取资产组列表
 void ServerManager::handle_get_asset_group_list(http_request request) {
+    http_request req = request;
+    string current_db = GetDb(req);
     try {
-        std::vector<std::pair<int, std::string>> groups = dbHandler_.getAllAssetGroups(pool);
+        std::vector<std::pair<int, std::string>> groups = dbHandler_.getAllAssetGroups(pool, current_db);
 
         json::value result = json::value::array();
         int index = 0;
@@ -4762,8 +5535,12 @@ void ServerManager::handle_get_asset_group_list(http_request request) {
             item[_XPLATSTR("name")] = json::value::string(utility::conversions::to_string_t(name));
             result[index++] = item;
         }
+        http_response res(status_codes::OK);
+        res.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));;
+        res.set_body(result);
 
-        request.reply(status_codes::OK, result);
+
+        request.reply(res);
     }
     catch (const std::exception& e) {
         request.reply(status_codes::InternalError,
@@ -4783,8 +5560,9 @@ void ServerManager::handle_change_asset_group(http_request request) {
 
     request.extract_json().then([this, request, ip](pplx::task<json::value> task) {
         try {
+            http_request req = request;
             json::value body = task.get();
-
+            string current_db = GetDb(req);
             if (!body.has_field(_XPLATSTR("group_id"))) {
                 request.reply(status_codes::BadRequest, _XPLATSTR("Missing 'group_id' field"));
                 return;
@@ -4792,15 +5570,20 @@ void ServerManager::handle_change_asset_group(http_request request) {
 
             bool success;
             if (body.at(_XPLATSTR("group_id")).is_null()) {
-                success = dbHandler_.updateAssetGroup(ip, 0, true, pool);  // 设置为 NULL
+              
+                success = dbHandler_.updateAssetGroup(ip, 0, true, pool, current_db);  // 设置为 NULL
             }
             else {
                 int group_id = body.at(_XPLATSTR("group_id")).as_integer();
-                success = dbHandler_.updateAssetGroup(ip, group_id, false, pool);  // 设置为具体组
+              
+                success = dbHandler_.updateAssetGroup(ip, group_id, false, pool,current_db);  // 设置为具体组
             }
 
             if (success) {
-                request.reply(status_codes::OK, _XPLATSTR("Asset group updated successfully"));
+                http_response res(status_codes::OK);
+                res.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));;
+                res.set_body(_XPLATSTR("Asset group updated successfully"));
+                request.reply(res);
             }
             else {
                 request.reply(status_codes::NotFound, _XPLATSTR("Asset not found or group invalid"));
@@ -4826,6 +5609,8 @@ void ServerManager::handle_asset_group_rename(http_request request) {
     int group_id = std::stoi(utility::conversions::to_utf8string(paths[1]));
 
     request.extract_json().then([this, request, group_id](pplx::task<json::value> task) {
+        http_request req = request;
+        string current_db = GetDb(req);
         try {
             json::value body = task.get();
             if (!body.has_field(_XPLATSTR("new_name"))) {
@@ -4839,11 +5624,14 @@ void ServerManager::handle_asset_group_rename(http_request request) {
                 request.reply(status_codes::BadRequest, _XPLATSTR("Group name cannot be empty"));
                 return;
             }
-
-            bool success = dbHandler_.renameAssetGroup(group_id, new_name, pool);
+            
+            bool success = dbHandler_.renameAssetGroup(group_id, new_name, pool,current_db);
 
             if (success) {
-                request.reply(status_codes::OK, _XPLATSTR("Asset group renamed successfully"));
+                http_response res(status_codes::OK);
+                res.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));;
+                res.set_body(_XPLATSTR("Asset group renamed successfully"));
+                request.reply(res);
             }
             else {
                 request.reply(status_codes::NotFound, _XPLATSTR("Asset group not found or name already exists"));
@@ -4858,6 +5646,8 @@ void ServerManager::handle_asset_group_rename(http_request request) {
 }
 
 void ServerManager::handle_delete_asset_group(http_request request) {
+    http_request req = request;
+    string current_db = GetDb(req);
     const auto paths = uri::split_path(uri::decode(request.relative_uri().path()));
     if (paths.size() != 2 || paths[0] != _XPLATSTR("asset_group")) {
         request.reply(status_codes::BadRequest, _XPLATSTR("Invalid path."));
@@ -4875,10 +5665,14 @@ void ServerManager::handle_delete_asset_group(http_request request) {
     }
 
     try {
-        bool success = dbHandler_.deleteAssetGroup(group_id, delete_assets, pool);
+      
+        bool success = dbHandler_.deleteAssetGroup(group_id, delete_assets, pool,current_db);
 
         if (success) {
-            request.reply(status_codes::OK, _XPLATSTR("Asset group deleted successfully"));
+            http_response res(status_codes::OK);
+            res.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));;
+            res.set_body(_XPLATSTR("Asset group deleted successfully"));
+            request.reply(res);
         }
         else {
             request.reply(status_codes::NotFound, _XPLATSTR("Asset group not found"));
@@ -4891,6 +5685,501 @@ void ServerManager::handle_delete_asset_group(http_request request) {
 }
 
 
+//------------用户管理部分函数----------------
+       // 用户注册处理（第一步）
+
+void ServerManager::handle_post_register(http_request request) {
+    request.extract_json().then([=](json::value json) {
+        try {
+            // 参数验证
+            if (!json.has_field(_XPLATSTR("email")) ||
+                !json.has_field(_XPLATSTR("username")) ||
+                !json.has_field(_XPLATSTR("password"))) {
+                request.reply(status_codes::BadRequest, _XPLATSTR("缺少必要参数"));
+                return;
+            }
+
+            std::string email = utility::conversions::to_utf8string(json[_XPLATSTR("email")].as_string());
+            std::string username = utility::conversions::to_utf8string(json[_XPLATSTR("username")].as_string());
+            std::string password = utility::conversions::to_utf8string(json[_XPLATSTR("password")].as_string());
+
+            // 1. 检查邮箱是否已存在
+            try {
+                auto conn = pool.getConnection();
+                auto res = conn->sql(
+                    "SELECT COUNT(*) FROM system_db.Users WHERE email = ?"
+                ).bind(email).execute();
+
+                if (res.fetchOne()[0].get<int>() > 0) {
+                    json::value response_body;
+                    response_body[_XPLATSTR("message")] = json::value::string(_XPLATSTR("邮箱已被注册"));
+                    http_response res(status_codes::Conflict);
+                    res.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+                    res.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET,POST"));
+                    res.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+                    res.set_body(response_body);
+                    request.reply(res);
+                    return;
+                }
+            }
+            catch (const std::exception& e) {
+                std::cerr << "数据库错误: " << e.what() << std::endl;
+                request.reply(status_codes::InternalError, _XPLATSTR("数据库错误"));
+                return;
+            }
+
+            // 2. 生成验证码
+            dbHandler_.setCurrentDatabase("system_db");
+            std::string verification_code = dbHandler_.generateVerificationCode();
+
+            // 3. 保存验证码到数据库（10分钟有效）
+            dbHandler_.setCurrentDatabase("system_db");
+            if (!dbHandler_.insertRegistrationRecord(email, verification_code,
+                std::chrono::minutes(10), pool)) {
+                request.reply(status_codes::InternalError, _XPLATSTR("无法保存验证码"));
+                return;
+            }
+        
+            //4.验证函数
+            if (!EmailService::sendVerificationEmail(email, verification_code,smtpConfig_)) {
+                std::cerr << "邮件发送失败，但验证码已生成: " << verification_code << std::endl;
+                request.reply(status_codes::InternalError, _XPLATSTR("邮件发送失败，请稍后重试"));
+                return;
+            }
+        
+                // 5. 返回成功响应
+                json::value response_body;
+                response_body[_XPLATSTR("status")] = json::value::string(_XPLATSTR("200"));
+                response_body[_XPLATSTR("message")] = json::value::string(_XPLATSTR("验证码已发送到您的邮箱，请查收"));
+
+                http_response response(status_codes::OK);
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET,POST"));
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+                response.set_body(response_body);
+                request.reply(response);
+
+            }
+            catch (const std::exception& e) {
+                std::cerr << "注册处理错误: " << e.what() << std::endl;
+                request.reply(status_codes::InternalError, _XPLATSTR("服务器错误"));
+            }
+        }).wait();
+
+}
+
+// 验证码验证处理（第二步）
+void ServerManager::handle_post_verify(http_request request) {
+    request.extract_json().then([=](json::value json) {
+     
+        try {
+            if (!json.has_field(_XPLATSTR("email")) ||
+                !json.has_field(_XPLATSTR("code")) ||
+                !json.has_field(_XPLATSTR("username")) ||
+                !json.has_field(_XPLATSTR("password"))) {
+                request.reply(status_codes::BadRequest, _XPLATSTR("缺少必要参数"));
+                return;
+            }
+
+            std::string email = utility::conversions::to_utf8string(json[_XPLATSTR("email")].as_string());
+            std::string verification_code = utility::conversions::to_utf8string(json[_XPLATSTR("code")].as_string());
+            std::string username = utility::conversions::to_utf8string(json[_XPLATSTR("username")].as_string());
+            std::string password = utility::conversions::to_utf8string(json[_XPLATSTR("password")].as_string());
+
+            // 1. 验证验证码
+            dbHandler_.setCurrentDatabase("system_db");
+            if (!dbHandler_.verifyRegistrationCode(email, verification_code, pool)) {
+                request.reply(status_codes::Unauthorized, _XPLATSTR("验证码无效或已过期"));
+                return;
+            }
+
+            // 2. 对密码进行哈希处理（使用bcrypt）
+            std::string password_hash = SecurityUtils::bcrypt_hash(password);
+        
+            // 3. 完成用户注册
+            dbHandler_.setCurrentDatabase("system_db");
+            if (dbHandler_.completeUserRegistration(email, username, password_hash, pool)) {
+                json::value response_body;
+                response_body[_XPLATSTR("status")] = json::value::string(_XPLATSTR("200"));
+                response_body[_XPLATSTR("message")] = json::value::string(_XPLATSTR("注册成功"));
+                http_response response(status_codes::Created);
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET,POST"));
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+                response.set_body(response_body);
+                request.reply(response);
+            }
+            else {
+                request.reply(status_codes::InternalError, _XPLATSTR("注册失败"));
+            }
+        }
+        catch (const std::exception& e) {
+            std::cerr << "验证处理错误: " << e.what() << std::endl;
+            request.reply(status_codes::InternalError, _XPLATSTR("服务器错误"));
+        }
+        }).wait();
+}
+
+//用户登录功能
+void ServerManager::handle_post_userLogin(http_request request) {
+    request.extract_json().then([=](json::value json) {
+    
+        try
+        {
+            if (!json.has_field(_XPLATSTR("username")) ||
+                !json.has_field(_XPLATSTR("password"))) {
+                request.reply(status_codes::BadRequest, _XPLATSTR("缺少必要参数"));
+                return;
+            }
+            std::string username = utility::conversions::to_utf8string(json[_XPLATSTR("username")].as_string());
+            std::string password = utility::conversions::to_utf8string(json[_XPLATSTR("password")].as_string());
+            dbHandler_.setCurrentDatabase("system_db");
+            if (dbHandler_.userLogin(username, password, pool)) {
+                dbHandler_.setCurrentDatabase("system_db");
+                std::string token = generateToken(dbHandler_.getIdByUsername(username, pool), username, std::chrono::hours(24));
+                json::value response_body;
+                response_body[_XPLATSTR("status")] = json::value::string(_XPLATSTR("200"));
+                response_body[_XPLATSTR("message")] = json::value::string(_XPLATSTR("登录成功"));
+                response_body[_XPLATSTR("token")] = json::value::string(utility::conversions::to_string_t(token));
+                dbHandler_.setCurrentDatabase("system_db");
+                response_body[_XPLATSTR("email")] = json::value::string(_XPLATSTR(dbHandler_.getEmailByUsername(username, pool)));
+                dbHandler_.setCurrentDatabase("system_db");
+                response_body[_XPLATSTR("role")] = json::value::string(_XPLATSTR(dbHandler_.getRoleByUsername(username, pool)));
+                response_body[_XPLATSTR("id")] = json::value::string(_XPLATSTR(to_string(dbHandler_.getIdByUsername(username, pool))));
+                http_response response(status_codes::OK);
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("POST"));
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+                response.set_body(response_body);
+
+                request.reply(response);
+            }
+            else {
+                json::value response_body;
+                response_body[_XPLATSTR("status")] = json::value::string(_XPLATSTR("401"));
+                response_body[_XPLATSTR("message")] = json::value::string(_XPLATSTR("用户名或密码错误"));
+                http_response response(status_codes::Unauthorized);
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("POST"));
+                response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+                response.set_body(response_body);
+                request.reply(response);
+            }
+        }
+        catch (const std::exception& e)
+        {
+            std::cerr << "登录处理错误: " << e.what() << std::endl;
+            request.reply(status_codes::InternalError, _XPLATSTR("服务器错误"));
+        }
+        
+        }).wait();
+
+}
+
+ 
+
+// 管理员对用户的增删改查
+void ServerManager::handle_post_create_user(http_request request) {
+    json::value response_data;
+    http_response response;
+   
+    try {
+        auto body_json = request.extract_json().get();
+
+        User user;
+        user.username = utility::conversions::to_utf8string(body_json.at(_XPLATSTR("username")).as_string());
+        user.email = utility::conversions::to_utf8string(body_json.at(_XPLATSTR("email")).as_string());
+        std::string password = utility::conversions::to_utf8string(body_json.at(_XPLATSTR("password")).as_string());
+        user.password_hash = SecurityUtils::bcrypt_hash(password);
+        user.role = "user";
+        user.account_status = "active";
+        dbHandler_.setCurrentDatabase("system_db");
+        if (dbHandler_.createUserbyAdmin(user, pool)) {
+            response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("用户创建成功"));
+
+            // 创建成功时使用 201 Created
+            http_response response(status_codes::Created);
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET,POST"));
+            response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+            response.set_body(response_data);
+            request.reply(response);
+            return;
+        }
+        else {
+            response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("用户创建失败"));
+            response.set_status_code(status_codes::InternalError);
+        }
+    }
+    catch (const std::exception& e) {
+        response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("参数错误: ") + utility::conversions::to_string_t(e.what()));
+        response.set_status_code(status_codes::BadRequest);
+    }
+
+    // 对于非201响应也要添加CORS头
+    response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+    response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET,POST"));
+    response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+    response.set_body(response_data);
+    request.reply(response);
+}
+
+void ServerManager::handle_put_update_user(http_request request) {
+    json::value response_data;
+    http_response response;
+    http_request req = request;
+    try {
+        auto body_json = request.extract_json().get();
+        int user_id = body_json.at(_XPLATSTR("userid")).as_integer();
+
+
+        // 先获取当前用户
+        dbHandler_.setCurrentDatabase("system_db");
+        User current_user = dbHandler_.getUserByUserId(user_id, pool);
+      
+       
+        if (current_user.user_id=0) {
+            response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("用户未找到"));
+            response.set_status_code(status_codes::NotFound);
+        }
+        else {
+            User user;
+            string email = utility::conversions::to_utf8string(body_json.at(_XPLATSTR("email")).as_string());
+            user.email = email;
+          
+            // 如果提供了新密码，更新密码哈希；否则保持原密码
+            if (body_json.has_field(_XPLATSTR("password"))) {
+                std::string password = utility::conversions::to_utf8string(body_json.at(_XPLATSTR("password")).as_string());
+                user.password_hash = SecurityUtils::bcrypt_hash(password);
+               
+            }
+            else {
+                user.password_hash = ""; // 特殊标记，表示不需要更新密码
+            }
+
+            // 保留原来的 schema_name 值
+            user.user_id = user_id;
+            user.username = current_user.username;
+            user.schema_name = current_user.schema_name;
+            user.account_status = current_user.account_status;
+            user.role = current_user.role;
+            dbHandler_.setCurrentDatabase("system_db");
+            if (dbHandler_.updateUserbyAdmin(user, pool)) {
+                response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("用户更新成功"));
+                response.set_status_code(status_codes::OK);
+            }
+            else {
+                response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("用户更新失败"));
+                response.set_status_code(status_codes::InternalError);
+            }
+        }
+    }
+    catch (const std::exception& e) {
+        response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("参数错误: ") + utility::conversions::to_string_t(e.what()));
+        response.set_status_code(status_codes::BadRequest);
+    }
+
+    // 添加CORS头
+    response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+    response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET,POST,PUT,DELETE,OPTIONS"));
+    response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+
+    response.set_body(response_data);
+    request.reply(response);
+}
+
+void ServerManager::handle_delete_user(http_request request) {
+    json::value response_data;
+    http_response response;
+  
+    try {
+        auto username = utility::conversions::to_utf8string(request.extract_json().get().at(_XPLATSTR("username")).as_string());
+        dbHandler_.setCurrentDatabase("system_db");
+        if (dbHandler_.deleteUserbyAdmin(username, pool)) {
+            response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("用户已标记为删除"));
+            response.set_status_code(status_codes::OK);
+        }
+        else {
+            response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("删除用户失败"));
+            response.set_status_code(status_codes::InternalError);
+        }
+    }
+    catch (const std::exception& e) {
+        response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("参数错误: ") + utility::conversions::to_string_t(e.what()));
+        response.set_status_code(status_codes::BadRequest);
+    }
+
+  
+    response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+    response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET,POST,PUT,DELETE,OPTIONS"));
+    response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+
+    response.set_body(response_data);
+    request.reply(response);
+}
+
+void ServerManager::handle_recover_user(http_request request) {
+    json::value response_data;
+    http_response response;
+  
+    try {
+        auto username = utility::conversions::to_utf8string(request.extract_json().get().at(_XPLATSTR("username")).as_string());
+        dbHandler_.setCurrentDatabase("system_db");
+        if (dbHandler_.recoverUserbyAdmin(username, pool)) {
+            response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("用户已成功恢复"));
+            response.set_status_code(status_codes::OK);
+        }
+        else {
+            response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("恢复用户失败"));
+            response.set_status_code(status_codes::InternalError);
+        }
+    }
+    catch (const std::exception& e) {
+        response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("参数错误: ") + utility::conversions::to_string_t(e.what()));
+        response.set_status_code(status_codes::BadRequest);
+    }
+
+    // 添加CORS头
+    response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+    response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET,POST,PUT,DELETE,OPTIONS"));
+    response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+
+    response.set_body(response_data);
+    request.reply(response);
+}
+
+void ServerManager::handle_get_user(http_request request) {
+    json::value response_data;
+    http_response response;
+    try {
+        auto username = utility::conversions::to_utf8string(request.extract_json().get().at(_XPLATSTR("username")).as_string());
+        dbHandler_.setCurrentDatabase("system_db");
+        auto users = dbHandler_.getUserByUsername(username,pool);
+
+        if (!users.empty()) {
+            json::value user_data;
+            auto& user = users[0];
+            user_data[_XPLATSTR("userid")] = json::value::number(user.user_id);
+            user_data[_XPLATSTR("username")] = json::value::string(utility::conversions::to_string_t(user.username));
+            user_data[_XPLATSTR("email")] = json::value::string(utility::conversions::to_string_t(user.email));
+            user_data[_XPLATSTR("role")] = json::value::string(utility::conversions::to_string_t(user.role));
+            user_data[_XPLATSTR("account_status")] = json::value::string(utility::conversions::to_string_t(user.account_status));
+            user_data[_XPLATSTR("schema_name")] = json::value::string(utility::conversions::to_string_t(user.schema_name));
+
+            response_data[_XPLATSTR("user")] = user_data;
+            response.set_status_code(status_codes::OK);
+        }
+        else {
+            response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("用户未找到"));
+            response.set_status_code(status_codes::NotFound);
+        }
+    }
+    catch (const std::exception& e) {
+        response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("参数错误: ") + utility::conversions::to_string_t(e.what()));
+        response.set_status_code(status_codes::BadRequest);
+    }
+
+   
+    response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+    response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET,POST,PUT,DELETE,OPTIONS"));
+    response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+
+    response.set_body(response_data);
+    request.reply(response);
+}
+
+void ServerManager::handle_get_all_users(http_request request) {
+    json::value response_data;
+    http_response response;
+    try {
+        dbHandler_.setCurrentDatabase("system_db");
+        auto users = dbHandler_.getAllUsers(pool);
+        json::value users_array = json::value::array();
+
+        for (int i = 0; i < users.size(); ++i) {
+            auto& user = users[i];
+            json::value user_data;
+            user_data[_XPLATSTR("userid")] = json::value::number(user.user_id);
+            user_data[_XPLATSTR("username")] = json::value::string(utility::conversions::to_string_t(user.username));
+            user_data[_XPLATSTR("email")] = json::value::string(utility::conversions::to_string_t(user.email));
+            user_data[_XPLATSTR("role")] = json::value::string(utility::conversions::to_string_t(user.role));
+            user_data[_XPLATSTR("account_status")] = json::value::string(utility::conversions::to_string_t(user.account_status));
+            user_data[_XPLATSTR("schema_name")] = json::value::string(utility::conversions::to_string_t(user.schema_name));
+
+            users_array[i] = user_data;
+        }
+
+        response_data[_XPLATSTR("users")] = users_array;
+        response.set_status_code(status_codes::OK);
+    }
+    catch (const std::exception& e) {
+        response_data[_XPLATSTR("message")] = json::value::string(_XPLATSTR("获取用户列表失败: ") + utility::conversions::to_string_t(e.what()));
+        response.set_status_code(status_codes::InternalError);
+    }
+
+   
+    response.headers().add(_XPLATSTR("Access-Control-Allow-Origin"), _XPLATSTR("*"));
+    response.headers().add(_XPLATSTR("Access-Control-Allow-Methods"), _XPLATSTR("GET,POST,PUT,DELETE,OPTIONS"));
+    response.headers().add(_XPLATSTR("Access-Control-Allow-Headers"), _XPLATSTR("Content-Type"));
+
+    response.set_body(response_data);
+    request.reply(response);
+}
+
+std::string ServerManager::GetDb(http_request request) {
+    auto headers = request.headers();
+    utility::string_t token;
+    utility::string_t username;
+
+    if (headers.has(_XPLATSTR("Authorization"))) {
+        token = headers[_XPLATSTR("Authorization")];
+        if (token.find(_XPLATSTR("Bearer ")) == 0) {
+            username = token.substr(7); // 去掉 "Bearer " 前缀
+            dbHandler_.setCurrentDatabase("system_db");
+            std::string db_name = dbHandler_.getSchemaByUsername(username, pool);
+            return db_name;
+        }
+        else {
+            // 处理没有"Bearer "前缀的情况
+            // 例如，返回一个空字符串或默认数据库
+            return std::string();
+        }
+    }
+    else {
+        // 没有Authorization头，返回空字符串或默认数据库
+        return std::string("system_db");
+    }
+}
+//std::string ServerManager::GetRole(http_request request) {
+//    auto headers = request.headers();
+//    utility::string_t token;
+//    utility::string_t username;
+//
+//    if (headers.has(_XPLATSTR("Authorization"))) {
+//        token = headers[_XPLATSTR("Authorization")];
+//        if (token.find(_XPLATSTR("Bearer ")) == 0) {
+//            username = token.substr(7); // 去掉 "Bearer " 前缀
+//            dbHandler_.setCurrentDatabase("system_db");
+//            std::string role = dbHandler_.getRoleByUsername(username, pool);
+//            return role;
+//        }
+//        else {
+//            // 处理没有"Bearer "前缀的情况
+//            // 例如，返回一个空字符串或默认数据库
+//            return std::string();
+//        }
+//    }
+//    else {
+//        // 没有Authorization头，返回空字符串或默认数据库
+//        return std::string("system_db");
+//    }
+//}
+
+bool ServerManager::InitializeAdminDatabase() {
+    dbHandler_.setCurrentDatabase("");
+    dbHandler_.InitializeAdminDataBase(pool);
+  
+}
 
 void ServerManager::start() {
     try {
@@ -4912,3 +6201,4 @@ void ServerManager::stop() {
         system_logger->error("An error occurred while stopping: {}", e.what());
     }
 }
+

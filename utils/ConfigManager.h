@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <string>
 #include <vector>
@@ -24,6 +24,15 @@ public:
     std::string getDbPassword() const;
     int getDbPort() const;
     std::string getDbSchema() const;
+
+    // 添加 SMTP 配置
+    std::string getSmtpHost() const;
+    int getSmtpPort() const;
+    std::string getSmtpUsername() const;
+    std::string getSmtpPassword() const;
+    std::string getSmtpFromAddress() const;
+    bool getSmtpUseTls() const;
+
 
     // CVE API
     std::string getCveApiBaseUrl() const;

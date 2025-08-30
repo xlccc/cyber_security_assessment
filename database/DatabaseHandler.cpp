@@ -3,6 +3,15 @@
 using namespace mysqlx;
 // 插入执行函数的实现
 void DatabaseHandler::executeInsert(const ScanHostResult& scanHostResult, ConnectionPool& pool) {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
     try {
         // 定义插入语句
         std::string sql =
@@ -13,6 +22,7 @@ void DatabaseHandler::executeInsert(const ScanHostResult& scanHostResult, Connec
             ") ON DUPLICATE KEY UPDATE scan_time = VALUES(scan_time), " +
             "alive = 'true', " +
             "expire_time = DATE_ADD(VALUES(scan_time), INTERVAL 7 DAY)";
+       
         auto conn = pool.getConnection();  // 获取连接
 
         // 执行一些SQL操作
@@ -20,14 +30,30 @@ void DatabaseHandler::executeInsert(const ScanHostResult& scanHostResult, Connec
         // 使用固定的数据库连接信息
         std::cout << "Data inserted successfully." << std::endl;
 
+        cleanup(); // 确保清理
     }
     catch (const mysqlx::Error& err) {
         std::cout << "ERROR: " << err.what() << std::endl;
+        cleanup();
+        throw;
     }
+      
+    
 }
 
 void DatabaseHandler::executeUpdateOrInsert(const ScanHostResult& scanHostResult, ConnectionPool& pool)
 {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+
+    // 确保无论如何都会恢复原始数据库设置
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
     try {
         auto conn = pool.getConnection();  // 获取连接
 
@@ -43,6 +69,7 @@ void DatabaseHandler::executeUpdateOrInsert(const ScanHostResult& scanHostResult
         mysqlx::Row row = result.fetchOne();
         if (!row) {
             std::cerr << "未找到对应 IP 的主机记录：" << ip << std::endl;
+            cleanup(); // 确保清理
             return;
         }
         int shr_id = row[0];  // 获取主机ID
@@ -89,16 +116,21 @@ void DatabaseHandler::executeUpdateOrInsert(const ScanHostResult& scanHostResult
         //(6)插入port_vuln_result表
         processPortVulns(scanHostResult, shr_id, pool);
 
+        cleanup(); // 正常执行完成后清理
 
 
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "executeUpdateOrInsert时数据库错误: " << err.what() << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
     }
-
+   
 }
 
 
@@ -131,6 +163,15 @@ void DatabaseHandler::processPortVulns(const ScanHostResult& hostResult, const i
 
 void DatabaseHandler::alterVulnsAfterPocSearch(ConnectionPool& pool, const Vuln& vuln)
 {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
     try {
         auto conn = pool.getConnection();  // 获取连接
 
@@ -145,20 +186,35 @@ void DatabaseHandler::alterVulnsAfterPocSearch(ConnectionPool& pool, const Vuln&
             vuln.Vuln_id
         )
             .execute();
+        cleanup(); 
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "alterVulnsAfterPocSearch时数据库错误: " << err.what() << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
     }
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
     }
 }
 
 void DatabaseHandler::alterHostVulnResultAfterPocVerify(ConnectionPool& pool, const Vuln& vuln, std::string ip, const std::string& scan_time)
 {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
     try {
         auto conn = pool.getConnection();
         std::string vulExist = vuln.vulExist;
@@ -205,6 +261,7 @@ void DatabaseHandler::alterHostVulnResultAfterPocVerify(ConnectionPool& pool, co
 
         mysqlx::Row hostRow = result.fetchOne();
         if (!hostRow) {
+            cleanup();
             return;
         }
 
@@ -239,62 +296,37 @@ void DatabaseHandler::alterHostVulnResultAfterPocVerify(ConnectionPool& pool, co
                     .bind(vulExist, scan_time, shr_id, vuln_id_primary).execute();
             }
         }
+        cleanup();
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "alterHostVulnResultAfterPocVerify数据库错误: " << err.what() << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
     }
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
     }
 }
 
 
-
-//void DatabaseHandler::alterPortVulnResultAfterPocVerify(ConnectionPool& pool, const Vuln& vuln, std::string ip, std::string portId)
-//{
-//    try {
-//        auto conn = pool.getConnection();
-//        std::string vulExist = vuln.vulExist;
-//        std::string vuln_id = vuln.Vuln_id;
-//
-//        // 修改查询语句,添加 open_ports 表中 shr_id 的匹配条件
-//        auto result = conn->sql("SELECT pvr.shr_id, op.id AS port_id, v.id AS vuln_id "
-//            "FROM port_vuln_result pvr "
-//            "JOIN scan_host_result shr ON pvr.shr_id = shr.id "
-//            "JOIN open_ports op ON pvr.port_id = op.id AND op.shr_id = pvr.shr_id "  // 增加 shr_id 匹配
-//            "JOIN vuln v ON pvr.vuln_id = v.id "
-//            "WHERE shr.ip = ? AND v.vuln_id = ? AND op.port = ?"
-//        ).bind(ip, vuln_id, portId).execute();
-//
-//        // 获取查询结果
-//        for (auto row : result) {
-//            int shr_id = row[0].get<int>();          // port_vuln_result 表中的 shr_id
-//            int port_id_primary = row[1].get<int>();  // open_ports 表中的主键 id
-//            int vuln_id_primary = row[2].get<int>();  // vuln 表中的主键 id
-//
-//            // 更新 port_vuln_result 表中的 vulExist 字段
-//            conn->sql("UPDATE port_vuln_result SET "
-//                "vulExist = ? "
-//                "WHERE shr_id = ? AND port_id = ? AND vuln_id = ?"
-//            ).bind(vulExist, shr_id, port_id_primary, vuln_id_primary).execute();
-//        }
-//    }
-//    catch (const mysqlx::Error& err) {
-//        std::cerr << "alterPortVulnResultAfterPocVerify时数据库错误: " << err.what() << std::endl;
-//    }
-//    catch (std::exception& ex) {
-//        std::cerr << "异常: " << ex.what() << std::endl;
-//    }
-//    catch (...) {
-//        std::cerr << "未知错误发生" << std::endl;
-//    }
-//}
-
 void DatabaseHandler::alterPortVulnResultAfterPocVerify(ConnectionPool& pool, const Vuln& vuln, std::string ip, std::string portId, const std::string& scan_time)
 {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
     try {
         std::cout << "===============================================" << std::endl;
         std::cout << "【开始】更新漏洞验证结果" << std::endl;
@@ -360,6 +392,7 @@ void DatabaseHandler::alterPortVulnResultAfterPocVerify(ConnectionPool& pool, co
             std::cout << "===============================================" << std::endl;
             std::cout << "【结束】漏洞验证结果更新失败 - 找不到主机或端口信息" << std::endl;
             std::cout << "===============================================" << std::endl;
+            cleanup();
             return;
         }
 
@@ -461,27 +494,43 @@ void DatabaseHandler::alterPortVulnResultAfterPocVerify(ConnectionPool& pool, co
         std::cout << "===============================================" << std::endl;
         std::cout << "【结束】漏洞验证结果更新过程完成" << std::endl;
         std::cout << "===============================================" << std::endl;
+        cleanup();
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "===============================================" << std::endl;
         std::cerr << "【错误】alterPortVulnResultAfterPocVerify时数据库错误:" << std::endl;
         std::cerr << err.what() << std::endl;
         std::cerr << "===============================================" << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
     }
     catch (std::exception& ex) {
         std::cerr << "===============================================" << std::endl;
         std::cerr << "【异常】" << ex.what() << std::endl;
         std::cerr << "===============================================" << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
     }
     catch (...) {
         std::cerr << "===============================================" << std::endl;
         std::cerr << "【错误】未知错误发生" << std::endl;
         std::cerr << "===============================================" << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
     }
 }
 
 void DatabaseHandler::alterVulnAfterPocTask(ConnectionPool& pool, const POCTask& task)
 {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
     try {
         auto conn = pool.getConnection();
         std::string ip = task.ip;
@@ -531,25 +580,43 @@ void DatabaseHandler::alterVulnAfterPocTask(ConnectionPool& pool, const POCTask&
                 ).bind(vulExist, shr_id, vuln_id_primary).execute();
             }
         }
+        cleanup();
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "alterVulnAfterPocTask时数据库错误: " << err.what() << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
     }
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
     }
 }
 std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPool& pool, std::vector<std::string> alive_hosts)
 {
+
     std::map<std::string, IpVulnerabilities> ip_vulns_map;
     for (auto ip : alive_hosts) {
         if (ip_vulns_map.find(ip) == ip_vulns_map.end()) {
             ip_vulns_map[ip] = IpVulnerabilities{ ip };
         }
     }
+
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+  
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
 
     try {
         auto conn = pool.getConnection();
@@ -669,16 +736,23 @@ std::vector<IpVulnerabilities> DatabaseHandler::getVulnerabilities(ConnectionPoo
         for (const auto& pair : ip_vulns_map) {
             result_vector.push_back(pair.second);
         }
+        cleanup(); 
         return result_vector;
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "getVulnerabilities时数据库错误: " << err.what() << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
     }
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
     }
 
     // 发生错误时返回空结果
@@ -814,6 +888,17 @@ std::set<std::string> DatabaseHandler::extractAllCPEs(const ScanHostResult& host
 
 void DatabaseHandler::insertHostCPEs(int shr_id, const std::set<std::string>& cpes, ConnectionPool& pool)
 {
+
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
+
     try {
         auto conn = pool.getConnection();  // 获取连接
 
@@ -827,14 +912,26 @@ void DatabaseHandler::insertHostCPEs(int shr_id, const std::set<std::string>& cp
 
             //std::cout << "成功插入或更新 CPE: " << cpe << std::endl;
         }
+        cleanup();
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "insertHostCPEs时数据库错误: " << err.what() << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
     }
 }
 
 void DatabaseHandler::insertAliveHosts(const std::vector<std::string>& aliveHosts, ConnectionPool& pool)
 {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
     try {
         auto conn = pool.getConnection();  // 获取连接
         for (const auto& ip : aliveHosts) {
@@ -849,14 +946,26 @@ void DatabaseHandler::insertAliveHosts(const std::vector<std::string>& aliveHost
                 .execute();
             //std::cout << "成功插入或更新存活主机: " << ip << std::endl;
         }
+        cleanup();
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "insertAliveHosts时数据库错误: " << err.what() << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
     }
 }
 
 void DatabaseHandler::insertAliveHosts2scanHostResult(const std::vector<std::string>& aliveHosts, ConnectionPool& pool)
 {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
     try {
         auto conn = pool.getConnection();  // 获取连接
         for (const auto& ip : aliveHosts) {
@@ -872,14 +981,26 @@ void DatabaseHandler::insertAliveHosts2scanHostResult(const std::vector<std::str
                 .execute();
             //std::cout << "成功插入或更新存活主机: " << ip << std::endl;
         }
+        cleanup();
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "insertAliveHosts2scanHostResult时数据库错误: " << err.what() << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
     }
 }
 
 void DatabaseHandler::readAliveHosts(std::vector<std::string>& aliveHosts, ConnectionPool& pool)
 {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
     try {
         auto conn = pool.getConnection();  // 获取连接
         mysqlx::SqlResult result = conn->sql(
@@ -890,20 +1011,36 @@ void DatabaseHandler::readAliveHosts(std::vector<std::string>& aliveHosts, Conne
         for (auto row : result) {
             aliveHosts.push_back(row[0].get<std::string>());
         }
+        cleanup();
     }
 	catch (const mysqlx::Error& err) {
 		std::cerr << "readAliveHosts时数据库错误: " << err.what() << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
 	}
 	catch (std::exception& ex) {
 		std::cerr << "异常: " << ex.what() << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
 	}
 	catch (...) {
 		std::cerr << "未知错误发生" << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
 	}
 }
 
 void DatabaseHandler::updateAliveHosts(std::string aliveHost, ConnectionPool& pool)
 {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
 	try {
 		auto conn = pool.getConnection();  // 获取连接
 		conn->sql(
@@ -914,16 +1051,28 @@ void DatabaseHandler::updateAliveHosts(std::string aliveHost, ConnectionPool& po
 			.bind(aliveHost)
 			.execute();
 		//std::cout << "成功更新存活主机: " << aliveHost << std::endl;
+        cleanup();
 	}
 	catch (const mysqlx::Error& err) {
 		std::cerr << "updateAliveHosts时数据库错误: " << err.what() << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
 	}
 }
 
 void DatabaseHandler::processVulns(const ScanHostResult& hostResult, ConnectionPool& pool)
 {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
     // 获取 scan_host_result 的 ID
     int shr_id = 0;
+
     try {
         auto conn = pool.getConnection();
         mysqlx::SqlResult result = conn->sql("SELECT id FROM scan_host_result WHERE ip = ?")
@@ -937,11 +1086,16 @@ void DatabaseHandler::processVulns(const ScanHostResult& hostResult, ConnectionP
         }
         else {
             std::cerr << "找不到IP为 " << hostResult.ip << " 的主机记录" << std::endl;
+            cleanup(); // 异常处理中清理
             return;
         }
+        cleanup(); // 异常处理中清理
+      
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "获取主机ID时数据库错误: " << err.what() << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
         return;
     }
 
@@ -988,10 +1142,20 @@ void DatabaseHandler::processVulns(const ScanHostResult& hostResult, ConnectionP
             }
         }
     }
+    cleanup();
 }
 
 int DatabaseHandler::getCpeId(int shr_id, const std::string& cpe, ConnectionPool& pool)
 {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
     try {
         auto conn = pool.getConnection();
 
@@ -1003,28 +1167,45 @@ int DatabaseHandler::getCpeId(int shr_id, const std::string& cpe, ConnectionPool
         // 正确处理结果集
         mysqlx::Row row = result.fetchOne();
         if (row) {
+            cleanup(); 
             return row[0];  // 直接返回第一列
         }
         else {
+            cleanup();
             return 0; // 未找到匹配的 CPE 记录
         }
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "查询 CPE ID 时数据库错误: " << err.what() << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
         return 0;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
         return 0;
     }
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
         return 0;
     }
 }
 
 void DatabaseHandler::insertVulns(const std::vector<Vuln>& vulns, ConnectionPool& pool, int cpe_id)
 {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
     try {
         auto conn = pool.getConnection();  // 获取连接
 
@@ -1073,15 +1254,22 @@ void DatabaseHandler::insertVulns(const std::vector<Vuln>& vulns, ConnectionPool
                     .execute();
             }
         }
+        cleanup(); 
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "insertVulns时数据库错误: " << err.what() << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
     }
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
+        cleanup(); // 异常处理中清理
+        throw;     // 重新抛出异常
     }
 }
 
@@ -1119,6 +1307,15 @@ void DatabaseHandler::processHostVulns(const ScanHostResult& hostResult, const i
 // 根据漏洞ID字符串(CVE-XXXX-XXXX格式)获取vuln表中的记录ID
 int DatabaseHandler::getVulnIdByVulnId(const std::string& vuln_id_str, ConnectionPool& pool)
 {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
     try {
         auto conn = pool.getConnection();
         mysqlx::SqlResult result = conn->sql("SELECT id FROM vuln WHERE vuln_id = ?")
@@ -1126,18 +1323,24 @@ int DatabaseHandler::getVulnIdByVulnId(const std::string& vuln_id_str, Connectio
             .execute();
         mysqlx::Row row = result.fetchOne();
         if (row) {
+            cleanup();
             return row[0];  // 直接访问列
         }
         else {
+            cleanup();
             return 0; // 未找到匹配的记录
         }
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "查询漏洞ID时数据库错误: " << err.what() << std::endl;
+        cleanup();
+        throw;
         return 0;
     }
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
+        cleanup();
+        throw;
         return 0;
     }
 }
@@ -1145,21 +1348,37 @@ int DatabaseHandler::getVulnIdByVulnId(const std::string& vuln_id_str, Connectio
 // 插入单条host_vuln_result记录
 void DatabaseHandler::insertHostVulnResult(const Vuln& vuln, int shr_id, int vuln_id, int cpe_id, ConnectionPool& pool)
 {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
     try {
         auto conn = pool.getConnection();
         conn->sql("INSERT INTO host_vuln_result (shr_id, vuln_id, vulExist, cpe_id) VALUES (?, ?, ?, ?) "
             "ON DUPLICATE KEY UPDATE vulExist = ?, cpe_id = ?")
             .bind(shr_id, vuln_id, vuln.vulExist, cpe_id, vuln.vulExist, cpe_id)
             .execute();
+        cleanup();
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "插入主机漏洞关联记录时数据库错误: " << err.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
+        cleanup();
+        throw;
     }
 }
 
@@ -1167,6 +1386,14 @@ void DatabaseHandler::insertHostVulnResult(const Vuln& vuln, int shr_id, int vul
 
 std::vector<PortInfo> DatabaseHandler::getAllPortInfoByIp(const std::string& ip, ConnectionPool& pool)
 {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
     std::vector<PortInfo> portInfoList;
     try {
         auto conn = pool.getConnection();
@@ -1177,6 +1404,7 @@ std::vector<PortInfo> DatabaseHandler::getAllPortInfoByIp(const std::string& ip,
         mysqlx::Row hostRow = hostResult.fetchOne();
         if (!hostRow) {
             std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
+            cleanup();
             return portInfoList;
         }
         int shr_id = hostRow[0]; // 获取shr_id
@@ -1211,21 +1439,37 @@ std::vector<PortInfo> DatabaseHandler::getAllPortInfoByIp(const std::string& ip,
         if (portInfoList.empty()) {
             std::cerr << "IP: " << ip << " 没有关联的端口信息" << std::endl;
         }
+        cleanup();
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "获取端口信息时数据库错误: " << err.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
+        cleanup();
+        throw;
     }
     return portInfoList;
 }
 
 int DatabaseHandler::getCpeIdFromVuln(int vuln_id, ConnectionPool& pool)
 {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
     try {
         auto conn = pool.getConnection();
         // 查询 vuln 表中指定 ID 的漏洞记录的 cpe_id
@@ -1235,28 +1479,45 @@ int DatabaseHandler::getCpeIdFromVuln(int vuln_id, ConnectionPool& pool)
         // 处理结果集
         mysqlx::Row row = result.fetchOne();
         if (row) {
+            cleanup();
             return row[0];  // 直接访问列
         }
         else {
+            cleanup();
             return 0; // 未找到 cpe_id 或值为 NULL
         }
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "查询漏洞 CPE ID 时数据库错误: " << err.what() << std::endl;
+        cleanup();
+        throw;
         return 0;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
+        cleanup();
+        throw;
         return 0;
     }
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
+        cleanup();
+        throw;
         return 0;
     }
 }
 
 void DatabaseHandler::insertPortVulnResult(const std::vector<Vuln>& vulns, const int shr_id, const std::string port, ConnectionPool& pool)
 {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
     try {
         auto conn = pool.getConnection();  // 获取连接
 
@@ -1269,6 +1530,7 @@ void DatabaseHandler::insertPortVulnResult(const std::vector<Vuln>& vulns, const
         mysqlx::Row portRow = resultPortId.fetchOne();
         if (!portRow) {
             std::cerr << "未找到端口: " << port << " 对应的记录" << std::endl;
+            cleanup();
             return;
         }
 
@@ -1303,15 +1565,22 @@ void DatabaseHandler::insertPortVulnResult(const std::vector<Vuln>& vulns, const
                 std::cerr << "找不到漏洞记录: " << vuln.Vuln_id << std::endl;
             }
         }
+        cleanup();
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "insertPortVulnResult时数据库错误: " << err.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
+        cleanup();
+        throw;
     }
 }
 
@@ -1320,6 +1589,14 @@ ScanHostResult DatabaseHandler::getScanHostResult(const std::string& ip, Connect
     ScanHostResult result;
     result.ip = ip;
     result.is_merged = false;
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
 
     try {
         auto conn = pool.getConnection();
@@ -1331,6 +1608,7 @@ ScanHostResult DatabaseHandler::getScanHostResult(const std::string& ip, Connect
         mysqlx::Row hostRow = hostResult.fetchOne();
         if (!hostRow) {
             std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
+            cleanup();
             return result;
         }
 
@@ -1476,17 +1754,24 @@ ScanHostResult DatabaseHandler::getScanHostResult(const std::string& ip, Connect
                 }
             }
         }
+       
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "获取扫描结果时数据库错误: " << err.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
+        cleanup();
+        throw;
     }
-
+    cleanup();
     return result;
 }
 
@@ -1628,6 +1913,16 @@ std::vector<AssetInfo> DatabaseHandler::getAllAssetsInfo(ConnectionPool& pool)
 
 std::vector<std::string> DatabaseHandler::getServiceNameByIp(const std::string& ip, ConnectionPool& pool)
 {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
+
     std::vector<std::string> serviceNames;
 
     try {
@@ -1641,6 +1936,7 @@ std::vector<std::string> DatabaseHandler::getServiceNameByIp(const std::string& 
         mysqlx::Row hostRow = hostResult.fetchOne();
         if (!hostRow) {
             std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
+            cleanup();
             return serviceNames;
         }
 
@@ -1656,17 +1952,24 @@ std::vector<std::string> DatabaseHandler::getServiceNameByIp(const std::string& 
             std::string serviceName = static_cast<std::string>(serviceRow[0]);
             serviceNames.push_back(serviceName);
         }
+        cleanup();
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "获取服务名称时数据库错误: " << err.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
+        cleanup();
+        throw;
     }
-
+    cleanup();
     return serviceNames;
 }
 
@@ -1739,6 +2042,15 @@ std::string DatabaseHandler::saveWeakPasswordResult(
     const std::string& password,
     ConnectionPool& pool)
 {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
     try {
         auto conn = pool.getConnection();
 
@@ -1749,6 +2061,7 @@ std::string DatabaseHandler::saveWeakPasswordResult(
         mysqlx::Row hostRow = hostResult.fetchOne();
         if (!hostRow) {
             std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
+            cleanup();
             return "";
         }
         int shr_id = hostRow[0]; // 获取shr_id
@@ -1827,23 +2140,41 @@ std::string DatabaseHandler::saveWeakPasswordResult(
         }
 
         std::cout << "弱口令结果保存成功: " << ip << ":" << port << " - " << login << ":" << password << " 时间: " << verify_time << std::endl;
+        cleanup();
         return verify_time; // 返回验证时间
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "保存弱口令结果时数据库错误: " << err.what() << std::endl;
+        cleanup();
+        throw;
         return "";
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
+        cleanup();
+        throw;
         return "";
     }
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
+        cleanup();
+        throw;
         return "";
     }
 }
 
 void DatabaseHandler::saveLevel3SecurityCheckResult(const std::string& ip, const event& checkEvent, ConnectionPool& pool) {
+
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
+
     try {
         auto conn = pool.getConnection();  // 获取连接
         // 首先获取 scan_host_result 表中的 id
@@ -1853,6 +2184,7 @@ void DatabaseHandler::saveLevel3SecurityCheckResult(const std::string& ip, const
         mysqlx::Row hostRow = hostResult.fetchOne();
         if (!hostRow) {
             std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
+            cleanup();
             return;
         }
         int shr_id = hostRow[0]; // 获取 shr_id
@@ -1920,20 +2252,35 @@ void DatabaseHandler::saveLevel3SecurityCheckResult(const std::string& ip, const
 
             std::cout << "成功插入安全检查结果: " << checkEvent.description << std::endl;
         }
+        cleanup();
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "saveLevel3SecurityCheckResult 时数据库错误: " << err.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
+        cleanup();
+        throw;
     }
 }
 
 void DatabaseHandler::updateLevel3SecurityCheckResult(const std::string& ip, ConnectionPool& pool, std::vector<scoreMeasure> vec_score)
 {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
     try {
         auto conn = pool.getConnection();  // 获取连接
 
@@ -1945,6 +2292,7 @@ void DatabaseHandler::updateLevel3SecurityCheckResult(const std::string& ip, Con
         mysqlx::Row hostRow = hostResult.fetchOne();
         if (!hostRow) {
             std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
+            cleanup();
             return;
         }
 
@@ -2002,15 +2350,22 @@ void DatabaseHandler::updateLevel3SecurityCheckResult(const std::string& ip, Con
         }
 
         std::cout << "完成对 IP " << ip << " 的安全检查结果合规状态及临时重要程度更新" << std::endl;
+        cleanup();
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "updateLevel3SecurityCheckResult 时数据库错误: " << err.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
+        cleanup();
+        throw;
     }
 }
 
@@ -2093,6 +2448,14 @@ void DatabaseHandler::updateLevel3SecurityCheckResult(const std::string& ip, Con
 
 std::vector<event> DatabaseHandler::getLevel3SecurityCheckResults(const std::string& ip, ConnectionPool& pool) {
     std::vector<event> checkResults;
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
 
     try {
         auto conn = pool.getConnection();  // 获取连接
@@ -2105,6 +2468,7 @@ std::vector<event> DatabaseHandler::getLevel3SecurityCheckResults(const std::str
         mysqlx::Row hostRow = hostResult.fetchOne();
         if (!hostRow) {
             std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
+            cleanup();
             return checkResults;
         }
 
@@ -2140,20 +2504,33 @@ std::vector<event> DatabaseHandler::getLevel3SecurityCheckResults(const std::str
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "getLevel3SecurityCheckResults时数据库错误: " << err.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
+        cleanup();
+        throw;
     }
-
+    cleanup();
     return checkResults;
 }
 
 std::vector<event> DatabaseHandler::getLevel3SecurityCheckResultsByIds(const std::string& ip, const std::vector<int>& ids, ConnectionPool& pool) {
     std::vector<event> checkResults;
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
 
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
     try {
         auto conn = pool.getConnection();  // 获取连接
 
@@ -2165,6 +2542,7 @@ std::vector<event> DatabaseHandler::getLevel3SecurityCheckResultsByIds(const std
         mysqlx::Row hostRow = hostResult.fetchOne();
         if (!hostRow) {
             std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
+            cleanup();
             return checkResults;
         }
 
@@ -2217,19 +2595,33 @@ std::vector<event> DatabaseHandler::getLevel3SecurityCheckResultsByIds(const std
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "getLevel3SecurityCheckResultsByIds时数据库错误: " << err.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
+        cleanup();
+        throw;
     }
-
+    cleanup();
     return checkResults;
 }
 
 
 void DatabaseHandler::saveSecurityCheckResult(const std::string& ip, const event& checkEvent, ConnectionPool& pool) {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
     try {
         auto conn = pool.getConnection();  // 获取连接
         // 首先获取scan_host_result表中的id
@@ -2239,6 +2631,7 @@ void DatabaseHandler::saveSecurityCheckResult(const std::string& ip, const event
         mysqlx::Row hostRow = hostResult.fetchOne();
         if (!hostRow) {
             std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
+            cleanup();
             return;
         }
         int shr_id = hostRow[0]; // 获取shr_id
@@ -2299,19 +2692,35 @@ void DatabaseHandler::saveSecurityCheckResult(const std::string& ip, const event
                 .execute();
             std::cout << "成功插入安全检查结果: " << checkEvent.description << std::endl;
         }
+        cleanup();
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "saveSecurityCheckResult时数据库错误: " << err.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
+        cleanup();
+        throw;
     }
 }
 
 std::vector<event> DatabaseHandler::getSecurityCheckResults(const std::string& ip, ConnectionPool& pool) {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
     std::vector<event> checkResults;
 
     try {
@@ -2325,6 +2734,7 @@ std::vector<event> DatabaseHandler::getSecurityCheckResults(const std::string& i
         mysqlx::Row hostRow = hostResult.fetchOne();
         if (!hostRow) {
             std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
+            cleanup();
             return checkResults;
         }
 
@@ -2361,20 +2771,34 @@ std::vector<event> DatabaseHandler::getSecurityCheckResults(const std::string& i
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "getSecurityCheckResults时数据库错误: " << err.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
+        cleanup();
+        throw;
     }
-
+    cleanup();
     return checkResults;
 }
 
 std::vector<event> DatabaseHandler::getSecurityCheckResultsByIds(const std::string& ip, const std::vector<int>& ids, ConnectionPool& pool) {
-    std::vector<event> checkResults;
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
 
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+    
+    std::vector<event> checkResults;
     try {
         auto conn = pool.getConnection();  // 获取连接
 
@@ -2386,6 +2810,7 @@ std::vector<event> DatabaseHandler::getSecurityCheckResultsByIds(const std::stri
         mysqlx::Row hostRow = hostResult.fetchOne();
         if (!hostRow) {
             std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
+            cleanup();
             return checkResults;
         }
 
@@ -2438,14 +2863,20 @@ std::vector<event> DatabaseHandler::getSecurityCheckResultsByIds(const std::stri
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "getSecurityCheckResultsByIds时数据库错误: " << err.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
+        cleanup();
+        throw;
     }
-
+    cleanup();
     return checkResults;
 }
 
@@ -2508,6 +2939,15 @@ BaselineCheckSummary DatabaseHandler::calculateBaselineSummary(const std::vector
 }
 
 void DatabaseHandler::insertServerInfo(const ServerInfo& info, const std::string& ip, ConnectionPool& pool) {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
     try {
         auto conn = pool.getConnection();  // 获取连接
 
@@ -2519,6 +2959,7 @@ void DatabaseHandler::insertServerInfo(const ServerInfo& info, const std::string
         mysqlx::Row hostRow = hostResult.fetchOne();
         if (!hostRow) {
             std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
+            cleanup();
             return;
         }
 
@@ -2584,15 +3025,23 @@ void DatabaseHandler::insertServerInfo(const ServerInfo& info, const std::string
 
             std::cout << "成功插入服务器信息: " << ip << std::endl;
         }
+        cleanup();
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "insertServerInfo时数据库错误: " << err.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
+        cleanup();
+        throw;
+
     }
 }
 
@@ -2610,6 +3059,15 @@ ServerInfo DatabaseHandler::getServerInfoByIp(const std::string& ip, ConnectionP
     info.osName = "";
     info.isInternet = "";
 
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
     try {
         auto conn = pool.getConnection();  // 获取连接
 
@@ -2621,6 +3079,7 @@ ServerInfo DatabaseHandler::getServerInfoByIp(const std::string& ip, ConnectionP
         mysqlx::Row hostRow = hostResult.fetchOne();
         if (!hostRow) {
             std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
+            cleanup();
             return info;
         }
 
@@ -2637,6 +3096,7 @@ ServerInfo DatabaseHandler::getServerInfoByIp(const std::string& ip, ConnectionP
         mysqlx::Row infoRow = infoResult.fetchOne();
         if (!infoRow) {
             std::cerr << "未找到IP: " << ip << " 对应的服务器信息" << std::endl;
+            cleanup();
             return info;
         }
 
@@ -2656,26 +3116,41 @@ ServerInfo DatabaseHandler::getServerInfoByIp(const std::string& ip, ConnectionP
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "getServerInfoByIp时数据库错误: " << err.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
+        cleanup();
+        throw;
     }
-
+    cleanup();
     return info;
 }
 
 //获取所有支持的漏洞类型
 std::vector<std::string> DatabaseHandler::getAllVulnTypes(ConnectionPool& pool)
 {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
     std::vector<std::string> types;
 
     try {
         auto conn = pool.getConnection();
 
-        mysqlx::SqlResult result = conn->sql("SELECT TypeName FROM VulnType")
+        mysqlx::SqlResult result = conn->sql("SELECT TypeName FROM VulnType order by ID")
             .execute();
 
         while (mysqlx::Row row = result.fetchOne()) {
@@ -2685,19 +3160,35 @@ std::vector<std::string> DatabaseHandler::getAllVulnTypes(ConnectionPool& pool)
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "[DB] 获取漏洞类型出错: " << err.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (std::exception& ex) {
         std::cerr << "[DB] 异常: " << ex.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (...) {
         std::cerr << "[DB] 未知错误" << std::endl;
+        cleanup();
+        throw;
     }
-
+    cleanup();
     return types;
 }
 
 // 添加/删除漏洞类型（统一入口）
 bool DatabaseHandler::editVulnType(const std::string& type, const std::string& action, ConnectionPool& pool) {
+    
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
     try {
         auto conn = pool.getConnection();
         if (action == "add") {
@@ -2717,25 +3208,346 @@ bool DatabaseHandler::editVulnType(const std::string& type, const std::string& a
         else {
             system_logger->warn("[editVulnType] 无效操作: {}", action);
             console->warn("[editVulnType] 无效操作: {}", action);
+            cleanup();
             return false;
         }
+        cleanup();
         return true;
     }
     catch (const mysqlx::Error& err) {
         system_logger->error("[editVulnType] MySQL 错误: {}", err.what());
         console->error("[editVulnType] MySQL 错误: {}", err.what());
+        cleanup();
+        throw;
         return false;
     }
 }
 
+//POC知识库的分页逻辑
+std::vector<POC> DatabaseHandler::getPocTableWithPagination(int page, int pageSize, int& totalRecords, int& totalPages, ConnectionPool& pool) {
+    std::vector<POC> records;
+    totalRecords = 0;
+    totalPages = 0;
+
+    // 验证分页参数
+    if (page < 1 || pageSize < 1 || pageSize > 1000) {
+        system_logger->error("[getPocTable] 无效的分页参数: page={}, pageSize={}", page, pageSize);
+        console->error("[getPocTable] 无效的分页参数: page={}, pageSize={}", page, pageSize);
+        return records; // 返回空结果集
+    }
+
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
+    try {
+        auto conn = pool.getConnection();
+
+        // 1. 获取总记录数
+        auto countResult = conn->sql("SELECT COUNT(*) FROM POC").execute();
+        if (countResult.count() > 0) {
+            totalRecords = countResult.fetchOne()[0].get<int>();
+            totalPages = (totalRecords + pageSize - 1) / pageSize; // 计算总页数
+
+            // 确保请求页在有效范围内
+            if (page > totalPages && totalPages > 0) {
+                page = totalPages;
+            }
+        }
+
+        // 2. 计算偏移量
+        int offset = (page - 1) * pageSize;
+
+        // 3. 构建带分页的SQL查询
+        std::string sqlQuery = "SELECT * from POC ORDER BY Poc_condition DESC,ID ASC LIMIT ? OFFSET ?";
+        auto stmt = conn->sql(sqlQuery);
+        stmt.bind(pageSize, offset);
+        auto result = stmt.execute();
+
+        // 4. 处理查询结果
+        while (mysqlx::Row row = result.fetchOne()) {
+            POC poc;
+            poc.id = row[0].get<int>();
+            poc.vuln_id = row[1].get<std::string>();
+            poc.vul_name = row[2].get<std::string>();
+            poc.type = row[3].get<std::string>();
+            poc.description = row[4].get<std::string>();
+            poc.affected_infra = row[5].get<std::string>();
+            poc.cvss_score = row[6].get<std::string>();
+            poc.poc_condition = row[7].get<std::string>();
+            poc.script_type = row[8].get<std::string>();
+            poc.script = row[9].isNull() ? "" : row[9].get<std::string>();
+            poc.timestamp = row[10].get<std::string>();
+            records.push_back(poc);
+        }
+
+        system_logger->info("[getPocTable] 成功加载第 {} 页数据 (共 {} 条，总计 {} 条记录，共 {} 页)",
+            page, records.size(), totalRecords, totalPages);
+        console->info("[getPocTable] 成功加载第 {} 页数据 (共 {} 条，总计 {} 条记录，共 {} 页)",
+            page, records.size(), totalRecords, totalPages);
+      
+           
+    }
+    catch (const mysqlx::Error& err) {
+        system_logger->error("[getPocTable] MySQL 错误: {}", err.what());
+        console->error("[getPocTable] MySQL 错误: {}", err.what());
+        cleanup();
+        throw;
+    }
+    cleanup();
+    return records;
+}
+//Poc_condition为"有"
+std::vector<POC> DatabaseHandler::getWithPocCondition(int page, int pageSize, int& totalRecords, int& totalPages, ConnectionPool& pool) {
+    std::vector<POC> records;
+    totalRecords = 0;
+    totalPages = 0;
+
+    // 验证分页参数
+    if (page < 1 || pageSize < 1 || pageSize > 1000) {
+        system_logger->error("[getWithPocCondition] 无效的分页参数: page={}, pageSize={}", page, pageSize);
+        console->error("[getWithPocCondition] 无效的分页参数: page={}, pageSize={}", page, pageSize);
+        return records; // 返回空结果集
+    }
+
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
+    try {
+        auto conn = pool.getConnection();
+
+        // 1. 获取总记录数
+        auto countResult = conn->sql("SELECT COUNT(*) FROM POC WHERE Poc_condition='有'").execute();
+        if (countResult.count() > 0) {
+            totalRecords = countResult.fetchOne()[0].get<int>();
+            totalPages = (totalRecords + pageSize - 1) / pageSize; // 计算总页数
+
+            // 确保请求页在有效范围内
+            if (page > totalPages && totalPages > 0) {
+                page = totalPages;
+            }
+        }
+
+        // 2. 计算偏移量
+        int offset = (page - 1) * pageSize;
+
+        // 3. 构建带分页的SQL查询
+        std::string sqlQuery = "SELECT * from POC WHERE Poc_condition='有'ORDER BY ID ASC LIMIT ? OFFSET ?";
+        auto stmt = conn->sql(sqlQuery);
+        stmt.bind(pageSize, offset);
+        auto result = stmt.execute();
+
+        // 4. 处理查询结果
+        while (mysqlx::Row row = result.fetchOne()) {
+            POC poc;
+            poc.id = row[0].get<int>();
+            poc.vuln_id = row[1].get<std::string>();
+            poc.vul_name = row[2].get<std::string>();
+            poc.type = row[3].get<std::string>();
+            poc.description = row[4].get<std::string>();
+            poc.affected_infra = row[5].get<std::string>();
+            poc.cvss_score = row[6].get<std::string>();
+            poc.poc_condition = row[7].get<std::string>();
+            poc.script_type = row[8].get<std::string>();
+            poc.script = row[9].isNull() ? "" : row[9].get<std::string>();
+            poc.timestamp = row[10].get<std::string>();
+            records.push_back(poc);
+        }
+
+        system_logger->info("[getWithPocCondition] 成功加载第 {} 页数据 (共 {} 条，总计 {} 条记录，共 {} 页)",
+            page, records.size(), totalRecords, totalPages);
+        console->info("[getWithPocCondition] 成功加载第 {} 页数据 (共 {} 条，总计 {} 条记录，共 {} 页)",
+            page, records.size(), totalRecords, totalPages);
+    }
+    catch (const mysqlx::Error& err) {
+        system_logger->error("[getWithPocCondition] MySQL 错误: {}", err.what());
+        console->error("[getWithPocCondition] MySQL 错误: {}", err.what());
+        cleanup();
+        throw;
+    }
+    cleanup();
+    return records;
+}
+
+std::vector<POC> DatabaseHandler::getWithTranPocCondition(int page, int pageSize, int& totalRecords, int& totalPages, ConnectionPool& pool) {
+    std::vector<POC> records;
+    totalRecords = 0;
+    totalPages = 0;
+
+    // 验证分页参数
+    if (page < 1 || pageSize < 1 || pageSize > 1000) {
+        system_logger->error("[getWithTranPocCondition] 无效的分页参数: page={}, pageSize={}", page, pageSize);
+        console->error("[getWithTranPocCondition] 无效的分页参数: page={}, pageSize={}", page, pageSize);
+        return records; // 返回空结果集
+    }
+
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+    try {
+        auto conn = pool.getConnection();
+
+        // 1. 获取总记录数
+        auto countResult = conn->sql("SELECT COUNT(*) FROM POC WHERE Poc_condition='暂存'").execute();
+        if (countResult.count() > 0) {
+            totalRecords = countResult.fetchOne()[0].get<int>();
+            totalPages = (totalRecords + pageSize - 1) / pageSize; // 计算总页数
+
+            // 确保请求页在有效范围内
+            if (page > totalPages && totalPages > 0) {
+                page = totalPages;
+            }
+        }
+
+        // 2. 计算偏移量
+        int offset = (page - 1) * pageSize;
+
+        // 3. 构建带分页的SQL查询
+        std::string sqlQuery = "SELECT * from POC WHERE Poc_condition='暂存'ORDER BY ID ASC LIMIT ? OFFSET ?";
+        auto stmt = conn->sql(sqlQuery);
+        stmt.bind(pageSize, offset);
+        auto result = stmt.execute();
+
+        // 4. 处理查询结果
+        while (mysqlx::Row row = result.fetchOne()) {
+            POC poc;
+            poc.id = row[0].get<int>();
+            poc.vuln_id = row[1].get<std::string>();
+            poc.vul_name = row[2].get<std::string>();
+            poc.type = row[3].get<std::string>();
+            poc.description = row[4].get<std::string>();
+            poc.affected_infra = row[5].get<std::string>();
+            poc.cvss_score = row[6].get<std::string>();
+            poc.poc_condition = row[7].get<std::string>();
+            poc.script_type = row[8].get<std::string>();
+            poc.script = row[9].isNull() ? "" : row[9].get<std::string>();
+            poc.timestamp = row[10].get<std::string>();
+            records.push_back(poc);
+        }
+
+        system_logger->info("[getWithTranPocCondition] 成功加载第 {} 页数据 (共 {} 条，总计 {} 条记录，共 {} 页)",
+            page, records.size(), totalRecords, totalPages);
+        console->info("[getWithTranPocCondition] 成功加载第 {} 页数据 (共 {} 条，总计 {} 条记录，共 {} 页)",
+            page, records.size(), totalRecords, totalPages);
+    }
+    catch (const mysqlx::Error& err) {
+        system_logger->error("[getWithTranPocCondition] MySQL 错误: {}", err.what());
+        console->error("[getWithTranPocCondition] MySQL 错误: {}", err.what());
+       cleanup();
+       throw;
+    }
+    cleanup();
+    return records;
+}
+std::vector<POC> DatabaseHandler::getWithOutPocCondition(int page, int pageSize, int& totalRecords, int& totalPages, ConnectionPool& pool) {
+    std::vector<POC> records;
+    totalRecords = 0;
+    totalPages = 0;
+
+    // 验证分页参数
+    if (page < 1 || pageSize < 1 || pageSize > 1000) {
+        system_logger->error("[getWithOutPocCondition] 无效的分页参数: page={}, pageSize={}", page, pageSize);
+        console->error("[getWithOutPocCondition] 无效的分页参数: page={}, pageSize={}", page, pageSize);
+        return records; // 返回空结果集
+    }
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+    try {
+        auto conn = pool.getConnection();
+
+        // 1. 获取总记录数
+        auto countResult = conn->sql("SELECT COUNT(*) FROM POC WHERE Poc_condition='无'").execute();
+        if (countResult.count() > 0) {
+            totalRecords = countResult.fetchOne()[0].get<int>();
+            totalPages = (totalRecords + pageSize - 1) / pageSize; // 计算总页数
+
+            // 确保请求页在有效范围内
+            if (page > totalPages && totalPages > 0) {
+                page = totalPages;
+            }
+        }
+
+        // 2. 计算偏移量
+        int offset = (page - 1) * pageSize;
+
+        // 3. 构建带分页的SQL查询
+        std::string sqlQuery = "SELECT * from POC WHERE Poc_condition='无'ORDER BY ID ASC LIMIT ? OFFSET ?";
+        auto stmt = conn->sql(sqlQuery);
+        stmt.bind(pageSize, offset);
+        auto result = stmt.execute();
+
+        // 4. 处理查询结果
+        while (mysqlx::Row row = result.fetchOne()) {
+            POC poc;
+            poc.id = row[0].get<int>();
+            poc.vuln_id = row[1].get<std::string>();
+            poc.vul_name = row[2].get<std::string>();
+            poc.type = row[3].get<std::string>();
+            poc.description = row[4].get<std::string>();
+            poc.affected_infra = row[5].get<std::string>();
+            poc.cvss_score = row[6].get<std::string>();
+            poc.poc_condition = row[7].get<std::string>();
+            poc.script_type = row[8].get<std::string>();
+            poc.script = row[9].isNull() ? "" : row[9].get<std::string>();
+            poc.timestamp = row[10].get<std::string>();
+            records.push_back(poc);
+        }
+
+        system_logger->info("[getWithOutPocCondition] 成功加载第 {} 页数据 (共 {} 条，总计 {} 条记录，共 {} 页)",
+            page, records.size(), totalRecords, totalPages);
+        console->info("[getWithOutPocCondition] 成功加载第 {} 页数据 (共 {} 条，总计 {} 条记录，共 {} 页)",
+            page, records.size(), totalRecords, totalPages);
+    }
+    catch (const mysqlx::Error& err) {
+        system_logger->error("[getWithOutPocCondition] MySQL 错误: {}", err.what());
+        console->error("[getWithOutPocCondition] MySQL 错误: {}", err.what());
+      cleanup();
+      throw;
+    }
+    cleanup();
+    return records;
+}
+
+
+
 //插入POC
 bool DatabaseHandler::insertData(const POC& poc, ConnectionPool& pool) {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
     try {
         auto conn = pool.getConnection();
 
         conn->sql(R"(
-            INSERT INTO POC (Vuln_id, Vul_name, Type, Description, Affected_infra, Script_type, Script, Timestamp)
-            VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+            INSERT INTO POC (Vuln_id, Vul_name, Type, Description, Affected_infra, Cvss_score,Poc_condition,Script_type, Script, Timestamp)
+            VALUES (?, ?, ?, ?, ?, ?, ?,?,?, NOW())
         )")
             .bind(
                 poc.vuln_id,
@@ -2743,6 +3555,8 @@ bool DatabaseHandler::insertData(const POC& poc, ConnectionPool& pool) {
                 poc.type,
                 poc.description,
                 poc.affected_infra,
+                poc.cvss_score,
+                poc.poc_condition,
                 poc.script_type,
                 poc.script
             )
@@ -2750,17 +3564,28 @@ bool DatabaseHandler::insertData(const POC& poc, ConnectionPool& pool) {
 
         system_logger->info("成功插入POC: {} - {}", poc.vuln_id, poc.vul_name);
         console->info("成功插入POC: {} - {}", poc.vuln_id, poc.vul_name);
+        cleanup();
         return true;
     }
     catch (const mysqlx::Error& err) {
         system_logger->error("[insertData] MySQL 错误: {}", err.what());  
         console->error("[insertData] MySQL 错误: {}", err.what());
+        cleanup();
+        throw;
         return false;
     }
 }
 
 //删除POC
 bool DatabaseHandler::deleteDataById(int id, ConnectionPool& pool) {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
     try {
         auto conn = pool.getConnection();
 
@@ -2771,17 +3596,21 @@ bool DatabaseHandler::deleteDataById(int id, ConnectionPool& pool) {
         if (result.getAffectedItemsCount() > 0) {
             system_logger->info("成功删除 POC，ID = {}", id);
             console->info("成功删除 POC，ID = {}", id);
+            cleanup();
             return true;
         }
         else {
             system_logger->error("删除失败，未找到 ID = {}", id);
             console->error("删除失败，未找到 ID = {}", id);
+            cleanup();
             return false;
         }
     }
     catch (const mysqlx::Error& err) {
         system_logger->error("[deleteDataById] MySQL 错误: {}", err.what());
         console->error("[deleteDataById] MySQL 错误: {}", err.what());
+        cleanup();
+        throw;
         return false;
     }
 }
@@ -2789,6 +3618,14 @@ bool DatabaseHandler::deleteDataById(int id, ConnectionPool& pool) {
 //更新POC
 
 bool DatabaseHandler::updateDataById(int id, const POC& poc, ConnectionPool& pool) {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
     try {
         auto conn = pool.getConnection();
 
@@ -2800,6 +3637,7 @@ bool DatabaseHandler::updateDataById(int id, const POC& poc, ConnectionPool& poo
         if (count == 0) {
             system_logger->error("[updateDataById] 错误：ID {} 不存在", id); 
             console->error("[updateDataById] 错误：ID {} 不存在", id);
+            cleanup();
             return false;
         }
 
@@ -2810,6 +3648,8 @@ bool DatabaseHandler::updateDataById(int id, const POC& poc, ConnectionPool& poo
                 Type = ?,
                 Description = ?,
                 Affected_infra = ?,
+                Cvss_score = ?,
+                Poc_condition = ?,
                 Script_type = ?,
                 Script = ?,
                 Timestamp = NOW()
@@ -2821,6 +3661,8 @@ bool DatabaseHandler::updateDataById(int id, const POC& poc, ConnectionPool& poo
                 poc.type,
                 poc.description,
                 poc.affected_infra,
+                poc.cvss_score,
+                poc.poc_condition,
                 poc.script_type,
                 poc.script,
                 id
@@ -2829,19 +3671,31 @@ bool DatabaseHandler::updateDataById(int id, const POC& poc, ConnectionPool& poo
 
         system_logger->info("成功更新 POC: ID = {}, Vuln_id = {}", id, poc.vuln_id);
         console->info("成功更新 POC: ID = {}, Vuln_id = {}", id, poc.vuln_id);
+        cleanup();
         return true;
     }
     catch (const mysqlx::Error& err) {
         system_logger->error("[updateDataById] MySQL 错误: {}", err.what());
         console->error("[updateDataById] MySQL 错误: {}", err.what());
+        cleanup();
+        throw;
         return false;
     }
 }
 
+
+
 std::vector<POC> DatabaseHandler::searchData(const std::string& keyword, ConnectionPool& pool) {
     std::vector<POC> records;
     std::string pattern = "%" + keyword + "%";
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
 
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
     try {
         auto conn = pool.getConnection();
 
@@ -2852,12 +3706,14 @@ std::vector<POC> DatabaseHandler::searchData(const std::string& keyword, Connect
                 Type LIKE ? OR
                 Description LIKE ? OR
                 Affected_infra LIKE ? OR
+                Cvss_score LIKE ? OR
+                Poc_condition LIKE ? OR
                 Script_type LIKE ? OR
                 Timestamp LIKE ?
         )";
 
         auto stmt = conn->sql(sql)
-            .bind(pattern, pattern, pattern, pattern, pattern, pattern, pattern)
+            .bind(pattern, pattern, pattern, pattern, pattern, pattern, pattern,pattern,pattern)
             .execute();
 
         while (mysqlx::Row row = stmt.fetchOne()) {
@@ -2868,9 +3724,11 @@ std::vector<POC> DatabaseHandler::searchData(const std::string& keyword, Connect
             poc.type = row[3].get<std::string>();
             poc.description = row[4].get<std::string>();
             poc.affected_infra = row[5].get<std::string>();
-            poc.script_type = row[6].get<std::string>();
-            poc.script = row[7].isNull() ? "" : row[7].get<std::string>();
-            poc.timestamp = row[8].get<std::string>();
+            poc.cvss_score = row[6].get<std::string>();
+            poc.poc_condition = row[7].get<std::string>();
+            poc.script_type = row[8].get<std::string>();
+            poc.script = row[9].isNull() ? "" : row[9].get<std::string>();
+            poc.timestamp = row[10].get<std::string>();
             records.push_back(poc);
         }
 
@@ -2878,16 +3736,30 @@ std::vector<POC> DatabaseHandler::searchData(const std::string& keyword, Connect
         console->info("成功搜索POC关键字：{}，匹配到 {} 条", keyword, records.size());
     }
     catch (const mysqlx::Error& err) {
-        system_logger->error("[searchData] 错误: {}", err.what());  // ⛔ 原为 searchPoc
+        system_logger->error("[searchData] 错误: {}", err.what());  //  原为 searchPoc
         console->error("[searchData] 错误: {}", err.what());
+        cleanup();
+        throw;
     }
-
+    cleanup();
     return records;
 }
 
 std::vector<POC> DatabaseHandler::searchDataByIds(const std::vector<int>& ids, ConnectionPool& pool) {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
     std::vector<POC> records;
-    if (ids.empty()) return records;
+    if (ids.empty()) {
+        cleanup();
+        return records;
+    }
 
     try {
         auto conn = pool.getConnection();
@@ -2911,9 +3783,11 @@ std::vector<POC> DatabaseHandler::searchDataByIds(const std::vector<int>& ids, C
             poc.type = row[3].get<std::string>();
             poc.description = row[4].get<std::string>();
             poc.affected_infra = row[5].get<std::string>();
-            poc.script_type = row[6].get<std::string>();
-            poc.script = row[7].isNull() ? "" : row[7].get<std::string>();
-            poc.timestamp = row[8].get<std::string>();
+            poc.cvss_score = row[6].get<std::string>();
+            poc.poc_condition = row[7].get<std::string>();
+            poc.script_type = row[8].get<std::string>();
+            poc.script = row[9].isNull() ? "" : row[9].get<std::string>();
+            poc.timestamp = row[10].get<std::string>();
             records.push_back(poc);
         }
 
@@ -2923,13 +3797,22 @@ std::vector<POC> DatabaseHandler::searchDataByIds(const std::vector<int>& ids, C
     catch (const mysqlx::Error& err) {
         system_logger->error("[searchDataByIds] 错误: {}", err.what());
         console->error("[searchDataByIds] 错误: {}", err.what());
+        cleanup();
+        throw;
     }
-
+    cleanup();
     return records;
 }
 std::vector<POC> DatabaseHandler::searchDataByCVE(const std::string& vuln_id, ConnectionPool& pool) {
     std::vector<POC> records;
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
 
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
     try {
         auto conn = pool.getConnection();
         auto result = conn->sql("SELECT * FROM POC WHERE Vuln_id = ?")
@@ -2944,9 +3827,11 @@ std::vector<POC> DatabaseHandler::searchDataByCVE(const std::string& vuln_id, Co
             poc.type = row[3].get<std::string>();
             poc.description = row[4].get<std::string>();
             poc.affected_infra = row[5].get<std::string>();
-            poc.script_type = row[6].get<std::string>();
-            poc.script = row[7].isNull() ? "" : row[7].get<std::string>();
-            poc.timestamp = row[8].get<std::string>();
+            poc.cvss_score = row[6].get<std::string>();
+            poc.poc_condition = row[7].get<std::string>();
+            poc.script_type = row[8].get<std::string>();
+            poc.script = row[9].isNull() ? "" : row[9].get<std::string>();
+            poc.timestamp = row[10].get<std::string>();
             records.push_back(poc);
         }
 
@@ -2956,11 +3841,23 @@ std::vector<POC> DatabaseHandler::searchDataByCVE(const std::string& vuln_id, Co
     catch (const mysqlx::Error& err) {
         system_logger->error("[searchDataByCVE] 错误: {}", err.what());
         console->error("[searchDataByCVE] 错误: {}", err.what());
+        cleanup();
+        throw;
     }
-
+    cleanup();
     return records;
 }
 bool DatabaseHandler::isExistCVE(const std::string& vuln_id, ConnectionPool& pool) {
+
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
     try {
         auto conn = pool.getConnection();
         auto result = conn->sql("SELECT COUNT(*) FROM POC WHERE Vuln_id = ?")
@@ -2971,19 +3868,30 @@ bool DatabaseHandler::isExistCVE(const std::string& vuln_id, ConnectionPool& poo
 
         system_logger->info("isExistCVE: {} -> {}", vuln_id, count > 0 ? "存在" : "不存在");
         console->info("isExistCVE: {} -> {}", vuln_id, count > 0 ? "存在" : "不存在");
-
+        cleanup();
         return count > 0;
     }
     catch (const mysqlx::Error& err) {
         system_logger->error("isExistCVE 错误: {}", err.what());
         console->error("isExistCVE 错误: {}", err.what());
+        cleanup();
+        throw;
         return false;
     }
 }
 
 std::string DatabaseHandler::searchPOCById(const int& id, ConnectionPool& pool) {
+
     std::string filename = "";
     std::string pathPrefix = "../../../src/scan/scripts/";
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
 
     try {
         auto conn = pool.getConnection();
@@ -2995,23 +3903,35 @@ std::string DatabaseHandler::searchPOCById(const int& id, ConnectionPool& pool) 
         if (!row || row[0].isNull()) {
             system_logger->info("[searchPOCById] 未找到 ID={} 的脚本路径", id);
             console->info("[searchPOCById] 未找到 ID={} 的脚本路径", id);
+            cleanup();
             return "";
         }
 
         filename = row[0].get<std::string>();
+        cleanup();
         return filename.empty() ? "" : pathPrefix + filename;
     }
     catch (const mysqlx::Error& err) {
         system_logger->error("[searchPOCById] MySQL 错误: {}", err.what());
         console->error("[searchPOCById] MySQL 错误: {}", err.what());
+        cleanup();
+        throw;
         return "";
     }
 }
 
-std::string DatabaseHandler::searchPOCById(const std::string& vuln_id, ConnectionPool& pool) {
+std::string DatabaseHandler::searchPOCByVulnId(const std::string& vuln_id, ConnectionPool& pool) {
     std::string filename = "";
     std::string pathPrefix = "../../../src/scan/scripts/";
 
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
     try {
         auto conn = pool.getConnection();
         auto result = conn->sql("SELECT Script FROM POC WHERE Vuln_id = ?")
@@ -3022,20 +3942,32 @@ std::string DatabaseHandler::searchPOCById(const std::string& vuln_id, Connectio
         if (!row || row[0].isNull()) {
             system_logger->info("[searchPOCById] 未找到 Vuln_id={} 的脚本路径", vuln_id);
             console->info("[searchPOCById] 未找到 Vuln_id={} 的脚本路径", vuln_id);
+            cleanup();
             return "";
         }
 
         filename = row[0].get<std::string>();
+        cleanup();
         return filename.empty() ? "" : pathPrefix + filename;
     }
     catch (const mysqlx::Error& err) {
         system_logger->error("[searchPOCById] MySQL 错误: {}", err.what());
         console->error("[searchPOCById] MySQL 错误: {}", err.what());
+        cleanup();
+        throw;
         return "";
     }
 }
 
 bool DatabaseHandler::searchDataById(const int& id, POC& poc, ConnectionPool& pool) {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
     try {
         auto conn = pool.getConnection();
         auto result = conn->sql("SELECT * FROM POC WHERE ID = ?")
@@ -3046,6 +3978,7 @@ bool DatabaseHandler::searchDataById(const int& id, POC& poc, ConnectionPool& po
         if (!row) {
             system_logger->error("[searchDataById] POC ID {} 不存在", id);
             console->error("[searchDataById] POC ID {} 不存在", id);
+            cleanup();
             return false;
         }
 
@@ -3055,52 +3988,66 @@ bool DatabaseHandler::searchDataById(const int& id, POC& poc, ConnectionPool& po
         poc.type = row[3].get<std::string>();
         poc.description = row[4].get<std::string>();
         poc.affected_infra = row[5].get<std::string>();
-        poc.script_type = row[6].get<std::string>();
-        poc.script = row[7].isNull() ? "" : row[7].get<std::string>();
-        poc.timestamp = row[8].get<std::string>();
+        poc.cvss_score = row[6].get<std::string>();
+        poc.poc_condition = row[7].get<std::string>();
+        poc.script_type = row[8].get<std::string>();
+        poc.script = row[9].isNull() ? "" : row[9].get<std::string>();
+        poc.timestamp = row[10].get<std::string>();
 
         system_logger->info("[searchDataById] 成功查询 POC ID={}", id);
         console->info("[searchDataById] 成功查询 POC ID={}", id);
+        cleanup();
         return true;
     }
     catch (const mysqlx::Error& err) {
         system_logger->error("[searchDataById] MySQL 错误: {}", err.what());
         console->error("[searchDataById] MySQL 错误: {}", err.what());
+        cleanup();
+        throw;
         return false;
     }
 }
-std::vector<POC> DatabaseHandler::getAllData(ConnectionPool& pool) {
-    std::vector<POC> records;
-    try {
-        auto conn = pool.getConnection();
-        auto result = conn->sql("SELECT * FROM POC").execute();
+//std::vector<POC> DatabaseHandler::getAllData(ConnectionPool& pool) {
+//    std::vector<POC> records;
+//    try {
+//        auto conn = pool.getConnection();
+//        auto result = conn->sql("SELECT * FROM POC").execute();
+//
+//        while (mysqlx::Row row = result.fetchOne()) {
+//            POC poc;
+//            poc.id = row[0].get<int>();
+//            poc.vuln_id = row[1].get<std::string>();
+//            poc.vul_name = row[2].get<std::string>();
+//            poc.type = row[3].get<std::string>();
+//            poc.description = row[4].get<std::string>();
+//            poc.affected_infra = row[5].get<std::string>();
+//            poc.script_type = row[6].get<std::string>();
+//            poc.script = row[7].isNull() ? "" : row[7].get<std::string>();
+//            poc.timestamp = row[8].get<std::string>();
+//            records.push_back(poc);
+//        }
+//
+//        system_logger->info("[getAllData] 成功加载 {} 条POC数据", records.size());
+//        console->info("[getAllData] 成功加载 {} 条POC数据", records.size());
+//    }
+//    catch (const mysqlx::Error& err) {
+//        system_logger->error("[getAllData] MySQL 错误: {}", err.what());
+//        console->error("[getAllData] MySQL 错误: {}", err.what());
+//        exit(1);
+//    }
+//    return records;
+//}
 
-        while (mysqlx::Row row = result.fetchOne()) {
-            POC poc;
-            poc.id = row[0].get<int>();
-            poc.vuln_id = row[1].get<std::string>();
-            poc.vul_name = row[2].get<std::string>();
-            poc.type = row[3].get<std::string>();
-            poc.description = row[4].get<std::string>();
-            poc.affected_infra = row[5].get<std::string>();
-            poc.script_type = row[6].get<std::string>();
-            poc.script = row[7].isNull() ? "" : row[7].get<std::string>();
-            poc.timestamp = row[8].get<std::string>();
-            records.push_back(poc);
-        }
-
-        system_logger->info("[getAllData] 成功加载 {} 条POC数据", records.size());
-        console->info("[getAllData] 成功加载 {} 条POC数据", records.size());
-    }
-    catch (const mysqlx::Error& err) {
-        system_logger->error("[getAllData] MySQL 错误: {}", err.what());
-        console->error("[getAllData] MySQL 错误: {}", err.what());
-        exit(1);
-    }
-    return records;
-}
 std::vector<POC> DatabaseHandler::getVaildPOCData(ConnectionPool& pool) {
     std::vector<POC> records;
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
     try {
         auto conn = pool.getConnection();
         auto result = conn->sql("SELECT * FROM POC WHERE Script IS NOT NULL AND Script != ''").execute();
@@ -3113,9 +4060,11 @@ std::vector<POC> DatabaseHandler::getVaildPOCData(ConnectionPool& pool) {
             poc.type = row[3].get<std::string>();
             poc.description = row[4].get<std::string>();
             poc.affected_infra = row[5].get<std::string>();
-            poc.script_type = row[6].get<std::string>();
-            poc.script = row[7].isNull() ? "" : row[7].get<std::string>();
-            poc.timestamp = row[8].get<std::string>();
+            poc.cvss_score = row[6].get<std::string>();
+            poc.poc_condition = row[7].get<std::string>();
+            poc.script_type = row[8].get<std::string>();
+            poc.script = row[9].isNull() ? "" : row[9].get<std::string>();
+            poc.timestamp = row[10].get<std::string>();
             records.push_back(poc);
         }
 
@@ -3125,8 +4074,10 @@ std::vector<POC> DatabaseHandler::getVaildPOCData(ConnectionPool& pool) {
     catch (const mysqlx::Error& err) {
         system_logger->error("[getVaildPOCData] MySQL 错误: {}", err.what());
         console->error("[getVaildPOCData] MySQL 错误: {}", err.what());
-        exit(1);
+        cleanup();
+        throw;
     }
+    cleanup();
     return records;
 }
 
@@ -3135,6 +4086,15 @@ void DatabaseHandler::updateBaseLineSecurityCheckResult(
     ConnectionPool& pool,
     std::vector<scoreMeasure> vec_score
 ) {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
     try {
         auto conn = pool.getConnection();  // 获取连接
 
@@ -3148,6 +4108,7 @@ void DatabaseHandler::updateBaseLineSecurityCheckResult(
         mysqlx::Row hostRow = hostResult.fetchOne();
         if (!hostRow) {
             std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
+            cleanup();
             return;
         }
 
@@ -3215,19 +4176,26 @@ void DatabaseHandler::updateBaseLineSecurityCheckResult(
             << ip
             << " 的基线安全检查结果合规状态及临时重要程度更新"
             << std::endl;
+        cleanup();
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "updateBaseLineSecurityCheckResult 时数据库错误: "
             << err.what()
             << std::endl;
+        cleanup();
+        throw;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: "
             << ex.what()
             << std::endl;
+        cleanup();
+        throw;
     }
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
+        cleanup();
+        throw;
     }
 }
 
@@ -3235,6 +4203,14 @@ void DatabaseHandler::updateBaseLineSecurityCheckResult(
 std::vector<event> DatabaseHandler::getUncheckedBaselineItems(const std::string& ip, ConnectionPool& pool)
 {
     std::vector<event> uncheckedItems;
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
 
     try {
         auto conn = pool.getConnection();
@@ -3247,6 +4223,7 @@ std::vector<event> DatabaseHandler::getUncheckedBaselineItems(const std::string&
         mysqlx::Row shrRow = shrResult.fetchOne();
         if (!shrRow) {
             std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
+            cleanup();
             return uncheckedItems;
         }
 
@@ -3309,14 +4286,21 @@ std::vector<event> DatabaseHandler::getUncheckedBaselineItems(const std::string&
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "获取未完成基线检查项时数据库错误: " << err.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
+        cleanup();
+        throw;
+        
     }
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
+        cleanup();
+        throw;
     }
-
+    cleanup();
     return uncheckedItems;
 }
 
@@ -3324,6 +4308,15 @@ std::vector<event> DatabaseHandler::getUncheckedBaselineItems(const std::string&
 std::vector<int> DatabaseHandler::getCheckedItemIds(const std::string& ip, ConnectionPool& pool)
 {
     std::vector<int> checkedIds;
+
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
 
     try {
         auto conn = pool.getConnection();
@@ -3345,14 +4338,24 @@ std::vector<int> DatabaseHandler::getCheckedItemIds(const std::string& ip, Conne
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "获取已检查项ID时数据库错误: " << err.what() << std::endl;
+        cleanup();
+        throw;
     }
-
+    cleanup();
     return checkedIds;
 }
 
 // 辅助函数：获取所有基线检查项ID列表
 std::vector<int> DatabaseHandler::getAllBaselineItemIds(ConnectionPool& pool)
 {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
     std::vector<int> allIds;
 
     try {
@@ -3369,14 +4372,24 @@ std::vector<int> DatabaseHandler::getAllBaselineItemIds(ConnectionPool& pool)
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "获取所有基线检查项ID时数据库错误: " << err.what() << std::endl;
+        cleanup();
+        throw;
     }
-
+    cleanup();
     return allIds;
 }
 
 // 根据IP获取未完成的Level3安全检查项
 std::vector<event> DatabaseHandler::getUncheckedLevel3Items(const std::string& ip, ConnectionPool& pool)
 {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
     std::vector<event> uncheckedItems;
 
     try {
@@ -3390,6 +4403,7 @@ std::vector<event> DatabaseHandler::getUncheckedLevel3Items(const std::string& i
         mysqlx::Row shrRow = shrResult.fetchOne();
         if (!shrRow) {
             std::cerr << "未找到IP: " << ip << " 对应的扫描记录" << std::endl;
+            cleanup();
             return uncheckedItems;
         }
 
@@ -3452,14 +4466,20 @@ std::vector<event> DatabaseHandler::getUncheckedLevel3Items(const std::string& i
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "获取未完成Level3检查项时数据库错误: " << err.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
+        cleanup();
+        throw;
     }
-
+    cleanup();
     return uncheckedItems;
 }
 
@@ -3467,6 +4487,14 @@ std::vector<event> DatabaseHandler::getUncheckedLevel3Items(const std::string& i
 std::vector<int> DatabaseHandler::getCheckedLevel3ItemIds(const std::string& ip, ConnectionPool& pool)
 {
     std::vector<int> checkedIds;
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
 
     try {
         auto conn = pool.getConnection();
@@ -3488,8 +4516,10 @@ std::vector<int> DatabaseHandler::getCheckedLevel3ItemIds(const std::string& ip,
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "获取已检查Level3项ID时数据库错误: " << err.what() << std::endl;
+        cleanup();
+        throw;
     }
-
+    cleanup();
     return checkedIds;
 }
 
@@ -3497,6 +4527,14 @@ std::vector<int> DatabaseHandler::getCheckedLevel3ItemIds(const std::string& ip,
 std::vector<int> DatabaseHandler::getAllLevel3ItemIds(ConnectionPool& pool)
 {
     std::vector<int> allIds;
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
 
     try {
         auto conn = pool.getConnection();
@@ -3512,18 +4550,21 @@ std::vector<int> DatabaseHandler::getAllLevel3ItemIds(ConnectionPool& pool)
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "获取所有Level3检查项ID时数据库错误: " << err.what() << std::endl;
+        cleanup();
+        throw;
     }
-
+    cleanup();
     return allIds;
 }
 
-std::vector<AssetInfo> DatabaseHandler::getAllAssetsFullInfo(ConnectionPool& pool) {
+std::vector<AssetInfo> DatabaseHandler::getAllAssetsFullInfo(ConnectionPool& pool,const std::string& db_name) {
     std::vector<AssetInfo> allAssets;
+
 
     try {
         auto session_ptr = pool.getConnection();  // std::shared_ptr<mysqlx::Session>
         mysqlx::Session& session = *session_ptr;
-
+        session.sql("USE " + db_name).execute();
         auto result = session.sql("SELECT ip, alive,group_id FROM scan_host_result").execute();
 
         //1.获取所有主机及存活状态
@@ -3542,6 +4583,7 @@ std::vector<AssetInfo> DatabaseHandler::getAllAssetsFullInfo(ConnectionPool& poo
         }
 
         //2.获取所有存活主机的漏洞信息
+        setCurrentDatabase(db_name);
         auto allVulns = getVulnerabilities(pool, all_ips);
         std::map<std::string, IpVulnerabilities> ipToVulnMap;
         for (const auto& v : allVulns) {
@@ -3557,13 +4599,17 @@ std::vector<AssetInfo> DatabaseHandler::getAllAssetsFullInfo(ConnectionPool& poo
 
 
             // 获取端口信息
+            setCurrentDatabase(db_name);
             assetInfo.ports = getAllPortInfoByIp(ip, pool);
 
             // 获取服务器系统信息
+            setCurrentDatabase(db_name);
             assetInfo.serverinfo = getServerInfoByIp(ip, pool);
 
             // 获取检测时间信息
+            setCurrentDatabase(db_name);
             assetInfo.baseline_check_time = getBaselineCheckTime(ip, pool);
+            setCurrentDatabase(db_name);
             assetInfo.level3_check_time = getLevel3CheckTime(ip, pool);
             // 如果有该IP的漏洞信息，则填充到assetInfo中
             if (ipToVulnMap.find(ip) != ipToVulnMap.end()) {
@@ -3572,10 +4618,13 @@ std::vector<AssetInfo> DatabaseHandler::getAllAssetsFullInfo(ConnectionPool& poo
                 assetInfo.port_vulnerabilities = ipVulns.port_vulnerabilities;
             }
             // 获取该IP的基线检测结果并计算摘要
+            setCurrentDatabase(db_name);
             std::vector<event> check_results = getSecurityCheckResults(ip, pool);
+            setCurrentDatabase(db_name);
             std::vector<event> level3_check_results = getLevel3SecurityCheckResults(ip, pool);
-            
+            setCurrentDatabase(db_name);
             assetInfo.baseline_summary = calculateBaselineSummary(check_results, 89);
+            setCurrentDatabase(db_name);
             assetInfo.level3_baseline_summary = calculateBaselineSummary(level3_check_results, 44);
             //计算等保得分
             // 定义合规等级映射表
@@ -3622,8 +4671,10 @@ std::vector<AssetInfo> DatabaseHandler::getAllAssetsFullInfo(ConnectionPool& poo
             assetInfo.M = 100.0 - (100.0 * sum / n);
 
             //获取有哪些检测项没做
+            setCurrentDatabase(db_name);
             assetInfo.undo_BaseLine = getUncheckedBaselineItems(ip, pool);
             //获取有哪些三级等保检测项没做
+            setCurrentDatabase(db_name);
             assetInfo.undo_level3BaseLine = getUncheckedLevel3Items(ip, pool);
 
             allAssets.push_back(assetInfo);
@@ -3631,50 +4682,60 @@ std::vector<AssetInfo> DatabaseHandler::getAllAssetsFullInfo(ConnectionPool& poo
     }
     catch (const std::exception& ex) {
         console->error("getAllAssetsFullInfo error: {}", ex.what());
+     
     }
-
+   
     return allAssets;
 }
 
 
-bool DatabaseHandler::isAssetGroupExists(const std::string& group_name, ConnectionPool& pool) {
+bool DatabaseHandler::isAssetGroupExists(const std::string& group_name, ConnectionPool& pool, const std::string& db_name) {
+
+
     try {
         auto session_ptr = pool.getConnection();  // std::shared_ptr<mysqlx::Session>
         mysqlx::Session& session = *session_ptr;
-
+        session.sql("USE " + db_name).execute();
         std::string query = "SELECT COUNT(*) FROM asset_group WHERE group_name = ?";
         auto result = session.sql(query).bind(group_name).execute();
         auto row = result.fetchOne();
+       
         return row[0].get<int>() > 0;
     }
     catch (const mysqlx::Error& err) {
         console->error("[DB] isAssetGroupExists failed: {}", err.what());
+    
         return false;
     }
 }
 
-int DatabaseHandler::createAssetGroup(const std::string& group_name, const std::string& description, ConnectionPool& pool) {
+int DatabaseHandler::createAssetGroup(const std::string& group_name, const std::string& description, ConnectionPool& pool,const std::string& db_name) {
+  
     try {
         auto session_ptr = pool.getConnection();  // std::shared_ptr<mysqlx::Session>
         mysqlx::Session& session = *session_ptr;
-
+        session.sql("USE " + db_name).execute();
         std::string insert = "INSERT INTO asset_group (group_name, description) VALUES (?, ?)";
         auto result = session.sql(insert).bind(group_name, description).execute();
-        return static_cast<int>(result.getAutoIncrementValue());
+        auto group_res = session.sql("SELECT LAST_INSERT_ID()").execute();
+        int group_id = group_res.fetchOne()[0].get<int>();
+        return group_id;
     }
+       
     catch (const mysqlx::Error& err) {
         console->error("[DB] createAssetGroup failed: {}", err.what());
-        throw;
+       
     }
 }
 
-std::vector<std::pair<int, std::string>> DatabaseHandler::getAllAssetGroups(ConnectionPool& pool) {
+std::vector<std::pair<int, std::string>> DatabaseHandler::getAllAssetGroups(ConnectionPool& pool, const std::string& db_name) {
+    
     std::vector<std::pair<int, std::string>> groups;
 
     try {
         auto session_ptr = pool.getConnection();  // std::shared_ptr<mysqlx::Session>
         mysqlx::Session& session = *session_ptr;
-
+        session.sql("USE " + db_name).execute();
         std::string query = "SELECT id, group_name FROM asset_group ORDER BY id ASC";
         auto result = session.sql(query).execute();
 
@@ -3687,20 +4748,23 @@ std::vector<std::pair<int, std::string>> DatabaseHandler::getAllAssetGroups(Conn
     }
     catch (const mysqlx::Error& err) {
         console->error("[DB] getAllAssetGroups failed: {}", err.what());
+      
         throw;
     }
-
+  
     return groups;
 }
 
-bool DatabaseHandler::updateAssetGroup(const std::string& ip, int group_id, bool is_null, ConnectionPool& pool) {
+bool DatabaseHandler::updateAssetGroup(const std::string& ip, int group_id, bool is_null, ConnectionPool& pool, const std::string& db_name) {
+    
     try {
         auto session_ptr = pool.getConnection();  // std::shared_ptr<mysqlx::Session>
         mysqlx::Session& session = *session_ptr;
-
+        session.sql("USE " + db_name).execute();
         // 检查 IP 是否存在
         auto check = session.sql("SELECT COUNT(*) FROM scan_host_result WHERE ip = ?").bind(ip).execute();
         if (check.fetchOne()[0].get<int>() == 0) {
+            
             return false; // IP 不存在
         }
 
@@ -3709,6 +4773,7 @@ bool DatabaseHandler::updateAssetGroup(const std::string& ip, int group_id, bool
             auto group_check = session.sql("SELECT COUNT(*) FROM asset_group WHERE id = ?")
                 .bind(group_id).execute();
             if (group_check.fetchOne()[0].get<int>() == 0) {
+               
                 return false;
             }
 
@@ -3720,26 +4785,31 @@ bool DatabaseHandler::updateAssetGroup(const std::string& ip, int group_id, bool
             session.sql("UPDATE scan_host_result SET group_id = NULL WHERE ip = ?")
                 .bind(ip).execute();
         }
-
+        
         return true;
 
     }
     catch (const mysqlx::Error& err) {
         console->error("[DB] updateAssetGroup failed: {}", err.what());
+       
+      
         return false;
     }
 }
 
 
-bool DatabaseHandler::renameAssetGroup(int group_id, const std::string& new_name, ConnectionPool& pool) {
+bool DatabaseHandler::renameAssetGroup(int group_id, const std::string& new_name, ConnectionPool& pool,const std::string& db_name) {
+   
     try {
         auto session_ptr = pool.getConnection();  // std::shared_ptr<mysqlx::Session>
         mysqlx::Session& session = *session_ptr;
+        session.sql("USE " + db_name).execute();
 
 
         // 检查是否存在此 ID
         auto check = session.sql("SELECT COUNT(*) FROM asset_group WHERE id = ?").bind(group_id).execute();
         if (check.fetchOne()[0].get<int>() == 0) {
+         
             return false;
         }
 
@@ -3747,29 +4817,34 @@ bool DatabaseHandler::renameAssetGroup(int group_id, const std::string& new_name
         auto dup = session.sql("SELECT COUNT(*) FROM asset_group WHERE group_name = ? AND id != ?")
             .bind(new_name, group_id).execute();
         if (dup.fetchOne()[0].get<int>() > 0) {
+           
             return false;
         }
 
         session.sql("UPDATE asset_group SET group_name = ? WHERE id = ?")
             .bind(new_name, group_id).execute();
-
+       
         return true;
 
     }
     catch (const mysqlx::Error& err) {
         console->error("[DB] renameAssetGroup failed: {}", err.what());
+      
+       
         return false;
     }
 }
 
-bool DatabaseHandler::deleteAssetGroup(int group_id, bool deleteAssets, ConnectionPool& pool) {
+bool DatabaseHandler::deleteAssetGroup(int group_id, bool deleteAssets, ConnectionPool& pool, const std::string& db_name) {
+   
     try {
         auto session_ptr = pool.getConnection();  // std::shared_ptr<mysqlx::Session>
         mysqlx::Session& session = *session_ptr;
-
+        session.sql("USE " + db_name).execute();
         // 先检查资产组是否存在
         auto check = session.sql("SELECT COUNT(*) FROM asset_group WHERE id = ?").bind(group_id).execute();
         if (check.fetchOne()[0].get<int>() == 0) {
+      
             return false;
         }
 
@@ -3786,16 +4861,25 @@ bool DatabaseHandler::deleteAssetGroup(int group_id, bool deleteAssets, Connecti
 
         // 删除资产组本身
         session.sql("DELETE FROM asset_group WHERE id = ?").bind(group_id).execute();
-
+      
         return true;
     }
     catch (const mysqlx::Error& err) {
         console->error("[DB] deleteAssetGroup failed: {}", err.what());
+      
         return false;
     }
 }
 // 根据IP更新基线检测时间
 void DatabaseHandler::updateBaselineCheckTime(const std::string& ip, ConnectionPool& pool) {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
     try {
         auto conn = pool.getConnection();  // 获取连接
 
@@ -3816,19 +4900,34 @@ void DatabaseHandler::updateBaselineCheckTime(const std::string& ip, ConnectionP
         else {
             std::cerr << "警告：未找到IP " << ip << " 对应的记录，无法更新基线检测时间" << std::endl;
         }
+        cleanup();
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "updateBaselineCheckTime 时数据库错误: " << err.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
+        cleanup();
+        throw;
     }
 }
 // 根据IP更新三级等保检测时间
 void DatabaseHandler::updateLevel3CheckTime(const std::string& ip, ConnectionPool& pool) {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
     try {
         auto conn = pool.getConnection();  // 获取连接
 
@@ -3849,20 +4948,35 @@ void DatabaseHandler::updateLevel3CheckTime(const std::string& ip, ConnectionPoo
         else {
             std::cerr << "警告：未找到IP " << ip << " 对应的记录，无法更新三级等保检测时间" << std::endl;
         }
+        cleanup();
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "updateLevel3CheckTime 时数据库错误: " << err.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
+        cleanup();
+        throw;
     }
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
+        cleanup();
+        throw;
     }
 }
 
 // 根据IP获取基线检测时间
 std::string DatabaseHandler::getBaselineCheckTime(const std::string& ip, ConnectionPool& pool) {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
     try {
         auto conn = pool.getConnection();  // 获取连接
 
@@ -3879,35 +4993,52 @@ std::string DatabaseHandler::getBaselineCheckTime(const std::string& ip, Connect
         if (row) {
             if (row[0].isNull()) {
                 std::cout << "IP " << ip << " 的基线检测时间为空" << std::endl;
+                cleanup();
                 return "";  // 返回空字符串表示未进行过基线检测
             }
             else {
                 std::string baselineTime = row[0].get<std::string>();
                 std::cout << "IP " << ip << " 的基线检测时间: " << baselineTime << std::endl;
+                cleanup();
                 return baselineTime;
             }
         }
         else {
             std::cerr << "未找到IP " << ip << " 对应的记录" << std::endl;
+            cleanup();
             return "";
         }
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "getBaselineCheckTime 时数据库错误: " << err.what() << std::endl;
+        cleanup();
+        throw;
         return "";
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
+        cleanup();
+        throw;
         return "";
     }
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
+        cleanup();
+        throw;
         return "";
     }
 }
 
 // 根据IP获取三级等保检测时间
 std::string DatabaseHandler::getLevel3CheckTime(const std::string& ip, ConnectionPool& pool) {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
     try {
         auto conn = pool.getConnection();  // 获取连接
 
@@ -3924,35 +5055,53 @@ std::string DatabaseHandler::getLevel3CheckTime(const std::string& ip, Connectio
         if (row) {
             if (row[0].isNull()) {
                 std::cout << "IP " << ip << " 的三级等保检测时间为空" << std::endl;
+                cleanup();
                 return "";  // 返回空字符串表示未进行过三级等保检测
             }
             else {
                 std::string level3Time = row[0].get<std::string>();
                 std::cout << "IP " << ip << " 的三级等保检测时间: " << level3Time << std::endl;
+                cleanup();
                 return level3Time;
             }
         }
         else {
             std::cerr << "未找到IP " << ip << " 对应的记录" << std::endl;
+            cleanup();
             return "";
         }
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "getLevel3CheckTime 时数据库错误: " << err.what() << std::endl;
+        cleanup();
+        throw;
         return "";
     }
     catch (std::exception& ex) {
         std::cerr << "异常: " << ex.what() << std::endl;
+        cleanup();
+        throw;
         return "";
     }
     catch (...) {
         std::cerr << "未知错误发生" << std::endl;
+        cleanup();
+        throw;
         return "";
     }
 }
 //更新 scan_host_result 表中指定 IP 的 scan_time 字段为当前时间
 void DatabaseHandler::updateScanTimeToNow(const std::vector<std::string>& ipList, ConnectionPool& pool)
 {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
     try {
         auto conn = pool.getConnection();  // 获取连接
         for (const auto& ip : ipList) {
@@ -3965,15 +5114,27 @@ void DatabaseHandler::updateScanTimeToNow(const std::vector<std::string>& ipList
                 .execute();
             //std::cout << "已更新scan_time为当前时间: " << ip << std::endl;
         }
+        cleanup();
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "updateScanTimeToNow时数据库错误: " << err.what() << std::endl;
+        cleanup();
+        throw;
     }
 }
 
 //更新 scan_host_result 表中指定 IP 的 scan_time 字段为指定时间
 void DatabaseHandler::updateScanTime(const std::vector<std::string>& ipList, const std::string& timestamp, ConnectionPool& pool)
 {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
     try {
         auto conn = pool.getConnection();  // 获取连接
         for (const auto& ip : ipList) {
@@ -3987,18 +5148,22 @@ void DatabaseHandler::updateScanTime(const std::vector<std::string>& ipList, con
                 .execute();
             //std::cout << "已将 scan_time 更新为指定时间: " << timestamp << "，目标 IP: " << ip << std::endl;
         }
+        cleanup();
     }
     catch (const mysqlx::Error& err) {
         std::cerr << "updateScanTimeToNow（带时间）时数据库错误: " << err.what() << std::endl;
+        cleanup();
+        throw;
     }
 }
 std::map<int, std::pair<std::string, std::vector<std::string>>>
-DatabaseHandler::getAliveHostsGroupInfo(const std::vector<std::string>& aliveHosts, ConnectionPool& pool) {
+DatabaseHandler::getAliveHostsGroupInfo(const std::vector<std::string>& aliveHosts, ConnectionPool& pool, const std::string& db_name) {
     std::map<int, std::pair<std::string, std::vector<std::string>>> groupMap;
-
+  
     try {
         auto session_ptr = pool.getConnection();
         mysqlx::Session& session = *session_ptr;
+        session.sql("USE " + db_name).execute();
 
         // 构建动态IN子句
         std::string inClause;
@@ -4008,7 +5173,7 @@ DatabaseHandler::getAliveHostsGroupInfo(const std::vector<std::string>& aliveHos
         }
 
         std::string query =
-            "SELECT shr.ip, ag.id AS group_id, ag.group_name "
+            "SELECT DISTINCT shr.ip, ag.id AS group_id, ag.group_name "
             "FROM scan_host_result shr "
             "LEFT JOIN asset_group ag ON shr.group_id = ag.id "
             "WHERE shr.ip IN (" + inClause + ")";
@@ -4029,12 +5194,784 @@ DatabaseHandler::getAliveHostsGroupInfo(const std::vector<std::string>& aliveHos
             auto& entry = groupMap[group_id];
             entry.first = group_name;
             entry.second.push_back(ip);
+            cout << entry.second.size();
         }
 
     }
     catch (const mysqlx::Error& err) {
         console->error("[DB] getAliveHostsGroupInfo failed: {}", err.what());
-    }
 
+    }
+  
     return groupMap;
 }
+
+
+
+//---------------用户管理方法----------------------
+////判断邮箱是否存在
+//bool DatabaseHandler::IsExistEmail(const std::string& email, ConnectionPool& pool) {
+//    if (current_db_.empty()) {
+//        throw std::runtime_error("Database not set for current operation");
+//    }
+//
+//    pool.setThreadDatabase(current_db_);
+//    auto cleanup = [&]() {
+//        pool.setThreadDatabase("");
+//        };
+//    try {
+//        auto conn = pool.getConnection();
+//
+//        // 检查用户名和邮箱是否唯一
+//        auto res = conn->sql("SELECT COUNT(*) FROM Users WHERE email = ?")
+//            .bind(email).execute();
+//
+//        if (res.fetchOne()[0].get<int>() > 0) {
+//            return false; // 邮箱已存在
+//        }
+//        else
+//            return true;
+//    }
+//        catch (const std::exception& e) {
+//            std::cerr << "" << e.what() << std::endl;
+//            cleanup();
+//            throw;
+//            return false;
+//        }
+//
+//}
+// 
+// 
+// 
+// 
+//创建管理员数据库admin_db
+
+bool DatabaseHandler::InitializeAdminDataBase(ConnectionPool& pool) {
+    pool.setThreadDatabase("");
+    pool.initializeAdminDatabase();
+
+}
+
+//创建用户
+bool DatabaseHandler::createUser(const std::string& username, const std::string& email,
+    const std::string& password_hash, const std::string& role,
+    ConnectionPool& pool) {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
+    try {
+        auto conn = pool.getConnection();
+
+        // 检查用户名和邮箱是否唯一
+        auto res = conn->sql("SELECT COUNT(*) FROM Users WHERE username = ? OR email = ?")
+            .bind(username, email).execute();
+
+        if (res.fetchOne()[0].get<int>() > 0) {
+            return false; // 用户名或邮箱已存在
+        }
+
+        // 创建用户记录
+        conn->sql("INSERT INTO Users (username, email, password_hash, role) "
+            "VALUES (?, ?, ?, ?)")
+            .bind(username, email, password_hash, role)
+            .execute();
+
+        // 获取新用户ID
+        auto user_res = conn->sql("SELECT LAST_INSERT_ID()").execute();
+        int user_id = user_res.fetchOne()[0].get<int>();
+
+        // 创建专属schema
+        std::string user_schema = "user_" + std::to_string(user_id);
+        pool.initializeUserSchema(user_schema);
+
+        // 更新用户记录
+        conn->sql("UPDATE Users SET schema_name = ? WHERE user_id = ?")
+            .bind(user_schema, user_id)
+            .execute();
+        cleanup();
+        return true;
+    }
+    catch (const std::exception& e) {
+        std::cerr << "创建用户失败: " << e.what() << std::endl;
+        cleanup();
+        throw;
+        return false;
+    }
+}
+
+// 新增：生成随机验证码
+std::string DatabaseHandler::generateVerificationCode(int length) {
+    // 线程安全的高质量随机数生成器
+    static thread_local std::random_device rd;
+    static thread_local std::mt19937 generator(rd());
+
+    // 仅使用数字
+    static const char digits[] = "0123456789";
+    std::uniform_int_distribution<int> distribution(0, sizeof(digits) - 2); // -2 包含结束符
+
+    std::string code;
+    code.reserve(length);
+
+    for (int i = 0; i < length; ++i) {
+        code += digits[distribution(generator)];
+    }
+    return code;
+}
+
+bool DatabaseHandler::insertRegistrationRecord(const std::string& email,
+    const std::string& verification_code,
+    std::chrono::minutes expiry_time,
+    ConnectionPool& pool) {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+    try {
+        auto conn = pool.getConnection();
+
+        // 获取当前系统时间（本地时间）
+        auto now = std::chrono::system_clock::now();
+        auto expires_at = now + expiry_time;
+
+        // 格式化为本地时间字符串
+        auto formatTime = [](std::chrono::system_clock::time_point tp) {
+            auto time_t = std::chrono::system_clock::to_time_t(tp);
+            std::tm tm_local;
+            localtime_r(&time_t, &tm_local); // 使用本地时间
+            char buffer[20];
+            std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &tm_local);
+            return std::string(buffer);
+            };
+
+        auto result = conn->sql(
+            "REPLACE INTO Registrations "
+            "(email, verification_code, created_at, expires_at) "
+            "VALUES (?, ?, ?, ?)"
+        ).bind(email, verification_code,
+            formatTime(now), formatTime(expires_at)).execute();
+        cleanup();
+        return result.getAffectedItemsCount() > 0;
+    }
+    catch (const std::exception& e) {
+        std::cerr << "插入注册记录失败: " << e.what() << std::endl;
+        cleanup();
+        throw;
+        return false;
+    }
+}
+
+// 新增：验证注册码
+bool DatabaseHandler::verifyRegistrationCode(const std::string& email,
+    const std::string& verification_code,
+    ConnectionPool& pool) {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+    try {
+        auto conn = pool.getConnection();
+        auto result = conn->sql(
+            "SELECT registration_id FROM system_db.Registrations "
+            "WHERE email = ? AND verification_code = ? AND expires_at > NOW()"
+        ).bind(email, verification_code).execute();
+        cleanup();
+        return (result.count() > 0);
+    }
+    catch (const std::exception& e) {
+        std::cerr << "验证注册码失败: " << e.what() << std::endl;
+        cleanup();
+        throw;
+        return false;
+    }
+}
+
+// 新增：完成用户注册
+bool DatabaseHandler::completeUserRegistration(const std::string& email,
+    const std::string& username,
+    const std::string& password_hash,
+    ConnectionPool& pool) {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+    try {
+        auto conn = pool.getConnection();
+
+        // 创建用户记录
+        conn->sql(
+            "INSERT INTO Users (username, email, password_hash, account_status) "
+            "VALUES (?, ?, ?, 'pending')"
+        ).bind(username, email, password_hash).execute();
+
+        // 获取新用户ID
+        auto user_res = conn->sql("SELECT LAST_INSERT_ID()").execute();
+        int user_id = user_res.fetchOne()[0].get<int>();
+
+        // 创建专属schema
+        std::string user_schema = "user_" + std::to_string(user_id);
+        pool.initializeUserSchema(user_schema);
+
+        // 更新用户记录
+        conn->sql(
+            "UPDATE Users "
+            "SET account_status = 'active', schema_name = ? "
+            "WHERE user_id = ?"
+        ).bind(user_schema, user_id).execute();
+
+        // 删除注册记录
+        conn->sql(
+            "DELETE FROM Registrations WHERE email = ?"
+        ).bind(email).execute();
+        cleanup();
+        return true;
+    }
+    catch (const std::exception& e) {
+        std::cerr << "完成用户注册失败: " << e.what() << std::endl;
+        cleanup();
+        throw;
+        return false;
+    }
+}
+
+//用户登录
+bool DatabaseHandler::userLogin(
+    const std::string& username,
+    const std::string& password,
+    ConnectionPool& pool) {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+    try {
+        // 从连接池获取连接
+        auto conn = pool.getConnection();
+
+        // 查询用户记录
+        auto res = conn->sql(
+            "SELECT password_hash FROM Users "
+            "WHERE username = ? AND account_status = 'active'"
+        ).bind(username).execute();
+
+        mysqlx::Row row = res.fetchOne();
+        if (!row) {
+            std::cerr << "登录失败: 用户不存在或账户未激活" << std::endl;
+            cleanup();
+            return false;
+        }
+
+        std::ostringstream oss;
+        oss << row[0];
+        std::string hash = oss.str();
+
+        // 验证密码
+        if (SecurityUtils::bcrypt_verify(password, hash)) {
+            // 密码验证成功，更新最后登录时间
+            try {
+                conn->sql(
+                    "UPDATE Users "
+                    "SET last_login = CURRENT_TIMESTAMP "
+                    "WHERE username = ?"
+                ).bind(username).execute();
+
+                std::cout << "用户 " << username << " 登录成功，更新最后登录时间" << std::endl;
+                cleanup();
+                return true;
+            }
+            catch (const std::exception& e) {
+                std::cerr << "更新最后登录时间失败: " << e.what() << std::endl;
+                // 即使更新失败，仍然允许登录
+                cleanup();
+                throw;
+                return true;
+            }
+        }
+        else {
+            std::cerr << "登录失败: 密码错误" << std::endl;
+            cleanup();
+            return false;
+        }
+    }
+    catch (const std::exception& e) {
+        std::cerr << "用户登录失败: " << e.what() << std::endl;
+        cleanup();
+        throw;
+        return false;
+    }
+}
+
+//通过username查找id
+int DatabaseHandler::getIdByUsername(const std::string username, ConnectionPool& pool) {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
+    try
+    {
+        auto conn = pool.getConnection();
+        auto res = conn->sql(
+            "SELECT user_id FROM Users "
+            "WHERE username = ? AND account_status = 'active'"
+        ).bind(username).execute();
+        mysqlx::Row row = res.fetchOne();
+        std::ostringstream oss;
+        oss << row[0];
+        std::istringstream iss(oss.str());
+        int user_id;
+        iss >> user_id;
+        cleanup();
+        return user_id;
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "查找失败: " << e.what() << std::endl;
+        cleanup();
+        throw;
+        return 0;
+    }
+}
+
+//通过username查找email
+std::string DatabaseHandler::getEmailByUsername(const std::string username, ConnectionPool& pool) {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+
+    try
+    {
+        auto conn = pool.getConnection();
+        auto res = conn->sql(
+            "SELECT email FROM system_db.Users "
+            "WHERE username = ? AND account_status = 'active'"
+        ).bind(username).execute();
+        mysqlx::Row row = res.fetchOne();
+        std::ostringstream oss;
+        oss << row[0];
+        cleanup();
+        return oss.str();
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "查找失败: " << e.what() << std::endl;
+        cleanup();
+        throw;
+        return 0;
+    }
+}
+
+//通过username查找role
+std::string DatabaseHandler::getRoleByUsername(const std::string username, ConnectionPool& pool) {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+    try
+    {
+        auto conn = pool.getConnection();
+        auto res = conn->sql(
+            "SELECT role FROM Users "
+            "WHERE username = ? AND account_status = 'active'"
+        ).bind(username).execute();
+        mysqlx::Row row = res.fetchOne();
+        std::ostringstream oss;
+        oss << row[0];
+        cleanup();
+        return oss.str();
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "查找失败: " << e.what() << std::endl;
+        cleanup();
+        throw;
+        return 0;
+    }
+}
+//通过username找用户数据库名
+std::string DatabaseHandler::getSchemaByUsername(const std::string username, ConnectionPool& pool) {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+    try
+    {
+        auto conn = pool.getConnection();
+        auto res = conn->sql(
+            "SELECT schema_name FROM Users "
+            "WHERE username = ?"
+        ).bind(username).execute();
+        mysqlx::Row row = res.fetchOne();
+        std::ostringstream oss;
+        oss << row[0];
+        cleanup();
+        return oss.str();
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "查找失败: " << e.what() << std::endl;
+        cleanup();
+        throw;
+        return 0;
+    }
+}
+
+//管理员对用户的增删改查
+bool DatabaseHandler::createUserbyAdmin(const User& user, ConnectionPool& pool) {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+    try {
+        auto conn = pool.getConnection();
+
+        // 开始事务
+        conn->startTransaction();
+
+        try {
+            // 创建用户记录
+            conn->sql(R"(
+                INSERT INTO Users (username, email, password_hash, role, account_status)
+                VALUES (?, ?, ?, ?, ?)
+            )")
+                .bind(
+                    user.username,
+                    user.email,
+                    user.password_hash,
+                    user.role,
+                    user.account_status
+                )
+                .execute();
+
+            // 获取新创建用户的ID
+            auto user_id_res = conn->sql("SELECT LAST_INSERT_ID()").execute();
+            int user_id = user_id_res.fetchOne()[0].get<int>();
+
+            // 创建用户专属schema
+            std::string user_schema = "user_" + std::to_string(user_id);
+            if (!pool.initializeUserSchema(user_schema)) {
+                throw std::runtime_error("无法创建用户专属数据库");
+            }
+
+            // 更新用户记录中的schema_name
+            conn->sql(R"(
+                UPDATE Users 
+                SET schema_name = ?
+                WHERE user_id = ?
+            )")
+                .bind(user_schema, user_id)
+                .execute();
+
+            // 提交事务
+            conn->commit();
+
+            system_logger->info("成功创建用户: {} (ID: {}, Schema: {})",
+                user.username, user_id, user_schema);
+            console->info("成功创建用户: {} (ID: {}, Schema: {})",
+                user.username, user_id, user_schema);
+            cleanup();
+            return true;
+        }
+        catch (const std::exception& e) {
+            // 回滚事务
+            conn->rollback();
+            throw;
+        }
+    }
+    catch (const mysqlx::Error& err) {
+        system_logger->error("[createUserbyAdmin] MySQL 错误: {}", err.what());
+        console->error("[createUserbyAdmin] MySQL 错误: {}", err.what());
+        cleanup();
+        throw;
+        return false;
+    }
+    catch (const std::exception& e) {
+        system_logger->error("[createUserbyAdmin] 错误: {}", e.what());
+        console->error("[createUserbyAdmin] 错误: {}", e.what());
+        cleanup();
+        throw;
+        return false;
+    }
+}
+
+bool DatabaseHandler::updateUserbyAdmin(const User& user, ConnectionPool& pool) {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }   
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+    try {
+        auto conn = pool.getConnection();
+
+        // 根据是否提供新密码构建不同的SQL语句
+        if (!user.password_hash.empty()) {
+            conn->sql(R"(
+                UPDATE Users 
+                SET email = ?, password_hash = ?
+                WHERE user_id = ?
+            )")
+                .bind(
+                    user.email,
+                    user.password_hash,
+                    user.user_id
+                )
+                .execute(); 
+
+        }
+        else {
+            conn->sql(R"(
+                UPDATE Users 
+                SET email = ?
+                WHERE user_id = ?
+            )")
+                .bind(
+                    user.email,
+                    user.user_id
+                )
+                .execute(); 
+        }
+
+        system_logger->info("成功更新用户: {}", user.username);
+        console->info("成功更新用户: {}", user.username);
+        cleanup();
+     
+        return true;
+    }
+    catch (const mysqlx::Error& err) {
+        system_logger->error("[updateUser] MySQL 错误: {}", err.what());
+        console->error("[updateUser] MySQL 错误: {}", err.what());
+        cleanup();
+        throw;
+        return false;
+    }
+}
+
+bool DatabaseHandler::deleteUserbyAdmin(const std::string& username, ConnectionPool& pool) {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+    try {
+        auto conn = pool.getConnection();
+
+        conn->sql(R"(
+            UPDATE Users 
+            SET account_status = 'deleted'
+            WHERE username = ?
+        )")
+            .bind(username)
+            .execute();
+
+        system_logger->info("成功删除用户: {}", username);
+        console->info("成功删除用户: {}", username);
+        cleanup();
+        return true;
+    }
+    catch (const mysqlx::Error& err) {
+        system_logger->error("[deleteUser] MySQL 错误: {}", err.what());
+        console->error("[deleteUser] MySQL 错误: {}", err.what());
+        cleanup();
+        throw;
+        return false;
+    }
+}
+bool DatabaseHandler::recoverUserbyAdmin(const std::string& username, ConnectionPool& pool) {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+    try {
+        auto conn = pool.getConnection();
+
+        conn->sql(R"(
+            UPDATE Users 
+            SET account_status = 'active'
+           WHERE username = ? AND account_status = 'deleted'
+        )")
+            .bind(username)
+            .execute();
+
+        system_logger->info("成功恢复用户: {}", username);
+        console->info("成功恢复用户: {}", username);
+        cleanup();
+        return true;
+    }
+    catch (const mysqlx::Error& err) {
+        system_logger->error("[recoverUser] MySQL 错误: {}", err.what());
+        console->error("[recoverUser] MySQL 错误: {}", err.what());
+        cleanup();
+        throw;
+        return false;
+    }
+}
+std::vector<User> DatabaseHandler::getUserByUsername(const std::string& username, ConnectionPool& pool) {
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+    std::vector<User> users;
+    try {
+        auto conn = pool.getConnection();
+
+        auto result = conn->sql("SELECT * FROM Users WHERE username = ?")
+            .bind(username)
+            .execute();
+
+    
+        if (auto row = result.fetchOne()) {
+            User user;
+            user.user_id = row[0].get<int>(); // 添加user_id字段获取
+            user.username = row[1].get<std::string>();
+            user.email = row[2].get<std::string>();
+            user.role = row[4].get<std::string>();
+            user.account_status = row[5].get<std::string>();
+            user.schema_name = row[8].isNull() ? "" : row[8].get<std::string>();
+
+            users.push_back(user);
+        }
+    }
+    catch (const mysqlx::Error& err) {
+        system_logger->error("[getUserByUsername] MySQL 错误: {}", err.what());
+        console->error("[getUserByUsername] MySQL 错误: {}", err.what());
+        cleanup();
+        throw;
+    }
+
+    cleanup();
+    return users;
+}
+
+std::vector<User> DatabaseHandler::getAllUsers(ConnectionPool& pool) {
+    std::vector<User> users;
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+    try {
+        auto conn = pool.getConnection();
+
+        auto result = conn->sql("SELECT * FROM Users").execute();
+
+        for (auto row : result.fetchAll()) {
+            User user;
+            user.user_id = row[0].get<int>(); 
+            user.username = row[1].get<std::string>();
+            user.email = row[2].get<std::string>();
+            user.role = row[4].get<std::string>();
+            user.account_status = row[5].get<std::string>();
+            user.schema_name = row[8].isNull() ? "" : row[8].get<std::string>();
+
+            users.push_back(user);
+        }
+    }
+    catch (const mysqlx::Error& err) {
+        system_logger->error("[getAllUsers] MySQL 错误: {}", err.what());
+        console->error("[getAllUsers] MySQL 错误: {}", err.what());
+        cleanup();
+        throw;
+    }
+    cleanup();
+    return users;
+}
+
+User DatabaseHandler::getUserByUserId(const int user_id, ConnectionPool& pool) {
+    User user; // 默认构造的User对象
+    if (current_db_.empty()) {
+        throw std::runtime_error("Database not set for current operation");
+    }
+
+    pool.setThreadDatabase(current_db_);
+    auto cleanup = [&]() {
+        pool.setThreadDatabase("");
+        };
+    try {
+        auto conn = pool.getConnection();
+
+        auto result = conn->sql("SELECT * FROM Users WHERE user_id = ?")
+            .bind(user_id)
+            .execute();
+
+        // 由于user_id是主键，最多只有一行结果
+        if (auto row = result.fetchOne()) {
+            user.user_id = user_id;
+           /* user.user_id = row[0].get<int>();*/
+            user.username = row[1].get<std::string>();
+            user.email = row[2].get<std::string>();
+            user.password_hash = row[3].get<std::string>(); // 添加密码哈希字段
+            user.role = row[4].get<std::string>();
+            user.account_status = row[5].get<std::string>();
+            user.schema_name = row[8].isNull() ? "" : row[8].get<std::string>();
+        }
+    }
+    catch (const mysqlx::Error& err) {
+        system_logger->error("[getUserByUserId] MySQL 错误: {}", err.what());
+        console->error("[getUserByUserId] MySQL 错误: {}", err.what());
+        cleanup();
+        throw;
+        // 可以选择记录错误信息或抛出异常
+    }
+    cleanup();
+    return user;
+}
+
+

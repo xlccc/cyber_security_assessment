@@ -37,12 +37,19 @@
 #include<regex>
 #include "run/mysql_scan.h"
 #include <spdlog/spdlog.h>
-
+#include "ssh_win.h"
+#include "windowsbaseline.h"
+#include "execute_win.h"
 
 #include"SSHConnectionPool.h"
 #include"redis_scan.h"
 #include"pgsql_scan.h"
 #include"DatabaseWrapper.h"
+#include <System_UserManage/EmailService.h>
+#include <System_UserManage/SecurityUtils.h>
+#include "../utils/jwtUtil/token_generator.h"
+
+
 using namespace web;
 using namespace web::http;
 using namespace web::http::experimental::listener;
@@ -57,11 +64,19 @@ public:
     void open_listener();
     void start();
     void stop();
-
+    std::string GetDb(http_request request);
+   /* std::string GetRole(http_request request);*/
+    static ServerManager& instance() {
+        static ServerManager instance; // 在第一次调用时创建
+        return instance;
+    }
+    //创建管理员数据库admin_db
+    bool InitializeAdminDatabase();
 private:
 
     // 创建用于连接本地服务器的配置
-    DBConfig localConfig;
+    DatabaseConfig localConfig;
+    SmtpConfig smtpConfig_;
     // ´æ´¢portIdºÍservice_nameµÄmap
     std::map<std::string, std::string> port_services;
     //缓存 ip 和上次检测的临时ids的映射
@@ -72,17 +87,27 @@ private:
     void handle_options(http_request request);
     void handle_request(http_request request);
 
+  
+
     void handle_post_login(http_request request);
     void handle_get_cve_scan(http_request request);
 
+  
     //新版：从数据库中获取扫描结果
     void handle_get_ScanHostResult(http_request request);
 
-    void handle_get_all_data(http_request request);
-    void handle_get_vaild_poc_data(http_request request);    //获取POC代码存在的POC数据
+    //void handle_get_all_data(http_request request);
+    void handle_get_vaild_poc_data(http_request request);   
+
+    void handle_get_poc_table(http_request request);
+    void handle_get_with_poc_condition(http_request request);
+    void handle_get_with_tran_poc_condition(http_request request);
+    void handle_get_without_poc_condition(http_request request);
+
+
     void handle_search_data(http_request request);
     void handle_post_insert_data(http_request request);
-    void handle_put_update_data_by_id(http_request request);
+    void  handle_put_update_data_by_id(http_request request);
     void handle_delete_data_by_id(http_request request);
     void handle_post_get_Nmap(http_request request);
     void handle_post_hydra(http_request request);
@@ -96,6 +121,9 @@ private:
     json::value convertToJson(const std::vector<IpVulnerabilities>& vulns);
     //POC列表转json（新增）
     json::value poc_list_to_json(const std::vector<POC>& poc_list);
+
+
+   
 
     //检验文件是否存在，并获取文件名
     bool check_and_get_filename(const std::string& body, const std::string& content_type, std::string& filename, std::string& data, std::string& error_message);
@@ -214,18 +242,51 @@ private:
     //删除资产组（支持是否删除组内资产）
     void handle_delete_asset_group(http_request request);
 
+    //windows基线检测
+    void handle_get_win_userinfo(http_request request);
+    void handle_post_win_login(http_request request);
+    void handle_get_baseline_scripts(http_request request);
+
+
+
+    //-------------用户管理-----------
+
+  //用户注册
+    void handle_post_register(http_request request);
+   //验证码验证处理（第二步）
+    void handle_post_verify(http_request request);
+    //用户登录
+    void handle_post_userLogin(http_request request);
+    //管理员对用户的增删改查
+    void handle_post_create_user(http_request request);
+    void handle_put_update_user(http_request request);
+    void handle_delete_user(http_request request);
+    void handle_recover_user(http_request request);
+    void handle_get_user(http_request request);
+    void handle_get_all_users(http_request request);
+
+  
+
     ConnectionPool pool;
     DatabaseHandler dbHandler_;
     //旧版
     //DatabaseManager dbManager;
     DatabaseWrapper dbManager;
+   
     std::vector<POC> poc_list;
 
     // Additional member variables
     std::string global_ip;
     std::string global_pd;
-
+    std::string global_hostname; //win基线检测
     vector<scoreMeasure> vecScoreMeasure;
+
+
+    //win基线检测
+    ServerInfo_t info_new;
+    vector<event_t>Event_win;
+    map<int, event_t>allBaseline;
+
 
     //线程池
     std::shared_ptr<ThreadPool> globalThreadPool;

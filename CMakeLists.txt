@@ -7,11 +7,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # 设置 vcpkg 的工具链文件，用于集成 vcpkg 管理的库
 if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-    set(CMAKE_TOOLCHAIN_FILE "/home/c/vcpkg/scripts/buildsystems/vcpkg.cmake")
+    set(CMAKE_TOOLCHAIN_FILE "/home/r/vcpkg/scripts/buildsystems/vcpkg.cmake")
 endif()
 
 # 设置 vcpkg 的路径
-set(VCPKG_DIR "/home/c/vcpkg")
+set(VCPKG_DIR "/home/r/vcpkg")
 
 # 添加 vcpkg 的 include 和 library 路径
 include_directories(${VCPKG_DIR}/installed/x64-linux/include)
@@ -25,8 +25,19 @@ find_package(SQLite3 REQUIRED)
 find_package(uchardet CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(hiredis CONFIG REQUIRED)
-find_package(unofficial-mysql-connector-cpp CONFIG REQUIRED)
+#find_package(unofficial-mysql-connector-cpp CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
+find_package(Iconv REQUIRED)
+find_package(CURL REQUIRED)
+find_package(jwt-cpp CONFIG REQUIRED)
+
+
+# 直接设置静态库的完整路径
+set(MYSQLCPPCONN_LIBRARY "/usr/local/mysql-connector-cpp/lib64/libmysqlcppconn8-static.a")
+set(SODIUM_INCLUDE_DIR "${VCPKG_DIR}/installed/x64-linux/include")
+set(SODIUM_LIBRARY "${VCPKG_DIR}/installed/x64-linux/lib/libsodium.a")
+# 设置头文件目录
+include_directories("/usr/local/mysql-connector-cpp/include")
 
 # 手动设置Python路径
 set(Python_EXECUTABLE "/usr/bin/python3.8")
@@ -61,6 +72,7 @@ include_directories(
     ${ICU_INCLUDE_DIRS}
     ${SQLite3_INCLUDE_DIRS}
     ${Python_INCLUDE_DIRS}
+    ${SODIUM_INCLUDE_DIR} 
 )
 
 # 设置源文件和头文件
@@ -84,7 +96,12 @@ set(SOURCES
     "run/mysql_scan.cpp"
     scan/hostDiscovery.cpp
  "database/DatabaseHandler.cpp" "pgsql_scan.cpp"
-    utils/threadPool.cpp "log/log.cpp" "utils/ConfigManager.cpp")
+    utils/threadPool.cpp "log/log.cpp" "utils/ConfigManager.cpp" 
+      "ssh_win.cpp"
+    "execute_win.cpp"
+    "windowsbaseline.cpp"
+    "database/mysql_connection_pool.cpp"
+   )
 
 set(HEADERS
     Command_Excute.h
@@ -118,10 +135,18 @@ set(HEADERS
     "database/DatabaseHandler.h" "database/mysql_connection_pool.h" 
     "utils/ConfigManager.h"
     "utils/CommonDefs.h" "cyberseProtection/cyber3.h"
-    "database/DatabaseWrapper.h")
+    "database/DatabaseWrapper.h"
+     "ssh_win.h"
+    "execute_win.h"
+    "windowsbaseline.h" 
+   "System_UserManage/EmailService.h"
+"System_UserManage/SecurityUtils.h"
+ "System_UserManage/User.h")
 
 # 添加可执行文件
-add_executable(MyCppProject ${SOURCES} ${HEADERS} "log/log.h" "log/log.cpp" "database/DatabaseWrapper.h")
+add_executable(MyCppProject ${SOURCES} ${HEADERS} "log/log.h" "log/log.cpp" "database/DatabaseWrapper.h""execute_win.h"    "utils/jwtUtil/token_generator.cpp"  "database/mysql_connection_pool.h"  "database/mysql_connection_pool.cpp")
+
+
 
 # 链接必要的库到 C++ 项目
 target_link_libraries(MyCppProject PRIVATE 
@@ -133,13 +158,18 @@ target_link_libraries(MyCppProject PRIVATE
     ${ICU_LIBRARIES}
     ${SQLite3_LIBRARIES}
     ${Python_LIBRARIES}
+    ${MYSQLCPPCONN_LIBRARY}
+    ${SODIUM_LIBRARY}  
     uchardet::libuchardet
-    unofficial::mysql-connector-cpp::connector  # 修正了此行
+    #unofficial::mysql-connector-cpp::connector  # 修正了此行
     resolv  # 确保添加这一行
     nlohmann_json::nlohmann_json
     hiredis::hiredis
     spdlog::spdlog
     stdc++fs #c++14实验性特性
+    Iconv::Iconv
+    CURL::libcurl
+    jwt-cpp::jwt-cpp
     )
 
 # 支持 Unicode 文件名和路径

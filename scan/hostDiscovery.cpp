@@ -1,4 +1,4 @@
-#include "hostDiscovery.h"
+ï»¿#include "hostDiscovery.h"
 #include <sstream>
 #include <cstdlib>
 #include <stdexcept>
@@ -7,7 +7,7 @@
 //HostDiscovery::HostDiscovery(const std::string& network)
 //    :network(network), threadPool(CONFIG.getThreadCount()) {
 //
-//    //ÈôÊäÈëÎªÍø¶Î£¬ÔòÌáÈ¡×ÓÍøÑÚÂë
+//    //è‹¥è¾“å…¥ä¸ºç½‘æ®µï¼Œåˆ™æå–å­ç½‘æ©ç 
 //    if (isValidCIDR(network)) {
 //        this->subnet = getSubnet(network);
 //
@@ -30,7 +30,7 @@ HostDiscovery::HostDiscovery(const std::string& network, std::shared_ptr<ThreadP
 }
 
 bool HostDiscovery::isValidIP(const std::string& ip) {
-    // ¼òµ¥µÄIP¸ñÊ½Ğ£Ñé
+    // ç®€å•çš„IPæ ¼å¼æ ¡éªŒ
     std::regex ipRegex(
         R"(^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$)"
     );
@@ -38,7 +38,7 @@ bool HostDiscovery::isValidIP(const std::string& ip) {
 }
 
 bool HostDiscovery::isValidCIDR(const std::string& network) {
-    // Ğ£ÑéCIDR¸ñÊ½£¬¼ì²éÍøÂçµØÖ·ºÍ×ÓÍøÑÚÂë
+    // æ ¡éªŒCIDRæ ¼å¼ï¼Œæ£€æŸ¥ç½‘ç»œåœ°å€å’Œå­ç½‘æ©ç 
     std::regex cidrRegex(
         R"(^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/([12]?[0-9]|3[0-2])$)"
     );
@@ -49,7 +49,7 @@ std::vector<std::string> HostDiscovery::scan() {
     std::vector<std::future<void>> futures;
 
     if (isValidIP(network)) {
-        // µ¥¸öIP¼ì²â
+        // å•ä¸ªIPæ£€æµ‹
         system_logger->info("Scanning single IP: {}", network);
         if (ping(network)) {
             aliveHosts.push_back(network);
@@ -80,7 +80,6 @@ std::vector<std::string> HostDiscovery::scan() {
     else {
         system_logger->error("Invalid Network/IP format: {}", network);
     }
-
     return aliveHosts;
 }
 
@@ -100,16 +99,16 @@ std::pair<unsigned int, unsigned int> HostDiscovery::calculateIPRange() {
         throw std::out_of_range("Subnet mask must be between 16 and 32.");
     }
 
-    // ¼ÆËã×ÓÍøÑÚÂë¶ÔÓ¦µÄ¶ş½øÖÆÖµ
+    // è®¡ç®—å­ç½‘æ©ç å¯¹åº”çš„äºŒè¿›åˆ¶å€¼
     unsigned int subnetMaskBinary = (0xFFFFFFFF << (32 - subnetMask)) & 0xFFFFFFFF;
 
-    // ¼ÆËãÍøÂçµØÖ·ºÍ¹ã²¥µØÖ·
+    // è®¡ç®—ç½‘ç»œåœ°å€å’Œå¹¿æ’­åœ°å€
     unsigned int networkAddress = startIP & subnetMaskBinary;
     unsigned int broadcastAddress = networkAddress | ~subnetMaskBinary;
 
-    // ÅÅ³ıÍøÂçµØÖ·ºÍ¹ã²¥µØÖ·
-    // ÍøÂçµØÖ·ÊÇ startIP£¬¹ã²¥µØÖ·ÊÇ endIP
-    // Ö÷»úµÄÓĞĞ§µØÖ··¶Î§Ó¦¸Ã´Ó startIP + 1 µ½ endIP - 1
+    // æ’é™¤ç½‘ç»œåœ°å€å’Œå¹¿æ’­åœ°å€
+    // ç½‘ç»œåœ°å€æ˜¯ startIPï¼Œå¹¿æ’­åœ°å€æ˜¯ endIP
+    // ä¸»æœºçš„æœ‰æ•ˆåœ°å€èŒƒå›´åº”è¯¥ä» startIP + 1 åˆ° endIP - 1
     unsigned int validStartIP = networkAddress + 1;
     unsigned int validEndIP = broadcastAddress - 1;
 
@@ -120,8 +119,10 @@ std::pair<unsigned int, unsigned int> HostDiscovery::calculateIPRange() {
 std::future<void> HostDiscovery::submitPingTask(const std::string& ipAddress, std::vector<std::string>& aliveHosts) {
     return threadPool->enqueue([this, &aliveHosts, ipAddress] {
         if (ping(ipAddress)) {
+            
             std::lock_guard<std::mutex> lock(resultMutex);
             aliveHosts.push_back(ipAddress);
+
             user_logger->info("Host {} is alive.", ipAddress);
         }
         else {
@@ -168,13 +169,13 @@ std::string HostDiscovery::ipToString(unsigned int ip) {
 }
 
 bool HostDiscovery::ping(const std::string& ipAddress) {
-    std::string command = "ping -c 1 -W 1 " + ipAddress + " > /dev/null 2>&1";  // Linux ping ÃüÁî
+    std::string command = "ping -c 1 -W 1 " + ipAddress + " > /dev/null 2>&1";  // Linux ping å‘½ä»¤
     int result = system(command.c_str());
 
     if (result == 0) {
         return true;
     }
     else {
-        return false;  // Ö÷»úÃ»ÓĞÏìÓ¦£¬µ«²»Å×³öÒì³£
+        return false;  // ä¸»æœºæ²¡æœ‰å“åº”ï¼Œä½†ä¸æŠ›å‡ºå¼‚å¸¸
     }
 }

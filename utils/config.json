@@ -1,4 +1,4 @@
-{
+﻿{
   "python": {
     "paths": [
       "../../../src/scan/lib",
@@ -8,21 +8,29 @@
     ]
   },
   "server": {
-    "url": "http://192.168.136.128:8081",
-    "ip": "192.168.136.128"
+    "url": "http://192.168.0.129:8081",
+    "ip": "192.168.0.129"
   },
   "database": {
-    "host": "192.168.136.128",
+    "host": "192.168.0.129",
     "port": 33060,
     "user": "root",
-    "password": "123456",
-    "schema": "test_db"
+    "password": "111",
+    "schema": "system_db"
+  },
+  "smtp": {
+    "host": "smtp.163.com",
+    "port": 465,
+    "username": "naur202506@163.com",
+    "password": "MXfxHLVvMtTzEkuh",
+    "from_address": "naur202506@163.com",
+    "use_tls": true
   },
   "pocDatabase": {
     "path": "../../../src/database/poc.db"
   },
   "cve_api": {
-    "base_url": "http://192.168.136.128:5000/api/cvefor"
+    "base_url": "http://192.168.0.129:5000/api/cvefor"
   },
   "poc": {
     "temp_file": "/tmp/uploaded_body_temp",
@@ -32,5 +40,10 @@
     "max_threads": 20,
     "task_timeout": 5,
     "thread_count": 4
+  },
+  "jwt": {
+    "secret": "nobodyknowssecret",
+    "issuser": "cyber_security_group"
+
   }
 }

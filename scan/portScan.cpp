@@ -1,4 +1,4 @@
-#include"portScan.h"
+﻿#include"portScan.h"
 #include"../utils/utils.h"
 #include<unistd.h>
 #include<algorithm>
@@ -44,7 +44,7 @@ std::string performPortScan(const std::string& targetHost, bool allPorts) {
         command1 = "sudo nmap -A -O " + targetHost + " -oX " + outputPath;
     }
 
-    std::string command2 = "sudo chown c:c " + outputPath;
+    std::string command2 = "sudo chown r:r " + outputPath;
     std::string command3 = "sudo chmod 666 " + outputPath;
 
     system_logger->info("Execute nmap port scan at {}", targetHost);

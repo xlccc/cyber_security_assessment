@@ -7,11 +7,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # 设置 vcpkg 的工具链文件，用于集成 vcpkg 管理的库
 if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-    set(CMAKE_TOOLCHAIN_FILE "/home/c/vcpkg/scripts/buildsystems/vcpkg.cmake")
+    set(CMAKE_TOOLCHAIN_FILE "/home/r/vcpkg/scripts/buildsystems/vcpkg.cmake")
 endif()
 
 # 设置 vcpkg 的路径
-set(VCPKG_DIR "/home/c/vcpkg")
+set(VCPKG_DIR "/home/r/vcpkg")
 
 # 添加 vcpkg 的 include 和 library 路径
 include_directories(${VCPKG_DIR}/installed/x64-linux/include)
@@ -27,6 +27,9 @@ find_package(nlohmann_json CONFIG REQUIRED)
 find_package(hiredis CONFIG REQUIRED)
 find_package(unofficial-mysql-connector-cpp CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
+find_package(libsodium CONFIG REQUIRED)
+find_package(Poco REQUIRED COMPONENTS Foundation Net Util)
+
 
 # 手动设置Python路径
 set(Python_EXECUTABLE "/usr/bin/python3.8")
@@ -117,10 +120,13 @@ set(HEADERS
     pgsql_scan.h
     "database/DatabaseHandler.h" "database/mysql_connection_pool.h" 
     "utils/ConfigManager.h"
-    "utils/CommonDefs.h")
+    "utils/CommonDefs.h"
+"utils/CommonDefs.h"))
 
 # 添加可执行文件
 add_executable(MyCppProject ${SOURCES} ${HEADERS} "log/log.h" "log/log.cpp")
+
+
 
 # 链接必要的库到 C++ 项目
 target_link_libraries(MyCppProject PRIVATE 
@@ -139,7 +145,11 @@ target_link_libraries(MyCppProject PRIVATE
     hiredis::hiredis
     spdlog::spdlog
     stdc++fs #c++14实验性特性
+    libsodium::libsodium
+    Poco::Foundation 
+    Poco::Net 
+    Poco::Util
     )
-
+  
 # 支持 Unicode 文件名和路径
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -finput-charset=UTF-8 -fexec-charset=UTF-8")

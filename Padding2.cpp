@@ -3,11 +3,13 @@
 #include"Command_Excute.h"
 #include<libssh/libssh.h>
 #include"Padding2.h"
+
 void fun2( const string& host, const string& username, const string& password, 
-	ConnectionPool& mysqlPool, DatabaseHandler& dbHandler, const vector<int>& ids ) {
+	ConnectionPool& mysqlPool, DatabaseHandler& dbHandler, const web::http::http_request& req, const vector<int>& ids) {
 	auto start = std::chrono::high_resolution_clock::now();
 	try {
 		//更新基线检测更新时间
+		dbHandler.setCurrentDatabase(ServerManager::instance().GetDb(req));
 		dbHandler.updateBaselineCheckTime(host, mysqlPool);
         // 创建局部变量，避免使用全局变量
         vector<event> localEvent;
@@ -21,6 +23,7 @@ void fun2( const string& host, const string& username, const string& password,
 		// 运行检测项
 		checker.checkEvents(localEvent,ids);
 		for (auto& e : localEvent) {
+			dbHandler.setCurrentDatabase(ServerManager::instance().GetDb(req));
 			dbHandler.saveSecurityCheckResult(host, e, mysqlPool);//tmp_import
 		}
 
@@ -39,9 +42,10 @@ void fun2( const string& host, const string& username, const string& password,
 }
 
 void level3Fun(const string& host, const string& username, const string& password,
-	ConnectionPool& mysqlPool, DatabaseHandler& dbHandler, const vector<int>& ids) {
+	ConnectionPool& mysqlPool, DatabaseHandler& dbHandler, const vector<int>& ids, const web::http::http_request& req) {
 	auto start = std::chrono::high_resolution_clock::now();
 	try {
+		dbHandler.setCurrentDatabase(ServerManager::instance().GetDb(req));
 		dbHandler.updateLevel3CheckTime(host, mysqlPool);
 		// 创建局部变量，避免使用全局变量
 		vector<event> localEvent;
@@ -55,6 +59,7 @@ void level3Fun(const string& host, const string& username, const string& passwor
 		// 运行检测项
 		checker.checkLevel3Events(localEvent, ids);
 		for (auto& e : localEvent) {
+			dbHandler.setCurrentDatabase(ServerManager::instance().GetDb(req));
 			dbHandler.saveLevel3SecurityCheckResult(host, e, mysqlPool);//
 		}
 
@@ -71,7 +76,7 @@ void level3Fun(const string& host, const string& username, const string& passwor
 	std::cout << "代码执行时间: " << elapsed.count() << " 毫秒" << std::endl;
 
 }
-void ServerInfo_Padding2(ServerInfo& info, const std::string ip, SSHConnectionPool& pool, ConnectionPool& mysqlPool, DatabaseHandler& dbHandler) {
+void ServerInfo_Padding2(ServerInfo& info, const std::string ip, SSHConnectionPool& pool, ConnectionPool& mysqlPool, DatabaseHandler& dbHandler, const web::http::http_request& req) {
     SSHConnectionGuard guard(pool);
     ssh_session session = guard.get();
     string hostname = "hostname | tr -d \"\\n\"";
@@ -106,5 +111,6 @@ void ServerInfo_Padding2(ServerInfo& info, const std::string ip, SSHConnectionPo
     info.free = execute_commands(session, free) + " GB";
     std::cout << info.free << endl;
     // 获取完信息后，调用数据库插入函数
+	dbHandler.setCurrentDatabase(ServerManager::instance().GetDb(req));
     dbHandler.insertServerInfo(info, ip, mysqlPool);
 }

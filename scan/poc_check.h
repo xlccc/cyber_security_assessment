@@ -1,5 +1,5 @@
-#pragma once
-#define _TURN_OFF_PLATFORM_STRING  // ½ûÓÃcpprestµÄUºê
+ï»¿#pragma once
+#define _TURN_OFF_PLATFORM_STRING  // ç¦ç”¨cpprestçš„Uå®
 #include <iostream>
 #include <string>
 #include <map>
@@ -9,9 +9,10 @@
 #include "utils_scan.h"
 #include"DatabaseHandler.h"
 #include"mysql_connection_pool.h"
+#include <cpprest/http_listener.h>
+#include<ServerManager.h>
+//æœç´¢POCæ˜¯å¦å­˜åœ¨ã€å¹¶åŠ è½½POCæ’ä»¶è·¯å¾„
+void searchPOCs(ScanHostResult& hostResult, DatabaseWrapper& dbManager, DatabaseHandler& dbHandler, ConnectionPool& pool, const web::http::http_request& req);
 
-//ËÑË÷POCÊÇ·ñ´æÔÚ¡¢²¢¼ÓÔØPOC²å¼şÂ·¾¶
-void searchPOCs(ScanHostResult& hostResult, DatabaseWrapper& dbManager, DatabaseHandler& dbHandler, ConnectionPool& pool);
-
-//Ö´ĞĞÑ¡ÖĞµÄPOC½Å±¾½øĞĞÂ©¶´ÑéÖ¤
-void verifyPOCs(std::vector<ScanHostResult>& scanHostResults, DatabaseHandler& dbHandler, ConnectionPool& pool);
+//æ‰§è¡Œé€‰ä¸­çš„POCè„šæœ¬è¿›è¡Œæ¼æ´éªŒè¯
+void verifyPOCs(std::vector<ScanHostResult>& scanHostResults, DatabaseHandler& dbHandler, ConnectionPool& pool, const web::http::http_request& req);

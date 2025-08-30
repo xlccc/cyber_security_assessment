@@ -1,4 +1,4 @@
-#include "ConfigManager.h"
+﻿#include "ConfigManager.h"
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
@@ -76,6 +76,40 @@ std::string ConfigManager::getDbSchema() const {
     ensureLoaded();
     return root["database"]["schema"].get<std::string>();
 }
+
+// SMTP配置获取实现
+std::string ConfigManager::getSmtpHost() const {
+    ensureLoaded();
+    return root["smtp"]["host"].get<std::string>();
+}
+
+int ConfigManager::getSmtpPort() const {
+    ensureLoaded();
+    return root["smtp"]["port"].get<int>();
+}
+
+std::string ConfigManager::getSmtpUsername() const {
+    ensureLoaded();
+    return root["smtp"]["username"].get<std::string>();
+}
+
+std::string ConfigManager::getSmtpPassword() const {
+    ensureLoaded();
+    return root["smtp"]["password"].get<std::string>();
+}
+
+
+std::string ConfigManager::getSmtpFromAddress() const {
+    ensureLoaded();
+    return root["smtp"]["from_address"].get<std::string>();
+}
+
+bool ConfigManager::getSmtpUseTls() const {
+    ensureLoaded();
+    return root["smtp"]["use_tls"].get<bool>();
+}
+
+
 
 std::string ConfigManager::getCveApiBaseUrl() const {
     ensureLoaded();

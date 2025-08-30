@@ -1,7 +1,8 @@
-// DatabaseHandler.h
+﻿// DatabaseHandler.h
 #ifndef DATABASEHANDLER_H
 #define DATABASEHANDLER_H
 #include <mysqlx/xdevapi.h>
+#include <random>
 #include <vector>
 #include <string>
 #include<set>
@@ -12,10 +13,18 @@
 #include <cmath> // 添加这个标准库头文件
 #include"database/poc.h"
 #include"log/log.h"
+#include"../System_UserManage/SecurityUtils.h"
+#include"System_UserManage/User.h"
 using namespace std;
 class DatabaseHandler {
 public:
     DatabaseHandler(){}
+
+    std::string current_db_;
+    // 设置当前操作的数据库
+    void setCurrentDatabase(const std::string& user_db) {
+        current_db_ = user_db;
+    }
 
 	void executeInsert(const ScanHostResult& scanHostResult, ConnectionPool& pool); // 执行插入操作的方法,专门插入scan_host_result表，在getNmap中
     void executeUpdateOrInsert(const ScanHostResult  &scanHostResult, ConnectionPool& pool);
@@ -127,54 +136,69 @@ public:
     bool deleteDataById(int id, ConnectionPool& pool);
     //更新POC
     bool updateDataById(int id, const POC& poc, ConnectionPool& pool);
+
+    //分页展示POC库中的内容
+    std::vector<POC>getPocTableWithPagination(int page, int pageSize, int& totalRecords, int& totalPages, ConnectionPool& pool);
+
+    //展示poc状态为有的poc
+    std::vector<POC>getWithPocCondition(int page, int pageSize, int& totalRecords, int& totalPages, ConnectionPool& pool);
+   
+        //展示poc状态为暂存的poc
+    std::vector<POC> getWithTranPocCondition(int page, int pageSize, int& totalRecords, int& totalPages, ConnectionPool& pool);
+
+    //展示poc状态为无的poc
+    std::vector<POC> getWithOutPocCondition(int page, int pageSize, int& totalRecords, int& totalPages, ConnectionPool& pool);
     // 根据关键字搜索数据
     std::vector<POC> searchData(const std::string& keyword, ConnectionPool& pool);
 
+   
+    
     //根据CVE搜索对应POC
     std::vector<POC> searchDataByCVE(const std::string& vuln_id, ConnectionPool& pool);
     ////按id搜索POC数据，若没有，返回无对应POC
     std::vector<POC> searchDataByIds(const std::vector<int>& ids, ConnectionPool& pool);
-
+    
     //搜索是否存在CVE编号的记录
     bool isExistCVE(const std::string& vuln_id, ConnectionPool& pool);
 
     //依据id搜索POC名称，用于删除对应POC
     std::string searchPOCById(const int& id, ConnectionPool& pool);
     //依据vuln_id搜索POC名称，用于删除对应POC
-    std::string searchPOCById(const std::string& vuln_id, ConnectionPool& pool);
+    std::string searchPOCByVulnId(const std::string& vuln_id, ConnectionPool& pool);
 
     //依据id搜索POC数据
     bool searchDataById(const int& id, POC& poc, ConnectionPool& pool);
 
-    //获取所有数据
-    std::vector<POC> getAllData(ConnectionPool& pool);
+    ////获取所有数据
+    //std::vector<POC> getAllData(ConnectionPool& pool);
 
-    // (新增）获取有效POC，即搜索 Script 字段不为空的记录
+    //(新增）获取有效POC，即搜索 Script 字段不为空的记录
     std::vector<POC> getVaildPOCData(ConnectionPool& pool);
+    
     //更新基线检测结果
     void updateBaseLineSecurityCheckResult(const std::string& ip, ConnectionPool& pool, std::vector<scoreMeasure>vec_score);
 
     // ------  POC表 相关的操作 --------
 
     //获取所有资产信息（包括不存活的）
-    std::vector<AssetInfo> getAllAssetsFullInfo(ConnectionPool& pool);
+    std::vector<AssetInfo> getAllAssetsFullInfo(ConnectionPool& pool, const std::string& db_name);
 
     // ------  资产组 相关的操作 --------
     
     //判断资产组是否存在
-    bool isAssetGroupExists(const std::string& group_name, ConnectionPool& pool);
+    bool isAssetGroupExists(const std::string& group_name, ConnectionPool& pool, const std::string& db_name);
     //创建资产组
-    int createAssetGroup(const std::string& group_name, const std::string& description, ConnectionPool& pool);
+    int createAssetGroup(const std::string& group_name, const std::string& description, ConnectionPool& pool,const std::string& db_name);
     //获取资产组列表
-    std::vector<std::pair<int, std::string>> getAllAssetGroups(ConnectionPool& pool);
+    std::vector<std::pair<int, std::string>> getAllAssetGroups(ConnectionPool& pool, const std::string& db_name);
     //归入当前组或移出资产
-    bool updateAssetGroup(const std::string& ip, int group_id, bool is_null, ConnectionPool& pool);
+    bool updateAssetGroup(const std::string& ip, int group_id, bool is_null, ConnectionPool& pool, const std::string& db_name);
     //资产组改名
-    bool renameAssetGroup(int group_id, const std::string& new_name, ConnectionPool& pool);
+    bool renameAssetGroup(int group_id, const std::string& new_name, ConnectionPool& pool, const std::string& db_name);
     //删除资产组（支持是否删除组内资产）
-    bool deleteAssetGroup(int group_id, bool deleteAssets, ConnectionPool& pool);
+    bool deleteAssetGroup(int group_id, bool deleteAssets, ConnectionPool& pool, const std::string& db_name);
     //根据ip list查询所属资产组，返回map。   
-    std::map<int, std::pair<std::string, std::vector<std::string>>> getAliveHostsGroupInfo(const std::vector<std::string>& aliveHosts, ConnectionPool& pool);
+    std::map<int, std::pair<std::string, std::vector<std::string>>> getAliveHostsGroupInfo(const std::vector<std::string>& aliveHosts,ConnectionPool& pool, const std::string& db_name);
 
     // ------  资产组 相关的操作 --------
     //更新基线检测更新时间
@@ -189,6 +213,65 @@ public:
     void updateScanTimeToNow(const std::vector<std::string>& ipList, ConnectionPool& pool);
     //更新 scan_host_result 表中指定 IP 的 scan_time 字段为指定时间
     void updateScanTime(const std::vector<std::string>& ipList, const std::string& timestamp, ConnectionPool& pool);
-};
 
-#endif // DATABASEHANDLER_H
+    //创建管理员数据库admin_db
+     bool InitializeAdminDataBase(ConnectionPool& pool);
+
+
+    // ------ 用户管理相关的操作 --------
+   
+    //创建用户
+    bool createUser(const std::string& username, const std::string& email,
+        const std::string& password_hash, const std::string& role,
+        ConnectionPool& pool);
+  
+    // 生成随机验证码
+    std::string generateVerificationCode(int length = 6);
+    // 插入注册验证记录
+    bool insertRegistrationRecord(const std::string& email,
+        const std::string& verification_code,
+        std::chrono::minutes expiry_time,
+        ConnectionPool& pool);
+     // 验证注册码
+    bool verifyRegistrationCode(const std::string& email,
+        const std::string& verification_code,
+        ConnectionPool& pool);
+    // 完成用户注册
+    bool completeUserRegistration(const std::string& email,
+        const std::string& username,
+        const std::string& password_hash,
+        ConnectionPool& pool);
+
+    //用户登录
+    bool userLogin(const std::string& username,
+        const std::string& password,
+        ConnectionPool& pool);
+
+    //通过用户名查找id
+    int getIdByUsername(const std::string username, ConnectionPool& pool);
+
+    //通过用户名查找邮箱
+    std::string getEmailByUsername(const std::string username, ConnectionPool& pool);
+    
+    //通过用户名查找用户身份
+    std::string getRoleByUsername(const std::string username, ConnectionPool& pool);
+
+    //通过用户名查找用数据库名
+    std::string getSchemaByUsername(const std::string username, ConnectionPool& pool);
+    //
+  
+
+
+//管理员对用户的增删改查
+//管理员创建用户
+    bool createUserbyAdmin(const User& user, ConnectionPool& pool);
+    bool updateUserbyAdmin(const User& user, ConnectionPool& pool);
+    bool deleteUserbyAdmin(const std::string& username, ConnectionPool& pool);
+    bool recoverUserbyAdmin(const std::string& username, ConnectionPool& pool);
+    User getUserByUserId(const int user_id, ConnectionPool& pool);
+    std::vector<User>getUserByUsername(const std::string& username, ConnectionPool& pool);
+    std::vector<User>getAllUsers(ConnectionPool& pool);
+
+    
+};
+#endif DATABASEHANDLER_H

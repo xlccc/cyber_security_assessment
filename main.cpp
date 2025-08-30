@@ -1,4 +1,4 @@
-#define _TURN_OFF_PLATFORM_STRING  // 禁用cpprest的U宏
+﻿#define _TURN_OFF_PLATFORM_STRING  // 禁用cpprest的U宏
 //main函数
 #include<iostream>
 #include <mysqlx/xdevapi.h>
@@ -14,6 +14,9 @@
 #include <sstream>
 #include <regex>
 #include <fstream>
+#include "database/DatabaseHandler.h"
+#include <csignal>
+#include <atomic>
 
 using namespace utility;          // Common utilities like string conversions
 using namespace web;              // Common features like URIs.
@@ -22,8 +25,19 @@ using namespace web::http::client;// HTTP client features
 using namespace concurrency::streams; // Asynchronous streams
 using namespace std;
 
+// 全局标志
+std::atomic<bool> running(true);
+
+// 信号处理函数
+void signal_handler(int signum) {
+    running = false;
+}
 int main()
 {
+    // 设置信号处理
+    std::signal(SIGINT, signal_handler);  // Ctrl+C
+    std::signal(SIGTERM, signal_handler); // kill命令
+
     char cwd[10000];
     if (getcwd(cwd, sizeof(cwd)) != nullptr) {
         std::cout << "Current working directory: " << cwd << std::endl;
@@ -49,85 +63,40 @@ int main()
     // 初始化Python解释器
     initializePython();
 
+ 
+  
     ServerManager serverManager;
-
+    serverManager.InitializeAdminDatabase();
     serverManager.open_listener();
 
-    std::string line;
-    std::cout << "Press Enter to close the server." << std::endl;
-    std::getline(std::cin, line);
+  
+    // 主循环
+    std::cout << "Server is running. Press Ctrl+C to close the server." << std::endl;
+
+    while (running) {
+        try {
+            // 使用更短的睡眠间隔，提高响应性
+            for (int i = 0; i < 10 && running; ++i) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
+        }
+        catch (const std::exception& e) {
+            // 处理睡眠中断异常
+            if (std::string(e.what()).find("Interrupt") != std::string::npos) {
+                // 睡眠被中断，检查是否需要退出
+                continue;
+            }
+            else {
+                std::cerr << "Unexpected exception: " << e.what() << std::endl;
+                running = false;
+            }
+        }
+    }
 
     // 终止Python解释器
     finalizePython();
+  
     return 0;
 }
 
 
-//#include<iostream>
-//#include<vector>
-//#include<cmath>
-//using namespace std;
-//
-//class Point
-//{
-//private:
-//	float x;
-//	float y;
-//public:
-//	Point(float x, float y)
-//	{
-//		this->x = x;
-//		this->y = y;
-//	}
-//	float getX() const
-//	{
-//		return this->x;
-//	}
-//	float getY() const
-//	{
-//		return this->y;
-//	}
-//};
-//class Line
-//{
-//private:
-//	vector<Point> point;
-//	int count;
-//public:
-//	//int familarDegree(const Line& line2)
-//	//{
-//	//	//计算点数差距
-//	//	//计算采样间距差距
-//
-//	//	//综合
-//	//}
-//	////计算点数差距
-//	//int countDiff(const Line& line2)
-//	//{
-//	//	return abs(this->count - line2.count);
-//	//}
-//	//计算采样间距差距
-//	Line(const std::initializer_list<Point>& l):point(l),count(static_cast<int>(l.size())){}
-//
-//	int disDiff(const Line& line2)
-//	{
-//		float result = 0;
-//		
-//		for (int i = 0; i < count; i++)
-//		{
-//			int x_d = abs(this->point[i].getX() - line2.point[i].getX());
-//			int y_d = abs(this->point[i].getY() - line2.point[i].getY());
-//			result += x_d * x_d + y_d * y_d;
-//		}
-//		return result;
-//	}
-//};
-//int main()
-//{
-//	Line line1{ {0, 0}, {10, 0}, {20, 0} };
-//	Line line2{ {1, 3}, {8, 7}, {16, 25} };
-//
-//	cout << line1.disDiff(line2) << endl;
-//
-//	return 0;
-//}

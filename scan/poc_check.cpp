@@ -1,10 +1,12 @@
 ﻿#include"poc_check.h"
+
 //搜索POC是否存在、并加载POC插件路径
-void searchPOCs(ScanHostResult& hostResult, DatabaseWrapper& dbManager, DatabaseHandler& dbHandler, ConnectionPool& pool) {
+void searchPOCs(ScanHostResult& hostResult, DatabaseWrapper& dbManager, DatabaseHandler& dbHandler, ConnectionPool& pool, const web::http::http_request& req) {
      
     // 搜索操作系统相关的POC
     for (auto& cpe : hostResult.cpes) {
         for (auto& cve : cpe.second) {
+            dbHandler.setCurrentDatabase(ServerManager::instance().GetDb(req));
             auto pocRecords = dbManager.searchDataByCVE(cve.Vuln_id);
             if (!pocRecords.empty()) {
                 cve.vul_name = pocRecords[0].vul_name;
@@ -14,6 +16,7 @@ void searchPOCs(ScanHostResult& hostResult, DatabaseWrapper& dbManager, Database
                     cve.pocExist = true;
                     cve.script = pocRecords[0].script; // 将 script 字段更新为数据库中的相应值
                 }
+                dbHandler.setCurrentDatabase(ServerManager::instance().GetDb(req));
                 dbHandler.alterVulnsAfterPocSearch(pool, cve);
 
             }
@@ -24,6 +27,7 @@ void searchPOCs(ScanHostResult& hostResult, DatabaseWrapper& dbManager, Database
     for (auto& port : hostResult.ports) {
         for (auto& cpe : port.cpes) {
             for (auto& cve : cpe.second) {
+                dbHandler.setCurrentDatabase(ServerManager::instance().GetDb(req));
                 auto pocRecords = dbManager.searchDataByCVE(cve.Vuln_id);
                 if (!pocRecords.empty()) {
                     cve.vul_name = pocRecords[0].vul_name;
@@ -33,6 +37,7 @@ void searchPOCs(ScanHostResult& hostResult, DatabaseWrapper& dbManager, Database
                         cve.pocExist = true;
                         cve.script = pocRecords[0].script; // 将 script 字段更新为数据库中的相应值
                     }
+                    dbHandler.setCurrentDatabase(ServerManager::instance().GetDb(req));
                     dbHandler.alterVulnsAfterPocSearch(pool, cve);
                 }
             }
@@ -41,7 +46,7 @@ void searchPOCs(ScanHostResult& hostResult, DatabaseWrapper& dbManager, Database
 }
 
 //执行选中的POC脚本进行漏洞验证
-void verifyPOCs(std::vector<ScanHostResult>& scanHostResults, DatabaseHandler& dbHandler, ConnectionPool& pool) {
+void verifyPOCs(std::vector<ScanHostResult>& scanHostResults, DatabaseHandler& dbHandler, ConnectionPool& pool, const web::http::http_request& req) {
     //std::cout << "共有主机数：" << scanHostResults.size() << std::endl;
 
 
@@ -65,6 +70,7 @@ void verifyPOCs(std::vector<ScanHostResult>& scanHostResults, DatabaseHandler& d
                     {
                         cve.vulExist = "未验证";
                     }
+                    dbHandler.setCurrentDatabase(ServerManager::instance().GetDb(req));
                     dbHandler.alterHostVulnResultAfterPocVerify(pool, cve, ip);
 
                 }
@@ -96,6 +102,7 @@ void verifyPOCs(std::vector<ScanHostResult>& scanHostResults, DatabaseHandler& d
                         {
                             cve.vulExist = "未验证";
                         }
+                        dbHandler.setCurrentDatabase(ServerManager::instance().GetDb(req));
                         dbHandler.alterPortVulnResultAfterPocVerify(pool, cve, ip, portId);
                     }
                 }
