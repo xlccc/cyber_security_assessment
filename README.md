@@ -28,6 +28,15 @@ username ALL=(ALL) NOPASSWD: /bin/chmod
 mkdir -p output_nmap
 sudo chown username:username output_nmap
 sudo chmod 777 output_nmap
+
+//导入数据文件
+sudo cp ~/.vs/项目目录/src/poc_data1.csv  /var/lib/mysql-files/
+sudo chown mysql:mysql /var/lib/mysql-files/poc_data1.csv 
+sudo chmod 644 /var/lib/mysql-files/poc_data1.csv
+
+sudo cp ~/.vs/项目目录/src/poc_data2.csv  /var/lib/mysql-files/
+sudo chown mysql:mysql /var/lib/mysql-files/poc_data2.csv 
+sudo chmod 644 /var/lib/mysql-files/poc_data2.csv 
 ```
 
 #### 2.CVE-Search
@@ -47,6 +56,10 @@ vcpkg install uchardet
 vcpkg install nlohmann-json
 vcpkg install mysql-connector-cpp:x64-linux
 vcpkg install spdlog
+vcpkg install hiredis
+vcpkg install jwt-cpp
+vcpkg install libsodium
+vcpkg install libiconv
 ```
 
 其他系统依赖安装：
@@ -65,11 +78,12 @@ sudo apt-get install -y autoconf automake autoconf-archive ninja-build
 #1.安装mysql
 #2.登录mysql：
    mysql -u root -p 
-#3.创建数据库：
-   CREATE DATABASE test_db
-#4.执行SQL文件：
+#3.执行SQL文件：
    mysql -u root -p your_database_name < /path/to/your.sql
-#5.配置mysql远程连接：
+①template_db.sql
+②/system_db.sql
+
+#4.配置mysql远程连接：
 #在localhost登入mysql后，更改 “mysql” 数据库里的 “user” 表里的 “host” 项，将"localhost"改称"%（代表允许远程）
 update user set host = '%' where user = 'root';
 select host, user from user;
