@@ -81,7 +81,7 @@ sudo apt-get install -y autoconf automake autoconf-archive ninja-build
 #3.执行SQL文件：
    mysql -u root -p your_database_name < /path/to/your.sql
 ①template_db.sql
-②/system_db.sql
+②system_db.sql
 
 #4.配置mysql远程连接：
 #在localhost登入mysql后，更改 “mysql” 数据库里的 “user” 表里的 “host” 项，将"localhost"改称"%（代表允许远程）
