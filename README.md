@@ -30,11 +30,11 @@ sudo chown username:username output_nmap
 sudo chmod 777 output_nmap
 
 //导入数据文件
-sudo cp ~/.vs/项目目录/src/poc_data1.csv  /var/lib/mysql-files/
+sudo cp ~/.vs/项目目录/src/database/poc_data1.csv  /var/lib/mysql-files/
 sudo chown mysql:mysql /var/lib/mysql-files/poc_data1.csv 
 sudo chmod 644 /var/lib/mysql-files/poc_data1.csv
 
-sudo cp ~/.vs/项目目录/src/poc_data2.csv  /var/lib/mysql-files/
+sudo cp ~/.vs/项目目录/src/database/poc_data2.csv  /var/lib/mysql-files/
 sudo chown mysql:mysql /var/lib/mysql-files/poc_data2.csv 
 sudo chmod 644 /var/lib/mysql-files/poc_data2.csv 
 ```
